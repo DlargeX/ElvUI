@@ -19,7 +19,19 @@ end
 function AB:ExtraButtons_BossStyle(button)
 	if not button or button.IsSkinned then return end
 
-	AB:StyleButton(button, true) -- registers cooldown too
+	-- normally we handle this in StyleButton but we want
+	-- to skip the cooldown register and use custom one
+	if not AB.handledbuttons[button] then
+		if button.cooldown then
+			button.cooldown:SetAllPoints(button.icon)
+
+			E:RegisterCooldown(button.cooldown, 'bossbutton')
+		end
+
+		AB.handledbuttons[button] = true
+	end
+
+	AB:StyleButton(button, true) -- normally handles cooldown
 
 	button.icon:SetDrawLayer('ARTWORK', -1)
 	button:SetTemplate()
@@ -32,10 +44,6 @@ function AB:ExtraButtons_BossStyle(button)
 
 	AB:FixKeybindText(button)
 	AB:FixKeybindColor(button)
-
-	if button.cooldown then
-		E:RegisterCooldown(button.cooldown, 'bossbutton')
-	end
 
 	AB:ExtraButtons_BossAlpha(button)
 
