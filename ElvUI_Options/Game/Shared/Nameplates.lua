@@ -447,7 +447,6 @@ NamePlates.enable = ACH:Toggle(L["Enable"], nil, 1, nil, nil, nil, function(info
 NamePlates.statusbar = ACH:SharedMediaStatusbar(L["StatusBar Texture"], nil, 2)
 NamePlates.resetFilters = ACH:Execute(L["Reset Aura Filters"], nil, 3, function() E:StaticPopup_Show('RESET_NP_AF') end)
 NamePlates.resetcvars = ACH:Execute(L["Reset CVars"], L["Reset Nameplate CVars to the ElvUI recommended defaults."], 4, function() NP:CVarReset() end, nil, true)
-NamePlates.persistentFriendlyNP = ACH:Toggle(E.NewSign..L["Lock Friendly NPC Plates"], L["Prevent Friendly NPC nameplates from being reset to enabled on login."], 5, nil, nil, nil, nil, nil, nil, not E.Retail)
 
 NamePlates.generalGroup = ACH:Group(L["General"], nil, 5, nil, nil, function(info, value) E.db.nameplates[info[#info]] = value NP:SetCVars() NP:ConfigureAll() end, function() return not E.NamePlates.Initialized end)
 NamePlates.generalGroup.args.motionType = ACH:Select(L["UNIT_NAMEPLATES_TYPES"], L["Set to either stack nameplates vertically or allow them to overlap."], 1, { STACKED = L["UNIT_NAMEPLATES_TYPE_2"], OVERLAP = L["UNIT_NAMEPLATES_TYPE_1"] }, nil, nil, nil, nil, nil, E.Retail)
@@ -495,9 +494,11 @@ do
 		nameplateOtherAtBase = L["Nameplate At Base"],
 	}
 
+	-- Descriptions based on GetCVar
 	if E.Retail then
 		cvarRanges.nameplatePlayerLargerScale = { name = L["Player Larger Scale"], default = '1.8', max = 3, order = 24 }
 		cvarToggles.nameplateShowOnlyNameForFriendlyPlayerUnits  = L["Show Only Names"]
+		cvarToggles.nameplateUseClassColorForFriendlyPlayerUnitNames = L["Class Color Names"]
 	else
 		cvarRanges.nameplateNotSelectedAlpha = { name = L["Non Selected Alpha"], default = '0.5', max = 1, order = 28 }
 		cvarToggles.nameplateShowOnlyNames = L["Show Only Names"]
@@ -507,8 +508,10 @@ do
 		if cvarToggles[key] then
 			E:SetCVar(key, value and (key == 'nameplateOtherAtBase' and 2 or 1) or 0)
 
-			if key == 'nameplateShowOnlyNames' or key == 'nameplateShowOnlyNameForFriendlyPlayerUnits' then
+			if (E.Retail and key == 'nameplateShowOnlyNameForFriendlyPlayerUnits') or key == 'nameplateShowOnlyNames' then
 				E.db.nameplates.visibility.showOnlyNames = value
+			elseif E.Retail and key == 'nameplateUseClassColorForFriendlyPlayerUnitNames' then
+				E.db.nameplates.visibility.classColorFriendlyPlayerNames = value
 			end
 		else
 			E:SetCVar(key, value)
@@ -516,8 +519,10 @@ do
 	end
 
 	local function CheckCVar(key)
-		if key == 'nameplateShowOnlyNames' or key == 'nameplateShowOnlyNameForFriendlyPlayerUnits' then
+		if (E.Retail and key == 'nameplateShowOnlyNameForFriendlyPlayerUnits') or key == 'nameplateShowOnlyNames' then
 			return E.db.nameplates.visibility.showOnlyNames
+		elseif E.Retail and key == 'nameplateUseClassColorForFriendlyPlayerUnitNames' then
+			return E.db.nameplates.visibility.classColorFriendlyPlayerNames
 		elseif cvarRanges[key] then
 			return tonumber(GetCVar(key)) or 0
 		else
