@@ -492,26 +492,25 @@ do
 
 	local cvarToggles = {
 		nameplateOtherAtBase = L["Nameplate At Base"],
+		nameplateShowOnlyNames = L["Show Only Names"]
 	}
 
 	-- Descriptions based on GetCVar
 	if E.Retail then
 		cvarRanges.nameplatePlayerLargerScale = { name = L["Player Larger Scale"], default = '1.8', max = 3, order = 24 }
-		cvarToggles.nameplateShowOnlyNameForFriendlyPlayerUnits  = L["Show Only Names"]
-		cvarToggles.nameplateUseClassColorForFriendlyPlayerUnitNames = L["Class Color Names"]
+		cvarToggles.useClassColorNames = L["Class Color Names"]
 	else
 		cvarRanges.nameplateNotSelectedAlpha = { name = L["Non Selected Alpha"], default = '0.5', max = 1, order = 28 }
-		cvarToggles.nameplateShowOnlyNames = L["Show Only Names"]
 	end
 
 	local function ApplyCVar(key, value)
 		if cvarToggles[key] then
 			E:SetCVar(key, value and (key == 'nameplateOtherAtBase' and 2 or 1) or 0)
 
-			if (E.Retail and key == 'nameplateShowOnlyNameForFriendlyPlayerUnits') or key == 'nameplateShowOnlyNames' then
+			if key == 'nameplateShowOnlyNames' then
 				E.db.nameplates.visibility.showOnlyNames = value
-			elseif E.Retail and key == 'nameplateUseClassColorForFriendlyPlayerUnitNames' then
-				E.db.nameplates.visibility.classColorFriendlyPlayerNames = value
+			elseif key == 'useClassColorNames' then
+				E.db.nameplates.classColorNames = value
 			end
 		else
 			E:SetCVar(key, value)
@@ -519,10 +518,10 @@ do
 	end
 
 	local function CheckCVar(key)
-		if (E.Retail and key == 'nameplateShowOnlyNameForFriendlyPlayerUnits') or key == 'nameplateShowOnlyNames' then
+		if key == 'nameplateShowOnlyNames' then
 			return E.db.nameplates.visibility.showOnlyNames
-		elseif E.Retail and key == 'nameplateUseClassColorForFriendlyPlayerUnitNames' then
-			return E.db.nameplates.visibility.classColorFriendlyPlayerNames
+		elseif key == 'useClassColorNames' then
+			return E.db.nameplates.classColorNames
 		elseif cvarRanges[key] then
 			return tonumber(GetCVar(key)) or 0
 		else

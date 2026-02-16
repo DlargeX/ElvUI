@@ -131,7 +131,22 @@ P.general = {
 	},
 	rotationAssist = {
 		nextcast = { r = 0.20, g = 0.60, b = 0.95, a = 0.9 },
-		alternative = { r = 0.40, g = 0.99, b = 0.20, a = 0.9 }
+		alternative = { r = 0.40, g = 0.99, b = 0.20, a = 0.9 },
+		spells = {
+			HUNTER = {},
+			WARRIOR = {},
+			ROGUE = {},
+			MAGE = {},
+			PRIEST = {},
+			EVOKER = {},
+			SHAMAN = {},
+			WARLOCK = {},
+			DEMONHUNTER = {},
+			DEATHKNIGHT = {},
+			DRUID = {},
+			MONK = {},
+			PALADIN = {}
+		}
 	},
 	customGlow = {
 		style = 'Pixel Glow',
@@ -850,7 +865,7 @@ P.nameplates = {
 	nameColoredGlow = false,
 	overlapH = 0.8,
 	overlapV = 1.1,
-	persistentFriendlyNP = false, -- ToDo: Remove me later, leaving it to not break installer imports
+	classColorNames = false,
 	showEnemyCombat = 'DISABLED',
 	showFriendlyCombat = 'DISABLED',
 	statusbar = 'ElvUI Norm',
@@ -1043,7 +1058,6 @@ P.nameplates = {
 	visibility = {
 		showAll = true,
 		showOnlyNames = false,
-		classColorFriendlyPlayerNames = false,
 		enemy = {
 			guardians = false,
 			minions = false,
@@ -3003,6 +3017,7 @@ do
 			object.position = 'RIGHT'
 			object.offsetX = -10
 		elseif key == 'auraindicator' then
+			object.reverse = true
 			object.hideNumbers = true
 			object.fontSize = 10
 		elseif key == 'auras' then

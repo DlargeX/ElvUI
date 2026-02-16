@@ -42,9 +42,12 @@ local GetSpellLossOfControlCooldown = C_Spell.GetSpellLossOfControlCooldown or G
 
 local GetPlayerAuraBySpellID = C_UnitAuras.GetPlayerAuraBySpellID
 local GetActionDisplayCount = C_ActionBar.GetActionDisplayCount
+local IsEquippedGearOutfitAction = C_ActionBar.IsEquippedGearOutfitAction
 local C_Container_GetItemCooldown = C_Container.GetItemCooldown
 local C_EquipmentSet_PickupEquipmentSet = C_EquipmentSet.PickupEquipmentSet
 local C_LevelLink_IsActionLocked = C_LevelLink and C_LevelLink.IsActionLocked
+local C_TransmogOutfitInfo_IsLockedOutfit = C_TransmogOutfitInfo and C_TransmogOutfitInfo.IsLockedOutfit
+local C_TransmogOutfitInfo_IsEquippedGearOutfitLocked = C_TransmogOutfitInfo and C_TransmogOutfitInfo.IsEquippedGearOutfitLocked
 
 local SpellVFX_ClearReticle, SpellVFX_ClearInterruptDisplay, SpellVFX_PlaySpellCastAnim, SpellVFX_PlayTargettingReticleAnim, SpellVFX_StopTargettingReticleAnim, SpellVFX_StopSpellCastAnim, SpellVFX_PlaySpellInterruptedAnim
 local SpellVFX_CastingAnim_OnHide, SpellVFX_CastingAnim_Finish_OnFinished
@@ -607,6 +610,16 @@ function Generic:OnButtonEvent(event, ...)
 		self:UnregisterEvent(event)
 
 		UpdateFlyout(self)
+	end
+end
+
+-----------------------------------------------------------
+--- handle AutoCastOverlay ~Simpy
+local function UpdateAutoCastOverlay(button, shown)
+	button.AutoCastOverlay:SetShown(shown)
+
+	if button.AutoCastOverlay.ShowAutoCastEnabled then
+		button.AutoCastOverlay:ShowAutoCastEnabled(shown)
 	end
 end
 
@@ -1949,6 +1962,10 @@ function Update(self, which)
 		if self.LevelLinkLockIcon then
 			self.LevelLinkLockIcon:SetShown(false)
 		end
+
+		if self.AutoCastOverlay then
+			UpdateAutoCastOverlay(self, false)
+		end
 	end
 
 	-- Add a green border if button is an equipped item
@@ -2338,6 +2355,19 @@ function UpdateFlash(self)
 		StartFlash(self)
 	else
 		StopFlash(self)
+	end
+
+	-- ours does not include the pet checks
+	if C_TransmogOutfitInfo_IsLockedOutfit and self.AutoCastOverlay then
+		if self._state_type == 'action' then
+			local actionType, actionID = GetActionInfo(self._state_action)
+			local isLockedOutfit = actionType == 'outfit' and C_TransmogOutfitInfo_IsLockedOutfit(actionID)
+			local isLockedEquippedGear = IsEquippedGearOutfitAction(self._state_action) and C_TransmogOutfitInfo_IsEquippedGearOutfitLocked()
+
+			UpdateAutoCastOverlay(self, isLockedOutfit or isLockedEquippedGear)
+		else
+			UpdateAutoCastOverlay(self, false)
+		end
 	end
 end
 
