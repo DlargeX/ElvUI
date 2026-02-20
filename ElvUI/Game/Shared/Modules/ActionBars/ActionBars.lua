@@ -843,6 +843,10 @@ function AB:StyleButton(button, noBackdrop, useMasque, ignoreNormal)
 	if not AB.handledbuttons[button] then
 		E:RegisterCooldown(button.cooldown, 'actionbar')
 
+		if button.AuraCooldown then
+			E:RegisterCooldown(button.AuraCooldown, 'targetaura')
+		end
+
 		AB.handledbuttons[button] = true
 	end
 
@@ -1705,6 +1709,10 @@ function AB:StyleFlyout(button, arrow)
 	end
 end
 
+function AB:SetTargetAuraCooldowns(enabled)
+	LAB:SetTargetAuraCooldowns(enabled)
+end
+
 function AB:ToggleCooldownOptions()
 	for button in pairs(LAB.actionButtons) do
 		if button._state_type == 'action' then
@@ -1988,6 +1996,8 @@ function AB:Initialize()
 	AB:UpdateButtonSettings()
 	AB:ToggleCooldownOptions()
 	AB:LoadKeyBinder()
+
+	AB:SetTargetAuraCooldowns(E.db.cooldown.targetaura.enable)
 
 	AB:RegisterEvent('ADDON_LOADED')
 	AB:RegisterEvent('PLAYER_ENTERING_WORLD')

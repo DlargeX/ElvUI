@@ -40,6 +40,11 @@ local IsConsumableSpell = C_Spell.IsConsumableSpell or IsConsumableSpell
 local IsSpellOverlayed = (C_SpellActivationOverlay and C_SpellActivationOverlay.IsSpellOverlayed) or IsSpellOverlayed
 local GetSpellLossOfControlCooldown = C_Spell.GetSpellLossOfControlCooldown or GetSpellLossOfControlCooldown
 
+local CopyTable = CopyTable
+local UnitIsFriend = UnitIsFriend
+local UnpackAuraData = AuraUtil.UnpackAuraData
+local GetAuraDataBySpellName = C_UnitAuras.GetAuraDataBySpellName
+local GetAuraDataByAuraInstanceID = C_UnitAuras.GetAuraDataByAuraInstanceID
 local GetPlayerAuraBySpellID = C_UnitAuras.GetPlayerAuraBySpellID
 local GetActionDisplayCount = C_ActionBar.GetActionDisplayCount
 local IsEquippedGearOutfitAction = C_ActionBar.IsEquippedGearOutfitAction
@@ -136,6 +141,9 @@ local UpdateFlyout, ShowGrid, HideGrid, UpdateGrid, SetupSecureSnippets, WrapOnC
 local ShowOverlayGlow, HideOverlayGlow
 local ClearChargeCooldown
 local UpdateRange -- Sezz
+
+local UpdateTargetAuras -- Simpy
+local TARGETAURA_ENABLED = false
 
 local RangeFont
 do -- properly support range symbol when it's shown ~Simpy
@@ -284,6 +292,12 @@ function lib:CreateButton(id, name, header, config)
 	button.cooldown:SetFrameStrata(button:GetFrameStrata())
 	button.cooldown:SetFrameLevel(button:GetFrameLevel() + 1)
 	button.cooldown:SetAllPoints(button.icon)
+
+	local AuraCooldown = CreateFrame("Cooldown", nil, button, "CooldownFrameTemplate")
+	AuraCooldown:SetDrawBling(false)
+	AuraCooldown:SetDrawSwipe(false)
+	AuraCooldown:SetDrawEdge(false)
+	button.AuraCooldown = AuraCooldown
 
 	if button.chargeCooldown then
 		button.chargeCooldown:SetAllPoints(button.icon)
@@ -1497,6 +1511,9 @@ function InitializeEventHandler()
 		lib.eventFrame:RegisterEvent("ACTION_USABLE_CHANGED")
 		lib.eventFrame:RegisterEvent("ACTION_RANGE_CHECK_UPDATE")
 	else
+		lib.eventFrame:RegisterUnitEvent("UNIT_AURA", "target")
+		lib.eventFrame:RegisterUnitEvent("UNIT_FACTION", "target")
+
 		lib.eventFrame:RegisterEvent("ACTIONBAR_UPDATE_USABLE")
 		lib.eventFrame:RegisterEvent("PET_BAR_HIDEGRID") -- Needed for classics show grid.. ACTIONBAR_SHOWGRID fires with PET_BAR_SHOWGRID but ACTIONBAR_HIDEGRID doesn't fire with PET_BAR_HIDEGRID
 	end
@@ -1554,6 +1571,10 @@ function OnEvent(_, event, arg1, arg2, arg3, arg4)
 				button.icon:SetTexture(texture)
 			end
 		end
+
+		if TARGETAURA_ENABLED then
+			UpdateTargetAuras(event)
+		end
 	elseif event == "UNIT_INVENTORY_CHANGED" then
 		local tooltipOwner = GameTooltip_GetOwnerForbidden()
 		if tooltipOwner and ButtonRegistry[tooltipOwner] then
@@ -1566,6 +1587,10 @@ function OnEvent(_, event, arg1, arg2, arg3, arg4)
 				Update(button, event)
 			end
 		end
+
+		if TARGETAURA_ENABLED then
+			UpdateTargetAuras(event)
+		end
 	elseif event == "PLAYER_ENTERING_WORLD" or event == "UPDATE_VEHICLE_ACTIONBAR" then
 		ForAllButtons(Update, nil, event)
 	elseif event == "ACTIONBAR_SHOWGRID" then
@@ -1575,10 +1600,22 @@ function OnEvent(_, event, arg1, arg2, arg3, arg4)
 	elseif event == "UPDATE_BINDINGS" or event == "GAME_PAD_ACTIVE_CHANGED" then
 		ForAllButtons(UpdateHotkeys, nil, event)
 	elseif event == "PLAYER_TARGET_CHANGED" then
+		if TARGETAURA_ENABLED then
+			UpdateTargetAuras(event)
+		end
+
 		if not WoWRetail then
 			for button in next, ActiveButtons do
 				UpdateRangeTimer(button)
 			end
+		end
+	elseif event == "UNIT_FACTION" then
+		if TARGETAURA_ENABLED then
+			UpdateTargetAuras(event)
+		end
+	elseif event == "UNIT_AURA" then
+		if TARGETAURA_ENABLED then
+			UpdateTargetAuras(event, arg1, arg2)
 		end
 	elseif (event == "ACTIONBAR_UPDATE_STATE" or event == "UNIT_ENTERED_VEHICLE" or event == "UNIT_EXITED_VEHICLE")
 		or (event == "TRADE_SKILL_SHOW" or event == "TRADE_SKILL_CLOSE"  or event == "ARCHAEOLOGY_CLOSED" or event == "TRADE_CLOSED") then
@@ -1831,6 +1868,136 @@ function UpdateRange(button, force, inRange, checksRange) -- Sezz: moved from On
 
 		lib.callbacks:Fire("OnUpdateRange", button)
 	end
+end
+
+-----------------------------------------------------------
+--- Active Aura Cooldowns for Target ~ By Simpy
+
+do
+	local current = {}
+	local auraInstances = {}
+
+	local function CheckIsMine(sourceUnit)
+		return sourceUnit == 'player' or sourceUnit == 'pet' or sourceUnit == 'vehicle'
+	end
+
+	local function CheckAuraFilter(aura, filter)
+		if not filter then
+			return true -- already filtered by GetAuraDataBySpellName
+		elseif filter == 'HELPFUL' then
+			return aura.isHelpful
+		elseif filter == 'HARMFUL' then
+			return aura.isHarmful
+		end
+	end
+
+	local function GetTargetAuraCooldown(aura)
+		if not aura then return end
+
+		local _, _, _, _, duration, expiration = UnpackAuraData(aura)
+		local start = (duration and duration > 0) and (expiration - duration)
+		return start, duration, expiration
+	end
+
+	local GCD = 1.5
+	local function HasActiveCooldown(button)
+		local _, duration = button:GetCooldown()
+		if duration and duration > GCD then return true end
+
+		local _, _, _, chargeDuration = button:GetCharges()
+		if chargeDuration and chargeDuration > GCD then return true end
+	end
+
+	local function CheckTargetAuraCooldown(aura, filter, buttons, previous)
+		local allow = CheckAuraFilter(aura, filter)
+		if not allow then return end
+
+		local isMine = CheckIsMine(aura.sourceUnit)
+		if not isMine then return end
+
+		local start, duration = GetTargetAuraCooldown(aura)
+		if not start then return end
+
+		for _, button in next, buttons do
+			if not HasActiveCooldown(button) then
+				button.AuraCooldown:SetCooldown(start, duration, 1)
+
+				current[button] = true
+
+				if previous then
+					previous[button] = nil
+				end
+			end
+		end
+	end
+
+	local function ProcessTargetAuras(which, filter, auras)
+		if not auras then return end
+
+		for _, value in next, auras do
+			if which == 'add' then
+				auraInstances[value.auraInstanceID] = value
+
+				local buttons = AuraButtons.auras[value.name]
+				if buttons then
+					CheckTargetAuraCooldown(value, filter, buttons)
+				end
+			else
+				local aura
+				if which == 'update' then -- update it
+					aura = GetAuraDataByAuraInstanceID('target', value)
+					auraInstances[value] = aura
+				else
+					aura = auraInstances[value] -- use cache to remove
+					auraInstances[value] = nil -- clear the old one
+				end
+
+				local buttons = aura and AuraButtons.auras[aura.name]
+				if buttons then
+					CheckTargetAuraCooldown(aura, filter, buttons)
+				end
+			end
+		end
+	end
+
+	function UpdateTargetAuras(event, arg1, arg2)
+		local isFriend = UnitIsFriend('player', 'target')
+		if event == 'UNIT_AURA' and arg2 and not arg2.isFullUpdate then
+			local filter = isFriend and 'HELPFUL' or 'HARMFUL'
+			ProcessTargetAuras('add', filter, arg2.addedAuras)
+			ProcessTargetAuras('update', filter, arg2.updatedAuraInstanceIDs)
+			ProcessTargetAuras('remove', filter, arg2.removedAuraInstanceIDs)
+		else
+			local previous = CopyTable(current, true) -- shallow copy
+
+			wipe(current) -- clear the current ones
+			wipe(auraInstances) -- keep this clean
+
+			if event ~= 'SetTargetAuraCooldowns' or arg1 then
+				local filter = isFriend and 'PLAYER|HELPFUL' or 'PLAYER|HARMFUL'
+				for spellName, buttons in next, AuraButtons.auras do
+					local aura = GetAuraDataBySpellName('target', spellName, filter)
+					if aura then -- collect what we can
+						auraInstances[aura.auraInstanceID] = aura
+
+						CheckTargetAuraCooldown(aura, nil, buttons, previous)
+					end
+				end
+			end
+
+			for button in next, previous do
+				button.AuraCooldown:Clear()
+			end
+		end
+	end
+end
+
+function lib:SetTargetAuraCooldowns(enabled)
+	local activate = not WoWRetail and enabled
+
+	TARGETAURA_ENABLED = activate
+
+	UpdateTargetAuras('SetTargetAuraCooldowns', activate)
 end
 
 -----------------------------------------------------------
@@ -2203,7 +2370,9 @@ local function StartChargeCooldown(parent, chargeStart, chargeDuration, chargeMo
 		return
 	end
 
-	parent.chargeCooldown = parent.chargeCooldown or CreateChargeCooldownFrame(parent)
+	if not parent.chargeCooldown then
+		parent.chargeCooldown = CreateChargeCooldownFrame(parent)
+	end
 
 	CooldownFrame_Set(parent.chargeCooldown, chargeStart, chargeDuration, true, true, chargeModRate)
 
