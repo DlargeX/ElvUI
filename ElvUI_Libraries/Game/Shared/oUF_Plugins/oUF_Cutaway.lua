@@ -10,7 +10,9 @@ local oUF = ns.oUF
 -- GLOBALS: ElvUI
 
 local max = math.max
+local pcall = pcall
 local assert = assert
+
 local hooksecurefunc = hooksecurefunc
 local UnitHealthMax = UnitHealthMax
 local UnitPowerMax = UnitPowerMax
@@ -87,9 +89,13 @@ end
 
 local function Health_PreUpdate(self, unit)
 	local element = self.__owner.Cutaway.Health
+
+	local okTap, tapDenied = pcall(UnitIsTapDenied, unit)
+	if not okTap or tapDenied then return end
+
 	local GetHealthMax = element.GetHealthMax or UnitHealthMax
-	local maxV = GetHealthMax(unit)
-	if Shared_UpdateCheckReturn(self, element, PRE, nil, maxV, unit) or UnitIsTapDenied(unit) then
+	local okMax, maxV = pcall(GetHealthMax, unit)
+	if not okMax or Shared_UpdateCheckReturn(self, element, PRE, nil, maxV, unit) then
 		return
 	end
 
@@ -126,9 +132,13 @@ end
 
 local function Power_PreUpdate(self, unit)
 	local element = self.__owner.Cutaway.Power
+
+	local okTap, tapDenied = pcall(UnitIsTapDenied, unit)
+	if not okTap or tapDenied then return end
+
 	local GetPowerMax = element.GetPowerMax or UnitPowerMax
-	local maxV = GetPowerMax(unit)
-	if Shared_UpdateCheckReturn(self, element, PRE, nil, maxV, unit) then
+	local ok, maxV = pcall(GetPowerMax, unit)
+	if not ok or Shared_UpdateCheckReturn(self, element, PRE, nil, maxV, unit) then
 		return
 	end
 
