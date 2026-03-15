@@ -36,6 +36,7 @@ local next, tinsert, tremove = next, tinsert, tremove
 local CreateFrame = CreateFrame
 local UnitInRange = UnitInRange
 local UnitInParty = UnitInParty
+local UnitInRaid = UnitInRaid
 local UnitIsConnected = UnitIsConnected
 
 local function Update(self, event)
@@ -51,15 +52,15 @@ local function Update(self, event)
 		element:PreUpdate()
 	end
 
-	local inRange, checkedRange
+	local inRange, wasChecked
 	local connected = UnitIsConnected(unit)
-	local isEligible = connected and UnitInParty(unit)
+	local isEligible = connected and (UnitInParty(unit) or UnitInRaid(unit))
 	if(isEligible) then
-		inRange, checkedRange = UnitInRange(unit)
+		inRange, wasChecked = UnitInRange(unit)
 
 		if oUF.isRetail then
 			self:SetAlphaFromBoolean(inRange, element.insideAlpha, element.outsideAlpha)
-		elseif(checkedRange and not inRange) then
+		elseif(wasChecked and not inRange) then
 			self:SetAlpha(element.outsideAlpha)
 		else
 			self:SetAlpha(element.insideAlpha)
@@ -98,7 +99,7 @@ local function OnRangeUpdate(_, elapsed)
 
 	if(timer >= .20) then
 		for _, object in next, _FRAMES do
-			if(object:IsShown()) then
+			if object:IsVisible() then
 				Path(object, 'OnUpdate')
 			end
 		end
@@ -114,7 +115,7 @@ local function Enable(self)
 		element.insideAlpha = element.insideAlpha or 1
 		element.outsideAlpha = element.outsideAlpha or 0.55
 
-		if oUF.isRetail then
+		if oUF.isRetail or oUF.isTBC then
 			self:RegisterEvent('UNIT_IN_RANGE_UPDATE', Path)
 		else
 			if not OnRangeFrame then
@@ -135,7 +136,7 @@ local function Disable(self)
 	if(element) then
 		self:SetAlpha(element.insideAlpha)
 
-		if oUF.isRetail then
+		if oUF.isRetail or oUF.isTBC then
 			self:UnregisterEvent('UNIT_IN_RANGE_UPDATE', Path)
 		else
 			for index, frame in next, _FRAMES do

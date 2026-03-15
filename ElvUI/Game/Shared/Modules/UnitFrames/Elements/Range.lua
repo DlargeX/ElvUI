@@ -15,6 +15,8 @@ local CheckInteractDistance = CheckInteractDistance
 local InCombatLockdown = InCombatLockdown
 local UnitPhaseReason = UnitPhaseReason
 local IsInInstance = IsInInstance
+local UnitInParty = UnitInParty
+local UnitInRaid = UnitInRaid
 
 local IsSpellInSpellBook = C_SpellBook.IsSpellInSpellBook or IsSpellKnownOrOverridesKnown
 local IsSpellInRange = C_Spell.IsSpellInRange
@@ -86,7 +88,7 @@ function UF:UnitInSpellsRange(unit, which)
 	end
 end
 
-function UF:FriendlyInRange(unit)
+function UF:FriendlyInRange(unit, element)
 	if UnitIsPlayer(unit) then
 		if E.Retail then
 			local phaseReason = UnitPhaseReason(unit)
@@ -102,8 +104,13 @@ function UF:FriendlyInRange(unit)
 		end
 	end
 
-	local range, checked = UnitInRange(unit)
-	if E:NotSecretValue(checked) and (checked and not range) then
+	local inRange, wasChecked = UnitInRange(unit)
+	if E:IsSecretValue(wasChecked) then
+		if element and (UnitInParty(unit) or UnitInRaid(unit)) then -- if its eligible
+			element.isInRange, element.checkedRange = inRange, wasChecked
+			return -- will be handled by these values so no need to proceed
+		end
+	elseif wasChecked and not inRange then
 		return false -- blizz checked and unit is out of range
 	end
 
@@ -114,15 +121,15 @@ function UF:UpdateRange(unit)
 	local element = self.Fader
 	if not element then return end
 
-	if not unit then
-		unit = self.unit
-	end
+	-- clear these if we arent checking them (these are secret values on retail)
+	element.isInRange, element.checkedRange = nil, nil
 
-	if self.forceInRange or unit == 'player' then
+	local exists = E:UnitExists(unit)
+	if self.forceInRange or (exists and unit == 'player') then
 		element.RangeAlpha = element.MaxAlpha
 	elseif self.forceNotInRange then
 		element.RangeAlpha = element.MinAlpha
-	elseif E:UnitExists(unit) then
+	elseif exists then
 		if UnitIsDeadOrGhost(unit) then
 			element.RangeAlpha = UF:UnitInSpellsRange(unit, 3) == true and element.MaxAlpha or element.MinAlpha
 		elseif UnitCanAttack('player', unit) then
@@ -130,7 +137,7 @@ function UF:UpdateRange(unit)
 		elseif UnitIsUnit('pet', unit) then
 			element.RangeAlpha = UF:UnitInSpellsRange(unit, 4) and element.MaxAlpha or element.MinAlpha
 		elseif UnitIsConnected(unit) then
-			element.RangeAlpha = UF:FriendlyInRange(unit) and element.MaxAlpha or element.MinAlpha
+			element.RangeAlpha = UF:FriendlyInRange(unit, element) and element.MaxAlpha or element.MinAlpha
 		else
 			element.RangeAlpha = element.MinAlpha
 		end
