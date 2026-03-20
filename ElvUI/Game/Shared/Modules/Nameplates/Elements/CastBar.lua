@@ -170,6 +170,8 @@ function NP:Castbar_PostCastInterruptible(unit)
 end
 
 function NP:Castbar_PostCastInterrupted(unit, spellID, interruptedBy)
+	self:SetStatusBarColor(NP.db.colors.castInterruptedColor.r, NP.db.colors.castInterruptedColor.g, NP.db.colors.castInterruptedColor.b)
+
 	if not interruptedBy then return end
 
 	local plate = self.__owner

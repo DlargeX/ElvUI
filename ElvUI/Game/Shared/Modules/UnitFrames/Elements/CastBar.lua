@@ -122,6 +122,7 @@ function UF:Construct_Castbar(frame, moverName)
 	castbar.PostCastStart = UF.PostCastStart
 	castbar.PostCastStop = UF.PostCastStop
 	castbar.PostCastInterruptible = UF.PostCastInterruptible
+	castbar.PostCastInterrupted = UF.PostCastInterrupted
 	castbar.PostCastFail = UF.PostCastFail
 	castbar.UpdatePipStep = UF.UpdatePipStep
 	castbar.PostUpdatePip = UF.PostUpdatePip
@@ -687,6 +688,10 @@ function UF:PostCastFail()
 	if self.SafeZone then
 		self.SafeZone:Hide()
 	end
+end
+
+function UF:PostCastInterrupted()
+	UF.PostCastFail(self)
 end
 
 function UF:PostCastInterruptible(unit)

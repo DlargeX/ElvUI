@@ -278,16 +278,23 @@ function UF:UpdateFilters(button)
 	local isBigDefensivePlayer = db and db.isAuraBigDefensivePlayer
 	local isRaidInCombat = db and db.isAuraRaidInCombat
 	local isRaidInCombatPlayer = db and db.isAuraRaidInCombatPlayer
-	local isExternalDefensive = E.Retail and db and db.isAuraExternalDefensive
-	local isExternalDefensivePlayer = E.Retail and db and db.isAuraExternalDefensivePlayer
+	local isExternalDefensive = db and db.isAuraExternalDefensive
+	local isExternalDefensivePlayer = db and db.isAuraExternalDefensivePlayer
 	local isCancelable = db and db.isAuraCancelable
 	local isCancelablePlayer = db and db.isAuraCancelablePlayer
 	local notCancelable = db and db.notAuraCancelable
 	local notCancelablePlayer = db and db.notAuraCancelablePlayer
 	local isRaid = db and db.isAuraRaid
 	local isRaidPlayer = db and db.isAuraRaidPlayer
+	local isPermanent = db and db.isAuraPermanent
+	local isPermanentPlayer = db and db.isAuraPermanentPlayer
 
 	local filters = button.auraFilters
+	local filterList = (db and db.useBlocklist) and E.global.unitframe.aurafilters
+	filters.Blocklist = filterList and filterList.Blocklist and filterList.Blocklist.spells or nil
+	filters.isPermanent = isPermanent
+	filters.isPermanentPlayer = isPermanentPlayer
+
 	filters.isPlayer = isPlayer
 	filters.isRaidPlayerDispellable = isRaidPlayerDispellable
 	filters.isImportant = isImportant
@@ -515,10 +522,10 @@ end
 function UF:GetAuraCurve(unit, button, allow)
 	if not unit or not allow then return end
 
-	local which = GetAuraDispelTypeColor and button.filter == 'HARMFUL' and 'debuffs'
-	if not which then return end
+	local curve = GetAuraDispelTypeColor and E.Curves.Color.Auras[button.filter == 'HARMFUL' and 'debuffs']
+	if not curve then return end
 
-	return GetAuraDispelTypeColor(unit, button.auraInstanceID, E.Curves.Color.Auras[which])
+	return GetAuraDispelTypeColor(unit, button.auraInstanceID, curve)
 end
 
 function UF:PostUpdateAura(unit, button)
@@ -746,14 +753,28 @@ end
 
 function UF:VerifyFilter(button, aura)
 	local filters = button.auraFilters
-	if not filters or button.noFilter then
-		return true
-	end
+	if not filters then return true end
 
 	local player, cancel = aura.auraIsPlayer, aura.auraIsCancelable
-	local other, perma = not player, not cancel
+	local other, noCancel = not player, not cancel
 
-	if E.Retail then
+	local checkPermanent = (filters.isPermanentPlayer and player) or (filters.isPermanent and other)
+	local cooldown = checkPermanent and button.Cooldown
+	if cooldown and not cooldown:IsShown() then
+		return false -- block no duration auras
+	end
+
+	local list = filters.Blocklist
+	if list and E:NotSecretValue(aura.spellId) then
+		local spell = list[aura.spellId] or list[aura.name]
+		if spell and spell.enable then
+			return false
+		end
+	end
+
+	if button.noFilter then
+		return true -- no allow boxes checked
+	elseif E.Retail then
 		return (filters.isPlayer and player)
 		or (filters.isRaidPlayerDispellable and aura.auraIsRaidPlayerDispellable)
 		or (filters.isImportant and aura.auraIsImportant and other)
@@ -768,16 +789,16 @@ function UF:VerifyFilter(button, aura)
 		or (filters.isExternalDefensivePlayer and aura.auraIsExternalDefensive and player)
 		or (filters.isCancelable and cancel and other)
 		or (filters.isCancelablePlayer and cancel and player)
-		or (filters.notCancelable and perma and other)
-		or (filters.notCancelablePlayer and perma and player)
+		or (filters.notCancelable and noCancel and other)
+		or (filters.notCancelablePlayer and noCancel and player)
 		or (filters.isRaid and aura.auraIsRaid and other)
 		or (filters.isRaidPlayer and aura.auraIsRaid and player)
 	else
 		return (filters.isPlayer and player)
 		or (filters.isCancelable and cancel and other)
 		or (filters.isCancelablePlayer and cancel and player)
-		or (filters.notCancelable and perma and other)
-		or (filters.notCancelablePlayer and perma and player)
+		or (filters.notCancelable and noCancel and other)
+		or (filters.notCancelablePlayer and noCancel and player)
 		or (filters.isRaid and aura.auraIsRaid and other)
 		or (filters.isRaidPlayer and aura.auraIsRaid and player)
 	end

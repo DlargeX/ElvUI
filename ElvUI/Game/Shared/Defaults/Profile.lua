@@ -8,6 +8,7 @@ P.hideTutorial = true
 P.dbConverted = nil -- use this to let DBConversions run once per profile
 
 E.AuraDefaults = {
+	useBlocklist = false,
 	isAuraImportant = false,
 	isAuraImportantPlayer = false,
 	isAuraCrowdControl = false,
@@ -26,6 +27,8 @@ E.AuraDefaults = {
 	isAuraPlayer = false,
 	isAuraRaid = false,
 	isAuraRaidPlayer = false,
+	isAuraPermanent = false,
+	isAuraPermanentPlayer = false
 }
 
 --Core
@@ -1507,6 +1510,8 @@ P.tooltip = {
 	includeReagents = true,
 	includeWarband = true,
 	modifierCount = true,
+	moneyLines = true,
+	moneyHide = false,
 	showMount = true,
 	modifierID = 'SHOW',
 	role = true,
@@ -1627,6 +1632,7 @@ local UF_AuraBars = {
 	tooltipAnchorType = 'ANCHOR_BOTTOMRIGHT',
 	tooltipAnchorX = 5,
 	tooltipAnchorY = -5,
+	useMidnight = false,
 	clickThrough = false,
 	reverseFill = false,
 	abbrevName = false,
@@ -2814,9 +2820,7 @@ P.unitframe.units.party.castbar.positionsGroup = {anchorPoint = 'BOTTOM', xOffse
 P.unitframe.units.party.CombatIcon.enable = false
 P.unitframe.units.party.debuffs.enable = true
 P.unitframe.units.party.debuffs.anchorPoint = 'RIGHT'
-P.unitframe.units.party.debuffs.isAuraImportant = true
-P.unitframe.units.party.debuffs.isAuraImportantPlayer = true
-P.unitframe.units.party.debuffs.isAuraRaidPlayerDispellable = true
+P.unitframe.units.party.debuffs.useBlocklist = true
 P.unitframe.units.party.debuffs.maxDuration = 300
 P.unitframe.units.party.debuffs.priority = 'Blacklist,Dispellable,RaidDebuffs,CCDebuffs'
 P.unitframe.units.party.debuffs.sizeOverride = 52
@@ -2855,9 +2859,7 @@ P.unitframe.units.raid1.privateAuras.parent.point = 'CENTER'
 P.unitframe.units.raid1.castbar = nil
 P.unitframe.units.raid1.CombatIcon.enable = false
 P.unitframe.units.raid1.debuffs.enable = false
-P.unitframe.units.raid1.debuffs.isAuraImportant = true
-P.unitframe.units.raid1.debuffs.isAuraImportantPlayer = true
-P.unitframe.units.raid1.debuffs.isAuraRaidPlayerDispellable = true
+P.unitframe.units.raid1.debuffs.useBlocklist = true
 P.unitframe.units.raid1.debuffs.numrows = 1
 P.unitframe.units.raid1.debuffs.perrow = 3
 P.unitframe.units.raid1.debuffs.priority = 'Blacklist,Dispellable,RaidDebuffs'

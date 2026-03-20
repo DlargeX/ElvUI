@@ -50,6 +50,7 @@ local UnitIsPlayer = UnitIsPlayer
 local UnitIsVisible = UnitIsVisible
 local UnitSex = UnitSex
 local UnitThreatSituation = UnitThreatSituation
+local UnitSelectionType = UnitSelectionType
 
 local WorldFrame = WorldFrame
 local GetWatchedFactionInfo = GetWatchedFactionInfo
@@ -204,6 +205,19 @@ E.SpecName = { -- english locale
 	[72]	= 'Fury',
 	[73]	= 'Protection',
 }
+
+do	-- credit: oUF/private.lua
+	local selectionTypes = {[0]=0,[1]=1,[2]=2,[3]=3,[4]=4,[5]=5,[6]=6,[7]=7,[8]=8,[9]=9,[13]=13}
+	-- 10 and 11 are unavailable to players, 12 is inconsistent due to bugs and its reliance on cvars
+
+	function E:UnitSelectionType(unit, considerHostile)
+		if considerHostile and UnitThreatSituation('player', unit) then
+			return 0
+		elseif E.Retail then
+			return selectionTypes[UnitSelectionType(unit, true)]
+		end
+	end
+end
 
 -- the secure header is different on retail because of evokers
 -- if both are registered on non-retail, it will fire on down and up

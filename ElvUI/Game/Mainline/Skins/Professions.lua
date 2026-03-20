@@ -305,6 +305,10 @@ local function HandleOrderView(frame)
 
 	ReskinOutputLog(frame.CraftingOutputLog)
 
+	if frame.SetOverrideCastBarActive ~= E.noop then
+		frame.SetOverrideCastBarActive = E.noop
+	end
+
 	S:HandleButton(frame.CreateButton)
 	S:HandleButton(frame.StartRecraftButton)
 	S:HandleButton(frame.CompleteOrderButton)
@@ -374,6 +378,10 @@ function S:Blizzard_Professions()
 
 	HandleSchematicForm(CraftingPage.SchematicForm)
 	HandleInputBox(CraftingPage.CreateMultipleInputBox)
+
+	if CraftingPage.SetOverrideCastBarActive ~= E.noop then
+		CraftingPage.SetOverrideCastBarActive = E.noop
+	end
 
 	local InspectRecipe = _G.InspectRecipeFrame
 	if InspectRecipe then

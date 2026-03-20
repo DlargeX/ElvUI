@@ -46,7 +46,15 @@ function S:Blizzard_TradeSkillUI()
 	TradeSkillCollapseAllButton:GetDisabledTexture():SetDesaturated(true)
 
 	S:HandleEditBox(_G.TradeSearchInputBox)
-	S:HandleCheckBox(_G.TradeSkillFrameAvailableFilterCheckButton)
+	_G.TradeSearchInputBox:ClearAllPoints()
+	_G.TradeSearchInputBox:Point('TOPRIGHT', TradeSkillRankFrame, 'BOTTOMRIGHT')
+
+	local AvailableCheckButton = _G.TradeSkillFrameAvailableFilterCheckButton
+	if AvailableCheckButton then
+		S:HandleCheckBox(AvailableCheckButton)
+		AvailableCheckButton:ClearAllPoints()
+		AvailableCheckButton:Point('TOPLEFT', TradeSkillRankFrame, 'BOTTOMLEFT')
+	end
 
 	S:HandleDropDownBox(_G.TradeSkillInvSlotDropdown, 110)
 	_G.TradeSkillInvSlotDropdown:ClearAllPoints()

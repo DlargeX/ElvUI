@@ -44,26 +44,20 @@ end
 
 local function UpdateValue(bar, start)
 	if oUF.isRetail then
-		if bar.auraDuration then
-			bar.cooldown:SetCooldownFromDurationObject(bar.auraDuration)
-
-			local remain = bar.auraDuration:GetRemainingDuration()
-			if remain then
-				bar:SetMinMaxValues(0, bar.aura.duration)
-				bar:SetValue(remain, bar.smoothing)
-			end
+		local remain = bar.auraDuration and bar.auraDuration:GetRemainingDuration()
+		if remain then
+			bar:SetMinMaxValues(0, bar.aura.duration)
+			bar:SetValue(remain, bar.smoothing)
 		end
 	else
+		bar:SetMinMaxValues(0, bar.duration)
+
 		local remain = (bar.expiration - GetTime()) / (bar.modRate or 1)
-		local value = remain / bar.duration
-
 		if start and bar.SetValue_ then
-			bar:SetValue_(value)
+			bar:SetValue_(remain)
 		else
-			bar:SetValue(value)
+			bar:SetValue(remain)
 		end
-
-		bar.timeText:SetFormattedText(oUF:GetTime(remain))
 	end
 end
 
@@ -95,19 +89,15 @@ local function CreateAuraBar(element, index)
 	icon:SetPoint('RIGHT', bar, 'LEFT', -element.barSpacing, 0)
 	icon:SetSize(element.height, element.height)
 
-	local cooldown = CreateFrame('Cooldown', '$parentCooldown', bar, 'CooldownFrameTemplate')
+	local Cooldown = CreateFrame('Cooldown', '$parentCooldown', bar, 'CooldownFrameTemplate')
 
 	local nameText = bar:CreateFontString(nil, 'OVERLAY', 'NumberFontNormal')
 	nameText:SetPoint('LEFT', bar, 'LEFT', 2, 0)
 
-	local timeText = bar:CreateFontString(nil, 'OVERLAY', 'NumberFontNormal')
-	timeText:SetPoint('RIGHT', bar, 'RIGHT', -2, 0)
-
 	bar.icon = icon
 	bar.spark = spark
-	bar.cooldown = cooldown
+	bar.Cooldown = Cooldown
 	bar.nameText = nameText
-	bar.timeText = timeText
 	bar.__owner = element
 
 	if(element.PostCreateBar) then element:PostCreateBar(bar) end
@@ -204,6 +194,20 @@ local function AuraUpdate(element, unit, aura, index, offset, filter, isDebuff, 
 	bar.auraDuration = aura and GetAuraDuration and GetAuraDuration(unit, aura.auraInstanceID) or nil
 	bar.noTime = oUF:NotSecretValue(duration) and (duration == 0 and expiration == 0)
 
+	if bar.Cooldown then -- same as what is in the auras file
+		if bar.Cooldown.SetCooldownFromDurationObject then
+			if bar.auraDuration then
+				bar.Cooldown:SetCooldownFromDurationObject(bar.auraDuration)
+			else
+				bar.Cooldown:Clear()
+			end
+		elseif(duration and duration > 0) then
+			bar.Cooldown:SetCooldown(expiration - duration, duration, modRate)
+		else
+			bar.Cooldown:Clear()
+		end
+	end
+
 	local show = (element.CustomFilter or CustomFilter) (element, unit, bar, aura, name, texture,
 		count, debuffType, duration, expiration, source, isStealable, nameplateShowPersonal, spellID,
 		canApplyAura, isBossDebuff, castByPlayer, nameplateShowAll, modRate, effect1, effect2, effect3)
@@ -237,7 +241,6 @@ local function SetPosition(element, from, to)
 
 		if bar.noTime then
 			bar:SetValue(1, bar.smoothing)
-			bar.timeText:SetText('')
 		end
 	end
 end

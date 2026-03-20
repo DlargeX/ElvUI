@@ -1,3 +1,31 @@
+### Version 15.09 [ March 18th 2026 ]
+*   **Nameplates**
+    *   Faction change was not updating plates properly.
+    *   Classification colors to prioritize casters in dungeons. (Thanks cchen666)
+    *   Classification colors added an option to only use in instances. (Thanks fang2hou)
+    *   Error with collecting quest data. (Thanks Dack)
+*   **Auras**
+    *   Aura highlight to use the correct color settings under Unitframes > Colors > Aura Highlight.
+    *   Aurabars on classic variants now have the option to use Midnight filters.
+    *   Filters: Blocklist added for non-secret auras.
+    *   Filters: Block Permanent added. (Thanks Eltreum for the idea)
+*   **Skins**
+    *   Archaeology skin error when opening with zero progress. (Thanks Dack)
+    *   Generic Trait skin updates. (Thanks Dack)
+    *   Damage meter skin updated more.
+    *   Skill line unlocked alert skinned. (Thanks fang2hou)
+    *   Profession castbar disabled for now.
+*   **Misc**
+    *   PlayerBuffTimerManager secret error caused by our toolkit.
+    *   Loot and Actionbars were showing wrong profession quality type.
+    *   Alternative power bar showing percentage with too much precision.
+    *   Additional class power option for Priest Insanity and Shaman Maelstrom to disable showing the alternative mana bar.
+    *   Mage Icicle tracking is back as classbar.
+    *   Unitframe range fading should work better again. (Thanks Dack)
+    *   Tooltip new option Money Lines which will prevent errors with the Money Frame.
+    *   Interrupted color not displayed correctly.
+    *   Threat calls sometimes triggering secret errors.
+
 ### Version 15.08 [ March 3rd 2026 ]
 *   Datatext for Crests updated.
 *   Bag error resolved when using the new bags.

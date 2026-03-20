@@ -27,8 +27,6 @@ local UnitIsPVPSanctuary = UnitIsPVPSanctuary
 local UnitIsUnit = UnitIsUnit
 local UnitName = UnitName
 local UnitReaction = UnitReaction
-local UnitSelectionType = UnitSelectionType
-local UnitThreatSituation = UnitThreatSituation
 local UnitWidgetSet = UnitWidgetSet
 
 local UnitNameplateShowsWidgetsOnly = UnitNameplateShowsWidgetsOnly
@@ -44,30 +42,12 @@ local GetCVar = C_CVar.GetCVar
 
 local POWERTYPE_ALTERNATE = Enum.PowerType.Alternate or 10
 
-do	-- credit: oUF/private.lua
-	local selectionTypes = {[0]=0,[1]=1,[2]=2,[3]=3,[4]=4,[5]=5,[6]=6,[7]=7,[8]=8,[9]=9,[13]=13}
-	-- 10 and 11 are unavailable to players, 12 is inconsistent due to bugs and its reliance on cvars
-
-	function NP:UnitSelectionType(unit, considerHostile)
-		if considerHostile and UnitThreatSituation('player', unit) then
-			return 0
-		elseif E.Retail then
-			return selectionTypes[UnitSelectionType(unit, true)]
-		end
-	end
-end
-
 local Blacklist = {
-	PLAYER = {
-		enable = true,
-		health = {
-			enable = true,
-		},
-	},
-	ENEMY_PLAYER = {},
-	FRIENDLY_PLAYER = {},
-	ENEMY_NPC = {},
-	FRIENDLY_NPC = {},
+	PLAYER = { enable = true, health = { enable = true }, },
+	ENEMY_PLAYER = { enable = true, health = { enable = true }, },
+	FRIENDLY_PLAYER = { enable = true, health = { enable = true }, },
+	ENEMY_NPC = { enable = true, health = { enable = true }, },
+	FRIENDLY_NPC = { enable = true, health = { enable = true }, },
 }
 
 function NP:ResetAuraPriority()

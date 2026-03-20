@@ -63,6 +63,7 @@ local UnitSex = UnitSex
 
 local TooltipDataType = Enum.TooltipDataType
 local ScaleTo100 = CurveConstants and CurveConstants.ScaleTo100
+local AddLinePreCall = TooltipDataProcessor and TooltipDataProcessor.AddLinePreCall
 local AddTooltipPostCall = TooltipDataProcessor and TooltipDataProcessor.AddTooltipPostCall
 local GetDisplayedItem = TooltipUtil and TooltipUtil.GetDisplayedItem
 
@@ -79,15 +80,21 @@ local C_PetJournal_GetPetTeamAverageLevel = C_PetJournal and C_PetJournal.GetPet
 local C_PetBattles_IsInBattle = C_PetBattles and C_PetBattles.IsInBattle
 local C_PlayerInfo_GetPlayerMythicPlusRatingSummary = C_PlayerInfo.GetPlayerMythicPlusRatingSummary
 local C_ClassColor_GetClassColor = C_ClassColor and C_ClassColor.GetClassColor
+local GetCoinTextureString = C_CurrencyInfo.GetCoinTextureString
 
+local TooltipDataLineType = Enum.TooltipDataLineType
+local LINETYPE_SELLPRICE = TooltipDataLineType.SellPrice
+
+local HIGHLIGHT_FONT_COLOR = HIGHLIGHT_FONT_COLOR
 local PRIEST_COLOR = RAID_CLASS_COLORS.PRIEST
 local UNKNOWN = UNKNOWN
 
 -- Custom to find LEVEL string on tooltip
 local LEVEL1 = strlower(_G.TOOLTIP_UNIT_LEVEL:gsub('%s?%%s%s?%-?',''))
 local LEVEL2 = strlower((_G.TOOLTIP_UNIT_LEVEL_RACE or _G.TOOLTIP_UNIT_LEVEL_CLASS):gsub('^%%2$s%s?(.-)%s?%%1$s','%1'):gsub('^%-?г?о?%s?',''):gsub('%s?%%s%s?%-?',''))
-local IDLine = '|cFFCA3C3C%s:|r %d'
 local TAPPED_COLOR = { r=0.6, g=0.6, b=0.6 }
+local IDNumber = '|cFFCA3C3C%s:|r %d'
+local IDString = '|cFFCA3C3C%s:|r %s'
 local AFK_LABEL = ' |cffFFFFFF[|r|cffFF9900'..L["AFK"]..'|r|cffFFFFFF]|r'
 local DND_LABEL = ' |cffFFFFFF[|r|cffFF3333'..L["DND"]..'|r|cffFFFFFF]|r'
 local genderTable = { _G.UNKNOWN..' ', _G.MALE..' ', _G.FEMALE..' ' }
@@ -611,7 +618,7 @@ function TT:SetUnitInfo(tt, unit, data)
 		local guid = (data and data.guid) or UnitGUID(unit) or ''
 		local id = E:NotSecretValue(guid) and tonumber(strmatch(guid, '%-(%d-)%-%x-$'), 10)
 		if id then -- NPC ID's
-			tt:AddLine(format(IDLine, _G.ID, id))
+			tt:AddLine(format(IDNumber, _G.ID, id))
 		end
 	end
 
@@ -733,7 +740,7 @@ end
 function TT:EmbeddedItemTooltip_ID(tt, id)
 	if tt:IsForbidden() then return end
 	if tt.Tooltip:IsShown() and TT:IsModKeyDown() then
-		tt.Tooltip:AddLine(format(IDLine, _G.ID, id))
+		tt.Tooltip:AddLine(format(IDNumber, _G.ID, id))
 		tt.Tooltip:Show()
 	end
 end
@@ -741,7 +748,7 @@ end
 function TT:EmbeddedItemTooltip_QuestReward(tt)
 	if tt:IsForbidden() then return end
 	if tt.Tooltip:IsShown() and TT:IsModKeyDown() then
-		tt.Tooltip:AddLine(format(IDLine, _G.ID, tt.itemID or tt.spellID))
+		tt.Tooltip:AddLine(format(IDNumber, _G.ID, tt.itemID or tt.spellID))
 		tt.Tooltip:Show()
 	end
 end
@@ -780,35 +787,35 @@ function TT:GameTooltip_OnTooltipSetItem(data)
 		end
 
 		if modKey then
-			itemID = format('|cFFCA3C3C%s|r %s', _G.ID, (data and data.id) or strmatch(link, ':(%w+)'))
+			itemID = format(IDString, _G.ID, (data and data.id) or strmatch(link, ':(%w+)'))
 		end
 
 		if not TT.db.modifierCount or modKey then
 			local count = GetItemCount(link)
 			local itemCount = TT.db.itemCount
 			if itemCount.bags then
-				bagCount = format(IDLine, L["Bags"], count)
+				bagCount = format(IDNumber, L["Bags"], count)
 			end
 
 			if itemCount.bank then
 				local bank = GetItemCount(link, true, nil, TT.db.includeReagents, TT.db.includeWarband)
 				local amount = bank and (bank - count)
 				if amount and amount > 0 then
-					bankCount = format(IDLine, L["Bank"], amount)
+					bankCount = format(IDNumber, L["Bank"], amount)
 				end
 			end
 
 			if itemCount.stack then
 				local _, _, _, _, _, _, _, stack = GetItemInfo(link)
 				if stack and stack > 1 then
-					stackSize = format(IDLine, L["Stack Size"], stack)
+					stackSize = format(IDNumber, L["Stack Size"], stack)
 				end
 			end
 		end
 	elseif modKey then
 		local id = data and data.id
 		if id then
-			itemID = format('|cFFCA3C3C%s|r %s', _G.ID, id)
+			itemID = format(IDString, _G.ID, id)
 		end
 	end
 
@@ -923,17 +930,17 @@ function TT:ShowAuraInfo(tt, source, spellID, aura)
 
 		if aura and aura.unitClassFilename then
 			local color = E:ClassColor(aura.unitClassFilename) or PRIEST_COLOR
-			tt:AddDoubleLine(format(IDLine, _G.ID, spellID), color:WrapTextInColorCode(aura.unitName or UNKNOWN))
+			tt:AddDoubleLine(format(IDNumber, _G.ID, spellID), color:WrapTextInColorCode(aura.unitName or UNKNOWN))
 		elseif source then
 			if E:NotSecretValue(source) then
 				local _, className = UnitClass(source)
 				local color = E:ClassColor(className) or PRIEST_COLOR
-				tt:AddDoubleLine(format(IDLine, _G.ID, spellID), color:WrapTextInColorCode(UnitName(source) or UNKNOWN))
+				tt:AddDoubleLine(format(IDNumber, _G.ID, spellID), color:WrapTextInColorCode(UnitName(source) or UNKNOWN))
 			else
-				tt:AddDoubleLine(format(IDLine, _G.ID, spellID), UnitName(source) or UNKNOWN)
+				tt:AddDoubleLine(format(IDNumber, _G.ID, spellID), UnitName(source) or UNKNOWN)
 			end
 		else
-			tt:AddLine(format(IDLine, _G.ID, spellID))
+			tt:AddLine(format(IDNumber, _G.ID, spellID))
 		end
 	end
 
@@ -978,7 +985,7 @@ function TT:GameTooltip_OnTooltipSetSpell(data)
 	end
 
 	if spellID then
-		self:AddLine(format(IDLine, _G.ID, spellID))
+		self:AddLine(format(IDNumber, _G.ID, spellID))
 		self:Show()
 	end
 end
@@ -986,7 +993,7 @@ end
 function TT:SetItemRef(link)
 	if IsModifierKeyDown() or not (link and strfind(link, '^spell:')) then return end
 
-	_G.ItemRefTooltip:AddLine(format(IDLine, _G.ID, strmatch(link, ':(%d+)')))
+	_G.ItemRefTooltip:AddLine(format(IDNumber, _G.ID, strmatch(link, ':(%d+)')))
 	_G.ItemRefTooltip:Show()
 end
 
@@ -994,7 +1001,7 @@ function TT:SetToyByItemID(tt, id)
 	if tt:IsForbidden() then return end
 	if id and TT:IsModKeyDown() then
 		tt:AddLine(' ')
-		tt:AddLine(format(IDLine, _G.ID, id))
+		tt:AddLine(format(IDNumber, _G.ID, id))
 		tt:Show()
 	end
 end
@@ -1007,7 +1014,7 @@ function TT:SetCurrencyToken(tt, index)
 	if not id then return end
 
 	tt:AddLine(' ')
-	tt:AddLine(format(IDLine, _G.ID, id))
+	tt:AddLine(format(IDNumber, _G.ID, id))
 	tt:Show()
 end
 
@@ -1016,7 +1023,7 @@ function TT:SetCurrencyByID(tt, id)
 
 	if id and TT:IsModKeyDown() then
 		tt:AddLine(' ')
-		tt:AddLine(format(IDLine, _G.ID, id))
+		tt:AddLine(format(IDNumber, _G.ID, id))
 		tt:Show()
 	end
 end
@@ -1026,7 +1033,7 @@ function TT:AddBattlePetID()
 	if not tt or not tt.speciesID or not TT:IsModKeyDown() then return end
 
 	tt:AddLine(' ')
-	tt:AddLine(format(IDLine, _G.ID, tt.speciesID))
+	tt:AddLine(format(IDNumber, _G.ID, tt.speciesID))
 	tt:Show()
 end
 
@@ -1036,7 +1043,7 @@ function TT:AddQuestID(frame)
 	local questID = TT:IsModKeyDown() and (frame.questLogIndex and C_QuestLog_GetQuestIDForLogIndex(frame.questLogIndex) or frame.questID)
 	if not questID then return end
 
-	GameTooltip:AddLine(format(IDLine, _G.ID, questID))
+	GameTooltip:AddLine(format(IDNumber, _G.ID, questID))
 
 	if GameTooltip.ItemTooltip:IsShown() then
 		GameTooltip:AddLine(' ')
@@ -1050,7 +1057,7 @@ function TT:SetBackpackToken(tt, id)
 	if id and TT:IsModKeyDown() then
 		local info = C_CurrencyInfo_GetBackpackCurrencyInfo(id)
 		if info and info.currencyTypesID then
-			tt:AddLine(format(IDLine, _G.ID, info.currencyTypesID))
+			tt:AddLine(format(IDNumber, _G.ID, info.currencyTypesID))
 			tt:Show()
 		end
 	end
@@ -1121,6 +1128,27 @@ function TT:WorldCursorTooltipUpdate(_, state)
 	end
 end
 
+function TT:AddMoneyInfo(lineData)
+	if self:IsForbidden() or self.isShopping or (lineData.type ~= LINETYPE_SELLPRICE) or not TT.db.moneyLines then return end
+
+	if TT.db.moneyHide then return true end
+
+	local price = lineData.price
+	if not price then return end
+
+	local r, g, b = HIGHLIGHT_FONT_COLOR:GetRGB()
+	local maxPrice = lineData.maxPrice
+	if maxPrice and maxPrice >= 1 then
+		self:AddLine(format('%s', _G.SELL_PRICE), r, g, b)
+		self:AddLine(format('    %s: %s', _G.MINIMUM, GetCoinTextureString(price)), r, g, b)
+		self:AddLine(format('    %s: %s', _G.MAXIMUM, GetCoinTextureString(maxPrice)), r, g, b)
+	else
+		self:AddLine(format('%s: %s', _G.SELL_PRICE, GetCoinTextureString(price)), r, g, b)
+	end
+
+	return true
+end
+
 function TT:Initialize()
 	if not E.private.tooltip.enable then return end
 	TT.Initialized = true
@@ -1166,6 +1194,10 @@ function TT:Initialize()
 		AddTooltipPostCall(TooltipDataType.Macro, TT.GameTooltip_OnTooltipSetSpell)
 		AddTooltipPostCall(TooltipDataType.Item, TT.GameTooltip_OnTooltipSetItem)
 		AddTooltipPostCall(TooltipDataType.Unit, TT.GameTooltip_OnTooltipSetUnit)
+
+		if E.Retail then -- MoneyFrame will error otherwise
+			AddLinePreCall(LINETYPE_SELLPRICE, TT.AddMoneyInfo)
+		end
 
 		TT:SecureHook(GameTooltip, 'Hide', 'GameTooltip_Hide') -- dont use OnHide use Hide directly
 	else

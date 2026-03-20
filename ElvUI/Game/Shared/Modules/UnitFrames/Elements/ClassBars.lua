@@ -128,8 +128,6 @@ function UF:Configure_ClassBar(frame)
 	bars.AdditionalHolder = (frame.ThirdPower or frame.AdditionalPower) and frame.ClassAdditionalHolder
 	bars.origParent = frame
 
-	local MAX_CLASS_BAR = frame.MAX_CLASS_BAR
-
 	--Fix height in case it is lower than the theme allows, or in case it's higher than 30px when not detached
 	if not UF.thinBorders and (frame.CLASSBAR_HEIGHT > 0 and frame.CLASSBAR_HEIGHT < 7) then --A height of 7 means 6px for borders and just 1px for the actual power statusbar
 		frame.CLASSBAR_HEIGHT = 7
@@ -142,29 +140,35 @@ function UF:Configure_ClassBar(frame)
 		if db.classbar then db.classbar.height = 10 end
 	end
 
-	--We don't want to modify the original frame.CLASSBAR_WIDTH value, as it bugs out when the classbar gains more buttons
-	local CLASSBAR_WIDTH = E:Scale(frame.CLASSBAR_WIDTH)
-	local SPACING = E:Scale((UF.BORDER + UF.SPACING)*2)
-	local isVertical = frame.CLASSBAR_DETACHED and db.classbar.verticalOrientation
-
 	local color = E.db.unitframe.colors.borderColor
 	if not bars.backdrop.forcedBorderColors then
 		bars.backdrop:SetBackdropBorderColor(color.r, color.g, color.b)
 	end
 
+	--We don't want to modify the original frame.CLASSBAR_WIDTH value, as it bugs out when the classbar gains more buttons
+	local CLASSBAR_WIDTH = frame.CLASSBAR_WIDTH
+	local MAX_CLASS_BAR = frame.MAX_CLASS_BAR
+	local ONE_LESS_BAR = MAX_CLASS_BAR - 1
+
 	if frame.USE_MINI_CLASSBAR and not frame.CLASSBAR_DETACHED then
 		if MAX_CLASS_BAR == 1 or frame.ClassBar == 'EclipseBar' or frame.ClassBar == 'Stagger' or frame.ClassBar == 'AlternativePower' then
-			CLASSBAR_WIDTH = CLASSBAR_WIDTH * 2 / 3
+			CLASSBAR_WIDTH = (CLASSBAR_WIDTH * 2) / 3
 		else
-			CLASSBAR_WIDTH = CLASSBAR_WIDTH * (MAX_CLASS_BAR - 1) / MAX_CLASS_BAR
+			CLASSBAR_WIDTH = (CLASSBAR_WIDTH * ONE_LESS_BAR) / MAX_CLASS_BAR
 		end
 	elseif frame.CLASSBAR_DETACHED then --Detached
 		CLASSBAR_WIDTH = db.classbar.detachedWidth
 	end
 
-	bars:Width(CLASSBAR_WIDTH - SPACING)
-	bars:Height(frame.CLASSBAR_HEIGHT - SPACING)
+	local DOUBLE_BORDER = UF.BORDER * 2
+	local SPACING = (UF.BORDER + UF.SPACING) * 2
+	local SPACING_ATTACHED = (frame.CLASSBAR_DETACHED and db.classbar.spacing or 5) + SPACING
 
+	local barsWidth = CLASSBAR_WIDTH - SPACING
+	local barsHeight = frame.CLASSBAR_HEIGHT - SPACING
+	bars:Size(barsWidth, barsHeight)
+
+	local isVertical = frame.CLASSBAR_DETACHED and db.classbar.verticalOrientation
 	if frame.ClassBar == 'ClassPower' or frame.ClassBar == 'Runes' or frame.ClassBar == 'Totems' then
 		if frame.ClassBar == 'Runes' then
 			bars.sortOrder = (db.classbar.sortDirection ~= 'NONE') and db.classbar.sortDirection
@@ -183,18 +187,18 @@ function UF:Configure_ClassBar(frame)
 					button.backdrop:SetBackdropBorderColor(color.r, color.g, color.b)
 				end
 
-				button:Height(bars:GetHeight())
+				button:Height(barsHeight)
 
 				if MAX_CLASS_BAR == 1 then
-					button:Width(CLASSBAR_WIDTH)
+					button:Width(barsWidth)
 				elseif frame.USE_MINI_CLASSBAR then
 					if frame.CLASSBAR_DETACHED and db.classbar.orientation == 'VERTICAL' then
-						button:Width(CLASSBAR_WIDTH)
+						button:Width(barsWidth)
 					else
-						button:Width((CLASSBAR_WIDTH - (((frame.CLASSBAR_DETACHED and db.classbar.spacing or 5) + (UF.BORDER*2 + UF.SPACING*2))*(MAX_CLASS_BAR - 1)) - UF.BORDER*2)/MAX_CLASS_BAR) --Width accounts for 5px spacing between each button, excluding borders
+						button:Width((CLASSBAR_WIDTH - (SPACING_ATTACHED * ONE_LESS_BAR) - DOUBLE_BORDER) / MAX_CLASS_BAR) --Width accounts for 5px spacing between each button, excluding borders
 					end
 				elseif i ~= MAX_CLASS_BAR then
-					button:Width((CLASSBAR_WIDTH - ((MAX_CLASS_BAR-1)*(UF.BORDER*2-UF.SPACING))) / MAX_CLASS_BAR) --classbar width minus total width of dividers between each button, divided by number of buttons
+					button:Width((CLASSBAR_WIDTH - (ONE_LESS_BAR * (DOUBLE_BORDER - UF.SPACING))) / MAX_CLASS_BAR) --classbar width minus total width of dividers between each button, divided by number of buttons
 				end
 
 				button:GetStatusBarTexture():SetHorizTile(false)
@@ -206,9 +210,9 @@ function UF:Configure_ClassBar(frame)
 					local prevButton = bars[i-1]
 					if frame.USE_MINI_CLASSBAR then
 						if frame.CLASSBAR_DETACHED and db.classbar.orientation == 'VERTICAL' then
-							button:Point('BOTTOM', prevButton, 'TOP', 0, (db.classbar.spacing + UF.BORDER*2 + UF.SPACING*2))
+							button:Point('BOTTOM', prevButton, 'TOP', 0, (db.classbar.spacing + SPACING))
 						else
-							button:Point('LEFT', prevButton, 'RIGHT', ((frame.CLASSBAR_DETACHED and db.classbar.spacing or 5) + UF.BORDER*2 + UF.SPACING*2), 0) --5px spacing between borders of each button(replaced with Detached Spacing option if detached)
+							button:Point('LEFT', prevButton, 'RIGHT', SPACING_ATTACHED, 0) --5px spacing between borders of each button(replaced with Detached Spacing option if detached)
 						end
 					elseif i == MAX_CLASS_BAR then
 						button:Point('LEFT', prevButton, 'RIGHT', UF.BORDER-UF.SPACING, 0)
@@ -239,14 +243,14 @@ function UF:Configure_ClassBar(frame)
 		local lr, lg, lb = unpack(ElvUF.colors.ClassBars.DRUID[1])
 		bars.LunarBar:SetMinMaxValues(-1, 1)
 		UF:SetStatusBarColor(bars.LunarBar, lr, lg, lb)
-		bars.LunarBar:Size(CLASSBAR_WIDTH - SPACING, frame.CLASSBAR_HEIGHT - SPACING)
+		bars.LunarBar:Size(barsWidth, barsHeight)
 		bars.LunarBar:SetOrientation(isVertical and 'VERTICAL' or 'HORIZONTAL')
 		E:SetSmoothing(bars.LunarBar, db.classbar.smoothbars)
 
 		local sr, sg, sb = unpack(ElvUF.colors.ClassBars.DRUID[2])
 		bars.SolarBar:SetMinMaxValues(-1, 1)
 		UF:SetStatusBarColor(bars.SolarBar, sr, sg, sb)
-		bars.SolarBar:Size(CLASSBAR_WIDTH - SPACING, frame.CLASSBAR_HEIGHT - SPACING)
+		bars.SolarBar:Size(barsWidth, barsHeight)
 		bars.SolarBar:SetOrientation(isVertical and 'VERTICAL' or 'HORIZONTAL')
 		bars.SolarBar:ClearAllPoints()
 		bars.SolarBar:Point(isVertical and 'BOTTOM' or 'LEFT', lunarTex, isVertical and 'TOP' or 'RIGHT')

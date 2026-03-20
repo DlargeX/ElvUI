@@ -19,16 +19,15 @@ local StatusBarInterpolation = Enum.StatusBarInterpolation
 
 local tankStatus = { [0] = 3, 2, 1, 0 }
 
-function DB:ThreatBar_GetLargestThreatOnList(percent)
+function DB:ThreatBar_GetLargestThreatOnList(value)
 	local largestValue, largestUnit = 0, nil
-	for unit, threatPercent in next, DB.StatusBars.Threat.list do
-		if threatPercent > largestValue then
-			largestValue = threatPercent
-			largestUnit = unit
+	for unit, percent in next, DB.StatusBars.Threat.list do
+		if E:NotSecretValue(percent) and (percent > largestValue) then
+			largestValue, largestUnit = percent, unit
 		end
 	end
 
-	return (percent - largestValue), largestUnit
+	return (value - largestValue), largestUnit
 end
 
 function DB:ThreatBar_GetColor(unit)
@@ -54,8 +53,7 @@ function DB:ThreatBar_Update()
 
 	if UnitAffectingCombat('player') and (petExists or E.IsInGroup) then
 		local _, status, percent = UnitDetailedThreatSituation('player', 'target')
-
-		if percent then
+		if E:NotSecretValue(status) and percent then
 			local name, isTank = UnitName('target') or UNKNOWN, E.myrole == 'TANK'
 			bar.showBar = true
 

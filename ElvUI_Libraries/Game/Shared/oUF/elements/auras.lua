@@ -218,6 +218,24 @@ local function updateAura(frame, which, unit, aura, index, offset, filter, visib
 	* show - indicates whether the aura button should be shown (boolean)
 	--]]
 
+	-- We might want to consider delaying the creation of an actual cooldown
+	-- object to this point, but I think that will just make things needlessly
+	-- complicated. ~haste on Apr 26, 2009 (2d1cf232d1)
+	-- We need this over the filter to allow duration check ~Simpy
+	if(button.Cooldown and not element.disableCooldown) then
+		if button.Cooldown.SetCooldownFromDurationObject then
+			if button.auraDuration then
+				button.Cooldown:SetCooldownFromDurationObject(button.auraDuration)
+			else
+				button.Cooldown:Clear()
+			end
+		elseif(duration and duration > 0) then
+			button.Cooldown:SetCooldown(expirationTime - duration, duration, timeMod)
+		else
+			button.Cooldown:Clear()
+		end
+	end
+
 	local show = not element.forceCreate
 	if not (forceShow or element.forceCreate) then
 		show = (element.CustomFilter or customFilter) (element, unit, button, aura, name, icon,
@@ -226,23 +244,6 @@ local function updateAura(frame, which, unit, aura, index, offset, filter, visib
 	end
 
 	if(show) then
-		-- We might want to consider delaying the creation of an actual cooldown
-		-- object to this point, but I think that will just make things needlessly
-		-- complicated.
-		if(button.Cooldown and not element.disableCooldown) then
-			if button.Cooldown.SetCooldownFromDurationObject then
-				if button.auraDuration then
-					button.Cooldown:SetCooldownFromDurationObject(button.auraDuration)
-				else
-					button.Cooldown:Clear()
-				end
-			elseif(duration and duration > 0) then
-				button.Cooldown:SetCooldown(expirationTime - duration, duration, timeMod)
-			else
-				button.Cooldown:Clear()
-			end
-		end
-
 		if button.Overlay then
 			if (isDebuff and element.showDebuffType) or (not isDebuff and element.showBuffType) or element.showType then
 				local colors = element.__owner.colors.debuff

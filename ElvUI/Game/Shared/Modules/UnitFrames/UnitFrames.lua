@@ -1978,21 +1978,7 @@ function UF:ToggleForceShowGroupFrames(group, numGroup)
 end
 
 local Blacklist = {
-	player = {
-		enable = true,
-		aurabars = true,
-		fader = true,
-		buffs = {
-			priority = true,
-			minDuration = true,
-			maxDuration = true,
-		},
-		debuffs = {
-			priority = true,
-			minDuration = true,
-			maxDuration = true,
-		},
-	},
+	player = { enable = true, fader = true, aurabars = true },
 	arena = { enable = true, fader = true },
 	assist = { enable = true, fader = true },
 	boss = { enable = true, fader = true },

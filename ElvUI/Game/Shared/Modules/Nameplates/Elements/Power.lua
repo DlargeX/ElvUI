@@ -23,7 +23,7 @@ function NP:Power_UpdateColor(_, unit)
 	local ptype, ptoken, altR, altG, altB = UnitPowerType(unit)
 	element.token = ptoken
 
-	local Selection = element.colorSelection and NP:UnitSelectionType(unit, element.considerSelectionInCombatHostile)
+	local Selection = element.colorSelection and E:UnitSelectionType(unit, element.considerSelectionInCombatHostile)
 
 	local r, g, b, color, atlas
 	if element.colorDisconnected and not UnitIsConnected(unit) then

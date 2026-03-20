@@ -1,5 +1,4 @@
 local E, L, V, P, G = unpack(ElvUI)
-local NP = E:GetModule('NamePlates')
 local ElvUF = E.oUF
 
 local Translit = E.Libs.Translit
@@ -410,22 +409,28 @@ if not E.Retail then
 	end)
 
 	E:AddTag('threat:lead', 'UNIT_THREAT_LIST_UPDATE UNIT_THREAT_SITUATION_UPDATE GROUP_ROSTER_UPDATE', function(unit)
+		if not (IsInGroup() or UnitExists('pet')) then return end
+
 		local percent = UnitThreatPercentageOfLead('player', unit)
-		if percent and percent > 0 and (IsInGroup() or UnitExists('pet')) then
+		if E:NotSecretValue(percent) and (percent and percent > 0) then
 			return format('%.0f%%', percent)
 		end
 	end)
 
 	E:AddTag('threat:percent', 'UNIT_THREAT_LIST_UPDATE UNIT_THREAT_SITUATION_UPDATE GROUP_ROSTER_UPDATE', function(unit)
+		if not (IsInGroup() or UnitExists('pet')) then return end
+
 		local _, _, percent = UnitDetailedThreatSituation('player', unit)
-		if percent and percent > 0 and (IsInGroup() or UnitExists('pet')) then
+		if E:NotSecretValue(percent) and (percent and percent > 0) then
 			return format('%.0f%%', percent)
 		end
 	end)
 
 	E:AddTag('threat:current', 'UNIT_THREAT_LIST_UPDATE UNIT_THREAT_SITUATION_UPDATE GROUP_ROSTER_UPDATE', function(unit)
+		if not (IsInGroup() or UnitExists('pet')) then return end
+
 		local _, _, percent, _, threatvalue = UnitDetailedThreatSituation('player', unit)
-		if percent and percent > 0 and (IsInGroup() or UnitExists('pet')) then
+		if E:NotSecretValue(percent) and (percent and percent > 0) then
 			return E:ShortValue(threatvalue)
 		end
 	end)
@@ -759,9 +764,12 @@ E:AddTag('reactioncolor', 'UNIT_NAME_UPDATE UNIT_FACTION', function(unit)
 end)
 
 E:AddTag('threatcolor', 'UNIT_THREAT_LIST_UPDATE UNIT_THREAT_SITUATION_UPDATE GROUP_ROSTER_UPDATE', function(unit)
+	if not (IsInGroup() or UnitExists('pet')) then return end
+
 	local _, status = UnitDetailedThreatSituation('player', unit)
-	if status and (IsInGroup() or UnitExists('pet')) then
-		return Hex(E:GetThreatStatusColor(status, true))
+	if E:NotSecretValue(status) and status then
+		local color = E:GetThreatStatusColor(status, true)
+		return color and Hex(color) or HEX_FALLBACK
 	end
 end)
 
@@ -771,7 +779,7 @@ E:AddTag('manacolor', 'UNIT_POWER_FREQUENT UNIT_DISPLAYPOWER', function()
 end)
 
 E:AddTag('selectioncolor', 'UNIT_NAME_UPDATE UNIT_FACTION INSTANCE_ENCOUNTER_ENGAGE_UNIT', function(unit)
-	local selection = NP:UnitSelectionType(unit)
+	local selection = E:UnitSelectionType(unit)
 	local cs = ElvUF.colors.selection[selection]
 	return cs and Hex(cs) or HEX_FALLBACK
 end)
