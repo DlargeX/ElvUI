@@ -1398,16 +1398,16 @@ function E:GROUP_ROSTER_UPDATE()
 		wipe(units)
 	end
 
-	if E.IsInGroup then
-		local group = isInRaid and 'raid' or 'party'
-		for i = 1, (isInRaid and GetNumGroupMembers()) or GetNumSubgroupMembers() do
-			local unit = group..i
-			local guid = UnitGUID(unit)
-			local role = guid and (not E.allowRoles and (GetPartyAssignment('MAINTANK', unit) and 'TANK' or 'NONE') or UnitGroupRolesAssigned(unit))
-			if role then
-				E.GroupRoles[guid] = role
-				E.GroupUnitsByRole[role][guid] = unit
-			end
+	if not E.IsInGroup then return end
+
+	local group = isInRaid and 'raid' or 'party'
+	for i = 1, (isInRaid and GetNumGroupMembers()) or GetNumSubgroupMembers() do
+		local unit = group..i
+		local guid = UnitGUID(unit)
+		local role = E:NotSecretValue(guid) and guid and (not E.allowRoles and (GetPartyAssignment('MAINTANK', unit) and 'TANK' or 'NONE') or UnitGroupRolesAssigned(unit))
+		if role then
+			E.GroupRoles[guid] = role
+			E.GroupUnitsByRole[role][guid] = unit
 		end
 	end
 end

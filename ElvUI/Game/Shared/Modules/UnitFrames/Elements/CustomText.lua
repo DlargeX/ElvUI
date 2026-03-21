@@ -22,7 +22,7 @@ function UF:Configure_CustomTexts(frame)
 	if not customTexts then return end
 
 	-- Make sure CustomTexts are hidden if they don't exist in current profile
-	local frameDB = frame.db.customTexts
+	local frameDB = frame.db and frame.db.customTexts
 	for name, object in pairs(customTexts) do
 		if not frameDB or not frameDB[name] then
 			object:Hide()
@@ -71,7 +71,7 @@ function UF:ToggleVisibility_CustomTexts(frame, show)
 	local customTexts = frame.customTexts
 	if not customTexts then return end
 
-	local frameDB = frame.db.customTexts
+	local frameDB = frame.db and frame.db.customTexts
 	if not frameDB then return end
 
 	for name, db in pairs(frameDB) do
