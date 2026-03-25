@@ -359,7 +359,10 @@ end
 
 tagFunctions.perhp = function(u)
 	if oUF.isRetail then
-		return format('%d', UnitHealthPercent(u, true, ScaleTo100))
+		local ok, precent = pcall(UnitHealthPercent, u, true, ScaleTo100)
+		if ok then
+			return format('%d', precent)
+		end
 	else
 		local m = UnitHealthMax(u)
 		if(m == 0) then
@@ -372,7 +375,10 @@ end
 
 tagFunctions.perpp = function(u)
 	if oUF.isRetail then
-		return format('%d', UnitPowerPercent(u, nil, true, ScaleTo100))
+		local ok, precent = pcall(UnitPowerPercent, u, nil, true, ScaleTo100)
+		if ok then
+			return format('%d', precent)
+		end
 	else
 		local m = UnitPowerMax(u)
 		if(m == 0) then

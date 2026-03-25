@@ -188,7 +188,7 @@ local function resetAttributes(self)
 end
 
 local function UpdateCurrentTarget(element, target)
-	element.curTarget = (oUF:NotSecretValue(target) and (target and target ~= "") and target) or nil
+	element.curTarget = target or nil
 end
 
 local function CreatePip(element)

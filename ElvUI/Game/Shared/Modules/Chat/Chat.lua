@@ -61,8 +61,8 @@ local BNET_CLIENT_WOW = BNET_CLIENT_WOW
 local LFG_LIST_AND_MORE = LFG_LIST_AND_MORE
 local UNKNOWN = UNKNOWN
 
-local GetGroupMembers = E.Retail and C_SocialQueue.GetGroupMembers
-local GetGroupQueues = E.Retail and C_SocialQueue.GetGroupQueues
+local GetGroupMembers = C_SocialQueue and C_SocialQueue.GetGroupMembers
+local GetGroupQueues = C_SocialQueue and C_SocialQueue.GetGroupQueues
 
 local GetCVar = C_CVar.GetCVar
 local GetCVarBool = C_CVar.GetCVarBool
@@ -3103,51 +3103,49 @@ function CH:SocialQueueIsLeader(playerName, leaderName)
 	end
 end
 
-local socialQueueCache = {}
-local function RecentSocialQueue(TIME, MSG)
-	local previousMessage = false
-	if next(socialQueueCache) then
-		for guid, tbl in pairs(socialQueueCache) do
-			-- !dont break this loop! its used to keep the cache updated
+do
+	local queueCache = {}
+	local function RecentSocialQueue(TIME, MSG)
+		local previous = false -- !dont break this loop!
+		for guid, tbl in next, queueCache do -- its used to keep the cache updated
 			if TIME and (difftime(TIME, tbl[1]) >= 300) then
-				socialQueueCache[guid] = nil --remove any older than 5m
-			elseif MSG and (MSG == tbl[2]) then
-				previousMessage = true --dont show any of the same message within 5m
-				-- see note for `message` in `SocialQueueMessage` about `MSG` content
+				queueCache[guid] = nil -- remove any older than 5m
+			elseif MSG and (MSG == tbl[2]) then -- dont show any of the same message within 5m
+				previous = true -- see note for `message` in `SocialQueueMessage` about `MSG` content
 			end
 		end
+
+		return previous
 	end
-	return previousMessage
-end
 
-function CH:SocialQueueMessage(guid, message)
-	if not (guid and message) then return end
-	-- `guid` is something like `Party-1147-000011202574` and appears to update each time for solo requeue, otherwise on new group creation.
-	-- `message` is something like `|cff82c5ff|Kf58|k000000000000|k|r queued for: |cff00CCFFRandom Legion Heroic|r `
+	function CH:SocialQueueMessage(guid, message)
+		if E:IsSecretValue(message) or not (guid and message) then return end
+		-- `guid` is something like `Party-1147-000011202574` and appears to update each time for solo requeue, otherwise on new group creation.
+		-- `message` is something like `|cff82c5ff|Kf58|k000000000000|k|r queued for: |cff00CCFFRandom Legion Heroic|r `
 
-	-- prevent duplicate messages within 5 minutes
-	local TIME = time()
-	if RecentSocialQueue(TIME, message) then return end
-	socialQueueCache[guid] = {TIME, message}
+		local TIME = time() -- prevent duplicate messages within 5 minutes
+		if RecentSocialQueue(TIME, message) then return end
+		queueCache[guid] = {TIME, message}
 
-	-- UI_71_SOCIAL_QUEUEING_TOAST = 79739; appears to have no sound?
-	PlaySound(SOUND_TUTORIAL_POPUP)
+		-- UI_71_SOCIAL_QUEUEING_TOAST = 79739; appears to have no sound?
+		PlaySound(SOUND_TUTORIAL_POPUP)
 
-	E:Print(format('|Hsqu:%s|h%s|h', guid, strtrim(message)))
+		E:Print(format('|Hsqu:%s|h%s|h', guid, strtrim(message)))
+	end
 end
 
 function CH:SocialQueueEvent(_, guid, numAddedItems) -- event, guid, numAddedItems
-	if not CH.db.socialQueueMessages then return end
-	if numAddedItems == 0 or not guid then return end
+	if not CH.db.socialQueueMessages or (not guid or numAddedItems == 0) then return end
 
 	local players = GetGroupMembers(guid)
 	if not players then return end
 
 	local firstMember, numMembers, extraCount, coloredName = players[1], #players, ''
-	local playerName, nameColor = _G.SocialQueueUtil_GetRelationshipInfo(firstMember.guid, nil, firstMember.clubId)
 	if numMembers > 1 then
 		extraCount = format(' +%s', numMembers - 1)
 	end
+
+	local playerName, nameColor = _G.SocialQueueUtil_GetRelationshipInfo(firstMember.guid, nil, firstMember.clubId)
 	if playerName and playerName ~= '' then
 		coloredName = format('%s%s|r%s', nameColor, playerName, extraCount)
 	else
@@ -3156,27 +3154,27 @@ function CH:SocialQueueEvent(_, guid, numAddedItems) -- event, guid, numAddedIte
 
 	local queues = GetGroupQueues(guid)
 	local firstQueue = queues and queues[1]
-	local isLFGList = firstQueue and firstQueue.queueData and firstQueue.queueData.queueType == 'lfglist'
+	if not firstQueue then return end
 
-	if isLFGList and firstQueue and firstQueue.eligible then
+	local firstData = firstQueue.queueData
+	if firstQueue.eligible and (firstData and firstData.queueType == 'lfglist') then
 		local activityID, activityInfo, name, leaderName, isLeader
-
-		if firstQueue.queueData.lfgListID then
-			local searchResultInfo = C_LFGList_GetSearchResultInfo(firstQueue.queueData.lfgListID)
-			if searchResultInfo then
-				activityID, name, leaderName = searchResultInfo.activityID, searchResultInfo.name, searchResultInfo.leaderName
+		if firstData.lfgListID then
+			local searchInfo = C_LFGList_GetSearchResultInfo(firstData.lfgListID)
+			if searchInfo then
+				activityID, name, leaderName = searchInfo.activityID, searchInfo.name, searchInfo.leaderName
 				isLeader = CH:SocialQueueIsLeader(playerName, leaderName)
 			end
 		end
 
-		if activityID or firstQueue.queueData.activityID then
-			activityInfo = C_LFGList_GetActivityInfoTable(activityID or firstQueue.queueData.activityID)
+		if activityID or firstData.activityID then
+			activityInfo = C_LFGList_GetActivityInfoTable(activityID or firstData.activityID)
 		end
 
 		CH:SocialQueueMessage(guid, format(name and '%s %s: [%s] |cff00CCFF%s|r' or '%s %s: |cff00CCFF%s|r', coloredName, (isLeader and L["is looking for members"]) or L["joined a group"], activityInfo and activityInfo.fullName or UNKNOWN, name))
-	elseif firstQueue then
+	else
 		local output, outputCount, queueCount = '', '', 0
-		for _, queue in pairs(queues) do
+		for _, queue in next, queues do
 			if type(queue) == 'table' and queue.eligible then
 				local queueName = (queue.queueData and _G.SocialQueueUtil_GetQueueName(queue.queueData)) or ''
 				if queueName ~= '' then
@@ -3189,8 +3187,12 @@ function CH:SocialQueueEvent(_, guid, numAddedItems) -- event, guid, numAddedIte
 				end
 			end
 		end
+
 		if output ~= '' then
-			if queueCount > 0 then outputCount = format(LFG_LIST_AND_MORE, queueCount) end
+			if queueCount > 0 then
+				outputCount = format(LFG_LIST_AND_MORE, queueCount)
+			end
+
 			CH:SocialQueueMessage(guid, format('%s %s: |cff00CCFF%s|r %s', coloredName, SOCIAL_QUEUE_QUEUED_FOR, output, outputCount))
 		end
 	end

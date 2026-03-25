@@ -6,6 +6,7 @@ local unpack, select, tinsert = unpack, select, tinsert
 local ipairs, next, rad = ipairs, next, rad
 local hooksecurefunc = hooksecurefunc
 
+local CreateFrame = CreateFrame
 local GetItemQualityByID = C_Item.GetItemQualityByID
 
 local journalBottomTabs = {}
@@ -301,6 +302,67 @@ local function RepositionTabs()
 	end
 end
 
+local function CollapseSetShown(collapse, shown)
+	local btn = collapse.collapseIndicator
+	if not btn then return end
+
+	btn:SetShown(shown)
+end
+
+local function CollapseSetAtlas(collapse, atlas)
+	local btn = collapse.collapseIndicator
+	if not (btn and btn.plus) then return end
+
+	btn.plus:SetShown(atlas == 'campaign_headericon_closed')
+end
+
+local function CollapseMouseUp(btn)
+	btn:OnClick() -- is this safe?
+end
+
+local function CreateCollapseButton(frame, collapse)
+	local btn = CreateFrame('Button', nil, frame)
+	btn:Point('TOPLEFT', collapse)
+	btn:StripTextures()
+	btn:SetTemplate()
+	btn:SetFrameLevel(4)
+	btn:Size(17)
+	btn:Hide()
+
+	if not btn.minus then
+		btn.minus = btn:CreateTexture(nil, 'OVERLAY', nil, 1)
+		btn.minus:Size(7, 1) -- this size is different then the plus texture?
+		btn.minus:Point('CENTER')
+		btn.minus:SetTexture(E.media.blankTex) -- is this supposed to be `E.Media.Textures.MinusButton`
+	end
+
+	if not btn.plus then
+		btn.plus = btn:CreateTexture(nil, 'OVERLAY', nil, 2)
+		btn.plus:Size(1, 7)  -- this size is different then the minus texture?
+		btn.plus:Point('CENTER')
+		btn.plus:SetTexture(E.media.blankTex) -- is this supposed to be `E.Media.Textures.PlusButton`
+	end
+
+	btn:HookScript('OnEnter', S.SetModifiedBackdrop)
+	btn:HookScript('OnLeave', S.SetOriginalBackdrop)
+	btn:SetScript('OnMouseUp', CollapseMouseUp)
+
+	hooksecurefunc(collapse, 'SetShown', CollapseSetShown)
+	hooksecurefunc(collapse, 'SetAtlas', CollapseSetAtlas)
+
+	return btn
+end
+
+local function HandleCollapseButtons(frame)
+	for _, button in next, { frame.ScrollTarget:GetChildren() } do
+		local collapse = button.HeaderCollapseIndicator
+		if collapse and not collapse.collapseIndicator then
+			collapse.collapseIndicator = CreateCollapseButton(frame, collapse)
+			collapse:SetAlpha(0)
+		end
+	end
+end
+
 function S:Blizzard_EncounterJournal()
 	if not (E.private.skins.blizzard.enable and E.private.skins.blizzard.encounterjournal) then return end
 
@@ -354,6 +416,12 @@ function S:Blizzard_EncounterJournal()
 	local JourneysList = _G.EncounterJournalJourneysFrame.JourneysList
 	if JourneysList then
 		hooksecurefunc(JourneysList, 'Update', JourneysListUpdate)
+	end
+
+	-- Monthly Activities
+	local MonthlyActivities = _G.EncounterJournalMonthlyActivitiesFrame
+	if MonthlyActivities then
+		hooksecurefunc(MonthlyActivities.ScrollBox, 'Update', HandleCollapseButtons)
 	end
 
 	-- Encounter Info Frame

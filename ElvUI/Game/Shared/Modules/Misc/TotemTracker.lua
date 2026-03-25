@@ -7,6 +7,7 @@ local ipairs = ipairs
 
 local CreateFrame = CreateFrame
 local GetTotemInfo = GetTotemInfo
+local GetTotemDuration = GetTotemDuration
 local MAX_TOTEMS = MAX_TOTEMS
 
 local classic = { 2, 1, 3, 4 } -- we need to swap 1/2 on era
@@ -14,12 +15,21 @@ local classic = { 2, 1, 3, 4 } -- we need to swap 1/2 on era
 function TM:UpdateButton(button, totem)
 	if not (button and totem) then return end
 
-	local _, _, startTime, duration, icon = GetTotemInfo((E.Classic or E.TBC) and totem or totem.slot)
-	button:SetShown(startTime and E:NotSecretValue(duration) and (duration > 0))
+	local slot = (E.Classic or E.TBC) and totem or totem.slot
+	local _, _, startTime, duration, icon = GetTotemInfo(slot)
 
 	if startTime then
 		button.icon:SetTexture(icon)
-		button.cooldown:SetCooldown(startTime, duration)
+
+		if E:IsSecretValue(duration) then
+			if GetTotemDuration then
+				button.cooldown:SetCooldownFromDurationObject(GetTotemDuration(slot))
+			end
+		elseif duration and duration > 0 then
+			button.cooldown:SetCooldown(startTime, duration)
+		else
+			button.cooldown:Clear()
+		end
 
 		if E.Retail or E.Mists then
 			if totem:GetParent() ~= button.holder then
@@ -28,7 +38,11 @@ function TM:UpdateButton(button, totem)
 
 			totem:SetAllPoints(button.holder)
 		end
+	else
+		button.cooldown:Clear()
 	end
+
+	button:SetShown(button.cooldown:IsShown())
 end
 
 function TM:Update()

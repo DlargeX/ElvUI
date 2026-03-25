@@ -6,11 +6,12 @@ local next = next
 local format = format
 local hooksecurefunc = hooksecurefunc
 
-local C_UnitAuras = C_UnitAuras
+local InCombatLockdown = InCombatLockdown
 local CreateFrame = CreateFrame
 local CopyTable = CopyTable
 local UIParent = UIParent
 
+local C_UnitAuras = C_UnitAuras
 local AddPrivateAuraAnchor = C_UnitAuras.AddPrivateAuraAnchor
 local RemovePrivateAuraAnchor = C_UnitAuras.RemovePrivateAuraAnchor
 local SetPrivateWarningTextAnchor = C_UnitAuras.SetPrivateWarningTextAnchor
@@ -128,12 +129,14 @@ function PA:CreateAnchor(aura, parent, unit, index, db)
 		data.durationAnchor = nil
 	end
 
-	return AddPrivateAuraAnchor(data)
+	if not InCombatLockdown() then
+		return AddPrivateAuraAnchor(data) -- protected on 12.0.1 build 66562
+	end
 end
 
 function PA:RemoveAura(aura)
-	if aura.anchorID then
-		RemovePrivateAuraAnchor(aura.anchorID)
+	if aura.anchorID and not InCombatLockdown() then
+		RemovePrivateAuraAnchor(aura.anchorID) -- protected on 12.0.1 build 66562
 		aura.anchorID = nil
 	end
 end
@@ -239,9 +242,11 @@ end
 
 function PA:RaidWarning_Reposition(_, anchor)
 	if not anchor then
-		anchor = _G.PrivateRaidBossEmoteFrameAnchor
-		warningAnchor.relativeTo = anchor.mover or UIParent
-		SetPrivateWarningTextAnchor(anchor, warningAnchor)
+		if not InCombatLockdown() then
+			anchor = _G.PrivateRaidBossEmoteFrameAnchor
+			warningAnchor.relativeTo = anchor.mover or UIParent
+			SetPrivateWarningTextAnchor(anchor, warningAnchor) -- protected on 12.0.1 build 66562
+		end
 	elseif anchor ~= self.mover then
 		self:ClearAllPoints()
 		self:Point('TOP', self.mover)

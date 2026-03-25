@@ -4,7 +4,6 @@ local UF = E:GetModule('UnitFrames')
 local CH = E:GetModule('Chat')
 local LSM = E.Libs.LSM
 
-local abs = abs
 local next = next
 local strmatch = strmatch
 local utf8sub = string.utf8sub
@@ -40,69 +39,17 @@ function NP:Castbar_CheckInterrupt(unit)
 end
 
 function NP:Castbar_CustomDelayText(duration, durationObject)
-	if durationObject then
-		local remain = durationObject:GetRemainingDuration()
-		self.Time:SetFormattedText('%.1f', remain)
+	local remain, maximum = UF:GetCastDurations(self, duration, durationObject)
+	if not remain then return end
 
-		return
-	elseif not duration then
-		return
-	end
-
-	if self.channeling then
-		if self.channelTimeFormat == 'CURRENT' then
-			self.Time:SetFormattedText('%.1f |cffaf5050%.1f|r', abs(duration - self.max), self.delay)
-		elseif self.channelTimeFormat == 'CURRENTMAX' then
-			self.Time:SetFormattedText('%.1f / %.1f |cffaf5050%.1f|r', duration, self.max, self.delay)
-		elseif self.channelTimeFormat == 'REMAINING' then
-			self.Time:SetFormattedText('%.1f |cffaf5050%.1f|r', duration, self.delay)
-		elseif self.channelTimeFormat == 'REMAININGMAX' then
-			self.Time:SetFormattedText('%.1f / %.1f |cffaf5050%.1f|r', abs(duration - self.max), self.max, self.delay)
-		end
-	else
-		if self.castTimeFormat == 'CURRENT' then
-			self.Time:SetFormattedText('%.1f |cffaf5050%s %.1f|r', duration, '+', self.delay)
-		elseif self.castTimeFormat == 'CURRENTMAX' then
-			self.Time:SetFormattedText('%.1f / %.1f |cffaf5050%s %.1f|r', duration, self.max, '+', self.delay)
-		elseif self.castTimeFormat == 'REMAINING' then
-			self.Time:SetFormattedText('%.1f |cffaf5050%s %.1f|r', abs(duration - self.max), '+', self.delay)
-		elseif self.castTimeFormat == 'REMAININGMAX' then
-			self.Time:SetFormattedText('%.1f / %.1f |cffaf5050%s %.1f|r', abs(duration - self.max), self.max, '+', self.delay)
-		end
-	end
+	UF:SetCastDisplayDelay(self, (self.channeling and self.channelTimeFormat) or self.castTimeFormat, duration, maximum, remain, self.delay)
 end
 
 function NP:Castbar_CustomTimeText(duration, durationObject)
-	if durationObject then
-		local remain = durationObject:GetRemainingDuration()
-		self.Time:SetFormattedText('%.1f', remain)
+	local remain, maximum = UF:GetCastDurations(self, duration, durationObject)
+	if not remain then return end
 
-		return
-	elseif not duration then
-		return
-	end
-
-	if self.channeling then
-		if self.channelTimeFormat == 'CURRENT' then
-			self.Time:SetFormattedText('%.1f', abs(duration - self.max))
-		elseif self.channelTimeFormat == 'CURRENTMAX' then
-			self.Time:SetFormattedText('%.1f / %.1f', abs(duration - self.max), self.max)
-		elseif self.channelTimeFormat == 'REMAINING' then
-			self.Time:SetFormattedText('%.1f', duration)
-		elseif self.channelTimeFormat == 'REMAININGMAX' then
-			self.Time:SetFormattedText('%.1f / %.1f', duration, self.max)
-		end
-	else
-		if self.castTimeFormat == 'CURRENT' then
-			self.Time:SetFormattedText('%.1f', duration)
-		elseif self.castTimeFormat == 'CURRENTMAX' then
-			self.Time:SetFormattedText('%.1f / %.1f', duration, self.max)
-		elseif self.castTimeFormat == 'REMAINING' then
-			self.Time:SetFormattedText('%.1f', abs(duration - self.max))
-		elseif self.castTimeFormat == 'REMAININGMAX' then
-			self.Time:SetFormattedText('%.1f / %.1f', abs(duration - self.max), self.max)
-		end
-	end
+	UF:SetCastDisplayCustom(self, (self.channeling and self.channelTimeFormat) or self.castTimeFormat, duration, maximum, remain)
 end
 
 function NP:Castbar_SetText(castbar, db, changed, spellName, unit)
@@ -114,7 +61,7 @@ function NP:Castbar_SetText(castbar, db, changed, spellName, unit)
 			target = UnitName(unit..'target') -- player or NPCs; if used on other players:
 		end -- the cast target doesn't match their target, can be misleading if they mouseover cast
 
-		if E:NotSecretValue(target) and (target and target ~= '') and (E:NotSecretValue(plate.unitName) and (target ~= plate.unitName)) then
+		if target then
 			local color = (db.displayTargetClass and UF:GetCasterColor(target)) or 'FFdddddd'
 			if db.targetStyle == 'SEPARATE' then
 				castbar.TargetText:SetFormattedText('|c%s%s|r', color, target)

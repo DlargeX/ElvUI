@@ -3,6 +3,7 @@ local BL = E:GetModule('Blizzard')
 local LSM = E.Libs.LSM
 
 local _G = _G
+local pcall = pcall
 local floor = floor
 local hooksecurefunc = hooksecurefunc
 
@@ -144,9 +145,16 @@ function BL:UpdateAltPowerBar()
 		bar:Hide()
 	end
 
+	local powerPercent
+	if UnitPowerPercent then
+		local ok, percent = pcall(UnitPowerPercent, 'player', _G.ALTERNATE_POWER_INDEX, true, ScaleTo100)
+		if ok then
+			powerPercent = percent
+		end
+	end
+
 	local power = UnitPower('player', _G.ALTERNATE_POWER_INDEX) or 0
 	local maxPower = UnitPowerMax('player', _G.ALTERNATE_POWER_INDEX) or 0
-	local powerPercent = UnitPowerPercent and UnitPowerPercent('player', _G.ALTERNATE_POWER_INDEX, true, ScaleTo100)
 	local barInfo = GetUnitPowerBarInfo('player')
 	if barInfo then
 		local allowed = E:NotSecretValue(power) and E:NotSecretValue(maxPower)

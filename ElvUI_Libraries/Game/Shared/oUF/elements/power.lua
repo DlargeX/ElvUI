@@ -171,8 +171,9 @@ local function UpdateColor(self, event, unit)
 		if(element.colorPowerSmooth) then
 			if oUF.isRetail then
 				local curve = color and color:GetCurve()
-				if curve then
-					color = UnitPowerPercent(unit, nil, true, curve)
+				local ok, colorPercent = pcall(UnitPowerPercent, unit, nil, true, curve)
+				if ok then
+					color = colorPercent
 				end
 			else
 				local adjust = 0 - (element.min or 0)

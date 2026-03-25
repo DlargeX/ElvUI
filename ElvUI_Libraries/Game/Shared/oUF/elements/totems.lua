@@ -50,6 +50,7 @@ local oUF = ns.oUF
 local GetTime = GetTime
 local GameTooltip = GameTooltip
 local GetTotemInfo = GetTotemInfo
+local GetTotemDuration = GetTotemDuration
 
 local priority = (oUF.myclass == 'SHAMAN' and SHAMAN_TOTEM_PRIORITIES) or STANDARD_TOTEM_PRIORITIES
 
@@ -101,40 +102,49 @@ local function UpdateTotem(self, event, slot)
 	--]]
 	if(element.PreUpdate) then element:PreUpdate(slot) end
 
-	local totem = element[priority[slot]]
+	local totem, durationObj = element[priority[slot]]
 	local haveTotem, name, start, duration, icon = GetTotemInfo(slot) -- slot is the same as totem:GetID()
-
-	if haveTotem and duration > 0 then
+	if haveTotem then
 		if totem.Icon then
 			totem.Icon:SetTexture(icon)
-		end
-
-		if totem.Cooldown then
-			totem.Cooldown:SetCooldown(start, duration)
 		end
 
 		if totem:IsObjectType('StatusBar') then
 			totem:SetValue(0)
 		end
+	end
 
-		totem:Show()
+	if totem.Cooldown then
+		if oUF:IsSecretValue(duration) then
+			if GetTotemDuration then
+				durationObj = GetTotemDuration(slot)
+				totem.Cooldown:SetCooldownFromDuration(durationObj)
+			end
+		elseif start and (duration and duration > 0) then
+			totem.Cooldown:SetCooldown(start, duration)
+		end
+	end
+
+	if totem.SetAlphaFromBoolean then
+		totem:SetAlphaFromBoolean(haveTotem, 1, 0)
 	else
-		totem:Hide()
+		totem:SetAlpha(haveTotem and 1 or 0)
 	end
 
 	--[[ Callback: Totems:PostUpdate(slot, haveTotem, name, start, duration, icon)
 	Called after the element has been updated.
 
-	* self      - the Totems element
-	* slot      - the slot of the updated totem (number)
-	* haveTotem - indicates if a totem is present in the given slot (boolean)
-	* name      - the name of the totem (string)
-	* start     - the value of `GetTime()` when the totem was created (number)
-	* duration  - the total duration for which the totem should last (number)
-	* icon      - the totem's icon (Texture)
+	* self        - the Totems element
+	* slot        - the slot of the updated totem (number)
+	* haveTotem   - indicates if a totem is present in the given slot (boolean)
+	* name        - the name of the totem (string)
+	* start       - the value of `GetTime()` when the totem was created (number)
+	* duration    - the total duration for which the totem should last (number)
+	* icon        - the totem's icon (Texture)
+	* durationObj - totem duration ([DurationObject](https://warcraft.wiki.gg/wiki/ScriptObject_DurationObject))
 	--]]
 	if(element.PostUpdate) then
-		return element:PostUpdate(slot, haveTotem, name, start, duration, icon)
+		return element:PostUpdate(slot, haveTotem, name, start, duration, icon, durationObj)
 	end
 end
 

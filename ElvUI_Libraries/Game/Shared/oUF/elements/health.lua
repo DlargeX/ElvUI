@@ -145,11 +145,12 @@ local function UpdateColor(self, event, unit)
 	elseif(element.colorSmooth) then
 		if oUF.isRetail then
 			local curve = self.colors.health:GetCurve()
-			if curve then
-				color = UnitHealthPercent(unit, true, curve)
+			local ok, colorPercent = pcall(UnitHealthPercent, unit, true, curve)
+			if ok then
+				color = colorPercent
 			end
 		else
-				local curValue, maxValue = element.cur or 1, element.max or 1
+			local curValue, maxValue = element.cur or 1, element.max or 1
 			local r, g, b = oUF:ColorGradient(maxValue == 0 and 0 or (curValue / maxValue), unpack(element.smoothGradient or self.colors.smooth))
 			self.colors.smooth:SetRGB(r, g, b)
 

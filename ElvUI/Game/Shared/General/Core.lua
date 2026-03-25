@@ -352,8 +352,8 @@ function E:UpdateMedia(mediaType)
 
 	if E.db.cooldown.enable then
 		for key in next, P.cooldown do
-			local db = type(key) == 'table' and E.db.cooldown[key]
-			if db then
+			local db = E.db.cooldown[key]
+			if type(db) == 'table' and db.colors then
 				E:UpdateClassColor(db.colors.text)
 				E:UpdateClassColor(db.colors.edge)
 				E:UpdateClassColor(db.colors.edgeCharge)

@@ -1,3 +1,15 @@
+### Version 15.10 [ March 24th 2026 ]
+*   Secret error in API file on line 1407.
+*   Custom Text error with Arena frames.
+*   Threat color tag causing an error.
+*   Translit tags will attempt to work but return regular names when secret.
+*   Compound unit token error involving tags.
+*   LibActionButton updated to handle the new hotfix. (Thanks Nevcairiel)
+*   Cooldown colors not updating properly on reload when swapping to a another class color.
+*   Tooltips broken by recent hotfix; in a rare case while secret, creature type may be displayed twice.
+*   Totem Tracker should work again under restrictions by new API blizzard provided.
+*   Castbar display target and time formatting working again.
+
 ### Version 15.09 [ March 18th 2026 ]
 *   **Nameplates**
     *   Faction change was not updating plates properly.
