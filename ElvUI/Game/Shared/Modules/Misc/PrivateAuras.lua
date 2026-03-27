@@ -16,6 +16,19 @@ local AddPrivateAuraAnchor = C_UnitAuras.AddPrivateAuraAnchor
 local RemovePrivateAuraAnchor = C_UnitAuras.RemovePrivateAuraAnchor
 local SetPrivateWarningTextAnchor = C_UnitAuras.SetPrivateWarningTextAnchor
 
+local reconfigure = {} -- used to reset frames tried to change during combat
+
+-- unitframeType is used before its actually initialized
+-- because they arent valid we skip them on purpose
+local exclude = {
+	raid = true,
+	raidpet = true,
+	party = true,
+	partypet = true,
+	arena = true,
+	boss = true,
+}
+
 local warningAnchor = {
 	relativeTo = nil, -- dynamically added in RaidWarning_Reposition
 	relativePoint = 'TOP',
@@ -46,7 +59,7 @@ local defaults = {
 		iconAnchor = nil -- added on creation
 	},
 	anchor = {
-		unitToken = 'player',
+		unitToken = nil,
 		auraIndex = 1,
 		showCountdownFrame = true,
 		showCountdownNumbers = true,
@@ -62,8 +75,12 @@ function PA:CreateAnchor(aura, parent, unit, index, db)
 		PA:RemoveAura(previousAura)
 	end
 
-	if not unit then unit = parent.unit end
-	if not unit then return end -- something went wrong
+	if not unit then -- try to get the unit token
+		unit = (parent.owner and parent.owner.unit) or nil
+	end
+
+	-- check one last time, stop if something goes wrong
+	if not unit or exclude[unit] then return end
 
 	local borderScale = db.borderScale
 	if not borderScale then borderScale = 1 end
@@ -129,7 +146,9 @@ function PA:CreateAnchor(aura, parent, unit, index, db)
 		data.durationAnchor = nil
 	end
 
-	if not InCombatLockdown() then
+	if InCombatLockdown() then
+		reconfigure[parent] = 2
+	else
 		return AddPrivateAuraAnchor(data) -- protected on 12.0.1 build 66562
 	end
 end
@@ -137,12 +156,17 @@ end
 function PA:RemoveAura(aura)
 	if aura.anchorID and not InCombatLockdown() then
 		RemovePrivateAuraAnchor(aura.anchorID) -- protected on 12.0.1 build 66562
+
 		aura.anchorID = nil
 	end
 end
 
 function PA:RemoveAuras(parent)
 	if not parent or not parent.auraIcons then return end
+
+	if InCombatLockdown() then
+		reconfigure[parent] = 2
+	end
 
 	for _, aura in next, parent.auraIcons do
 		PA:RemoveAura(aura)
@@ -155,23 +179,32 @@ function PA:CreateAura(parent, unit, index, db)
 		aura = CreateFrame('Frame', format('%s%d', parent:GetName(), index), parent)
 	end
 
-	aura.anchorID = PA:CreateAnchor(aura, parent, unit, index, db)
+	if not aura.anchorID then
+		aura.anchorID = PA:CreateAnchor(aura, parent, unit, index, db)
+	end
 
-	aura:Size(db.icon.size)
+	-- EnableMouse doesnt work; set the size to 1x1
+	if db.clickThrough then
+		aura:SetSize(1, 1)
+	else
+		aura:Size(db.icon.size)
+	end
+
 	aura:ClearAllPoints()
 
+	local offsetNoMouse = (db.clickThrough and db.icon.size) or 0
 	if index == 1 then
-		aura:Point('CENTER', parent, 0, 0)
+		aura:Point('CENTER', parent, -(offsetNoMouse * 0.5), 0)
 	else
-		local offsetX, offsetY = 0, 0
+		local offsetX, offsetY, offsetIcon = 0, 0, db.icon.offset + offsetNoMouse
 		if db.icon.point == 'RIGHT' then
-			offsetX = db.icon.offset
+			offsetX = offsetIcon
 		elseif db.icon.point == 'LEFT' then
-			offsetX = -db.icon.offset
+			offsetX = -offsetIcon
 		elseif db.icon.point == 'TOP' then
-			offsetY = db.icon.offset
+			offsetY = offsetIcon
 		else
-			offsetY = -db.icon.offset
+			offsetY = -offsetIcon
 		end
 
 		aura:Point(E.InversePoints[db.icon.point], parent.auraIcons[index-1], db.icon.point, offsetX, offsetY)
@@ -180,9 +213,9 @@ function PA:CreateAura(parent, unit, index, db)
 	return aura
 end
 
-function PA:SetupPrivateAuras(db, parent, unit)
-	if not db then db = E.db.general.privateAuras end
-	if not parent then parent = UIParent end
+function PA:SetupPrivateAuras(parent, unit)
+	local db = parent and parent.db
+	if not db then return end
 
 	if not parent.auraIcons then
 		parent.auraIcons = {}
@@ -193,13 +226,26 @@ function PA:SetupPrivateAuras(db, parent, unit)
 	end
 end
 
+function PA:Reconfigure()
+	for parent, value in next, reconfigure do
+		if value == 1 then
+			PA:RaidWarning_Reposition()
+		else
+			PA:RemoveAuras(parent)
+			PA:SetupPrivateAuras(parent)
+		end
+
+		reconfigure[parent] = nil
+	end
+end
+
 function PA:Update()
 	PA:RemoveAuras(PA.Auras)
 
 	if E.db.general.privateAuras.enable then
 		PA.Auras:Size(E.db.general.privateAuras.icon.size)
 
-		PA:SetupPrivateAuras(nil, PA.Auras, 'player')
+		PA:SetupPrivateAuras(PA.Auras, 'player')
 
 		E:EnableMover(PA.Auras.mover.name)
 	else
@@ -242,8 +288,11 @@ end
 
 function PA:RaidWarning_Reposition(_, anchor)
 	if not anchor then
-		if not InCombatLockdown() then
-			anchor = _G.PrivateRaidBossEmoteFrameAnchor
+		anchor = _G.PrivateRaidBossEmoteFrameAnchor
+
+		if InCombatLockdown() then
+			reconfigure[anchor] = 1
+		else
 			warningAnchor.relativeTo = anchor.mover or UIParent
 			SetPrivateWarningTextAnchor(anchor, warningAnchor) -- protected on 12.0.1 build 66562
 		end
@@ -259,9 +308,12 @@ function PA:Initialize()
 	PA.Auras = CreateFrame('Frame', 'ElvUI_PrivateAuras', E.UIParent)
 	PA.Auras:Point('TOPRIGHT', _G.ElvUI_MinimapHolder or _G.Minimap, 'BOTTOMLEFT', -(9 + E.Border), -4)
 	PA.Auras:Size(32)
+	PA.Auras.db = E.db.general.privateAuras
 
 	E:CreateMover(PA.Auras, 'PrivateAurasMover', L["Private Auras"], nil, nil, nil, nil, nil, 'auras,privateAuras')
 	PA:Update()
+
+	PA:RegisterEvent('PLAYER_REGEN_ENABLED', 'Reconfigure')
 
 	local raidWarning = _G.PrivateRaidBossEmoteFrameAnchor
 	if raidWarning then

@@ -273,8 +273,11 @@ function AB:UpdateMicroBarTextures()
 end
 
 function AB:UpdateMicroButtonsParent()
-	for _, x in next, AB.MICRO_BUTTONS do
-		_G[x]:SetParent(microBar)
+	for _, name in next, AB.MICRO_BUTTONS do
+		local button = _G[name]
+		if button then
+			button:SetParent(microBar)
+		end
 	end
 end
 
@@ -441,19 +444,21 @@ function AB:SetupMicroBar()
 
 	for _, name in next, AB.MICRO_BUTTONS do
 		local button = _G[name]
-		AB:HandleMicroButton(button, name)
+		if button then
+			AB:HandleMicroButton(button, name)
 
-		if E.Retail or (name == 'MainMenuMicroButton' or name == 'GuildMicroButton') then
-			hooksecurefunc(button, (E.Retail and 'SetHighlightAtlas') or (E.Classic and 'SetPushedTexture') or 'SetHighlightTexture', function()
-				AB:UpdateMicroButtonTexture(name)
-			end)
+			if E.Retail or (name == 'MainMenuMicroButton' or name == 'GuildMicroButton') then
+				hooksecurefunc(button, (E.Retail and 'SetHighlightAtlas') or (E.Classic and 'SetPushedTexture') or 'SetHighlightTexture', function()
+					AB:UpdateMicroButtonTexture(name)
+				end)
 
-			if name == 'CharacterMicroButton' then
-				hooksecurefunc(button, 'SetPushed', AB.HandleCharacterPortrait)
-				hooksecurefunc(button, 'SetNormal', AB.HandleCharacterPortrait)
+				if name == 'CharacterMicroButton' then
+					hooksecurefunc(button, 'SetPushed', AB.HandleCharacterPortrait)
+					hooksecurefunc(button, 'SetNormal', AB.HandleCharacterPortrait)
+				end
+			elseif name == 'TalentMicroButton' and E.global.general.disableTutorialButtons and _G.TalentMicroButtonAlert then
+				_G.TalentMicroButtonAlert:Kill()
 			end
-		elseif name == 'TalentMicroButton' and E.global.general.disableTutorialButtons and _G.TalentMicroButtonAlert then
-			_G.TalentMicroButtonAlert:Kill()
 		end
 	end
 

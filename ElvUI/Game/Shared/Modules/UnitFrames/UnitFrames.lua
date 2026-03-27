@@ -651,22 +651,28 @@ function UF:Update_FontStrings()
 end
 
 function UF:Construct_PrivateAuras(frame)
-	return CreateFrame('Frame', frame.frameName..'PrivateAuras', frame.RaisedElementParent)
+	local element = CreateFrame('Frame', frame.frameName..'PrivateAuras', frame.RaisedElementParent)
+	element.owner = frame
+
+	return element
 end
 
 function UF:Configure_PrivateAuras(frame)
-	if not E.Retail then return end -- dont exist on classic
+	local element = E.Retail and frame.PrivateAuras
+	if not element then return end
 
-	PA:RemoveAuras(frame.PrivateAuras)
+	PA:RemoveAuras(element)
 
 	local db = frame.db and frame.db.privateAuras
-	if db and db.enable then
-		frame.PrivateAuras:SetFrameLevel(frame.RaisedElementParent.PrivateAurasLevel)
-		frame.PrivateAuras:ClearAllPoints()
-		frame.PrivateAuras:Point(E.InversePoints[db.parent.point], frame, db.parent.point, db.parent.offsetX, db.parent.offsetY)
-		frame.PrivateAuras:Size(db.icon.size)
+	element.db = db or nil
 
-		PA:SetupPrivateAuras(db, frame.PrivateAuras, frame.unit)
+	if db and db.enable then
+		element:SetFrameLevel(frame.RaisedElementParent.PrivateAurasLevel)
+		element:ClearAllPoints()
+		element:Point(E.InversePoints[db.parent.point], frame, db.parent.point, db.parent.offsetX, db.parent.offsetY)
+		element:Size(db.icon.size)
+
+		PA:SetupPrivateAuras(element)
 	end
 end
 

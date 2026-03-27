@@ -1380,7 +1380,7 @@ end
 function AB:GetHotkeyConfig(db)
 	local font = LSM:Fetch('font', db and db.hotkeyFont or AB.db.font)
 	local size = db and db.hotkeyFontSize or AB.db.fontSize
-	local flags = db and db.hotkeyFontOutline or AB.db.font
+	local flags = db and db.hotkeyFontOutline or AB.db.fontOutline
 
 	local anchor = db and db.hotkeyTextPosition or 'TOPRIGHT'
 	local offsetX = db and db.hotkeyTextXOffset or 0
@@ -1437,7 +1437,7 @@ function AB:UpdateButtonConfig(barName, buttonName)
 	do -- count text
 		text.count.font.font = LSM:Fetch('font', db and db.countFont or AB.db.font)
 		text.count.font.size = db and db.countFontSize or AB.db.fontSize
-		text.count.font.flags = db and db.countFontOutline or AB.db.font
+		text.count.font.flags = db and db.countFontOutline or AB.db.fontOutline
 		text.count.position.anchor = db and db.countTextPosition or 'BOTTOMRIGHT'
 		text.count.position.relAnchor = false
 		text.count.position.offsetX = db and db.countTextXOffset or 0
@@ -1451,7 +1451,7 @@ function AB:UpdateButtonConfig(barName, buttonName)
 	do -- macro text
 		text.macro.font.font = LSM:Fetch('font', db and db.macroFont or AB.db.font)
 		text.macro.font.size = db and db.macroFontSize or AB.db.fontSize
-		text.macro.font.flags = db and db.macroFontOutline or AB.db.font
+		text.macro.font.flags = db and db.macroFontOutline or AB.db.fontOutline
 		text.macro.position.anchor = db and db.macroTextPosition or 'BOTTOM'
 		text.macro.position.relAnchor = false
 		text.macro.position.offsetX = db and db.macroTextXOffset or 0

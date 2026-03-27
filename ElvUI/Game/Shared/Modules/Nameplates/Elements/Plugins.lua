@@ -306,22 +306,28 @@ function NP:Update_Cutaway(nameplate)
 end
 
 function NP:Construct_PrivateAuras(nameplate)
-	return CreateFrame('Frame', nameplate.frameName..'PrivateAuras', nameplate.RaisedElement)
+	local element = CreateFrame('Frame', nameplate.frameName..'PrivateAuras', nameplate.RaisedElement)
+	element.owner = nameplate
+
+	return element
 end
 
 function NP:Update_PrivateAuras(nameplate, disable)
-	if not E.Retail then return end -- dont exist on classic
+	local element = E.Retail and nameplate.PrivateAuras
+	if not element then return end
 
-	PA:RemoveAuras(nameplate.PrivateAuras)
+	PA:RemoveAuras(element)
 
 	local plateDB = not disable and NP:PlateDB(nameplate)
 	local db = plateDB and plateDB.privateAuras
-	if db and db.enable then
-		nameplate.PrivateAuras:SetFrameLevel(16)
-		nameplate.PrivateAuras:ClearAllPoints()
-		nameplate.PrivateAuras:Point(E.InversePoints[db.parent.point], nameplate, db.parent.point, db.parent.offsetX, db.parent.offsetY)
-		nameplate.PrivateAuras:Size(db.icon.size)
+	element.db = db or nil
 
-		PA:SetupPrivateAuras(db, nameplate.PrivateAuras, nameplate.unit)
+	if db and db.enable then
+		element:SetFrameLevel(16)
+		element:ClearAllPoints()
+		element:Point(E.InversePoints[db.parent.point], nameplate, db.parent.point, db.parent.offsetX, db.parent.offsetY)
+		element:Size(db.icon.size)
+
+		PA:SetupPrivateAuras(element)
 	end
 end
