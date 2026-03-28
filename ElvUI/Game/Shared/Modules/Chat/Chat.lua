@@ -3672,7 +3672,7 @@ function CH:FCFTab_UpdateColors(tab, selected)
 		end
 
 		local name = GetChatWindowInfo(tab:GetID())
-		if name then
+		if name and E:NotSecretValue(name) then
 			tab.Text:SetText(name)
 		end
 
@@ -3683,20 +3683,21 @@ function CH:FCFTab_UpdateColors(tab, selected)
 
 		tab.selected = selected
 
-		local whisper = tab.conversationIcon and chat.chatTarget
 		local name = chat.name or UNKNOWN
+		local whisper = tab.conversationIcon and chat.chatTarget
+		tab.whisperName = (whisper and not tab.whisperName) and E:NotSecretValue(name) and gsub(E:StripMyRealm(name), '([%S]-)%-[%S]+', '%1|cFF999999*|r') or nil
 
-		if whisper and not tab.whisperName then
-			tab.whisperName = E:NotSecretValue(name) and gsub(E:StripMyRealm(name), '([%S]-)%-[%S]+', '%1|cFF999999*|r') or nil
-		end
-
+		local nameText = tab.whisperName or name
+		local nameTextNotSecret = E:NotSecretValue(nameText)
 		if selected then -- color tables are class updated in UpdateMedia
-			if CH.db.tabSelector == 'NONE' then
-				tab:SetFormattedText(CH.TabStyles.NONE, tab.whisperName or name)
-			else
-				local color = CH.db.tabSelectorColor
-				local hexColor = color and E:RGBToHex(color.r, color.g, color.b) or '|cff4cff4c'
-				tab:SetFormattedText(CH.TabStyles[CH.db.tabSelector] or CH.TabStyles.ARROW1, hexColor, tab.whisperName or name, hexColor)
+			if nameTextNotSecret then
+				if CH.db.tabSelector == 'NONE' then
+					tab:SetFormattedText(CH.TabStyles.NONE, nameText)
+				else
+					local color = CH.db.tabSelectorColor
+					local hexColor = color and E:RGBToHex(color.r, color.g, color.b) or '|cff4cff4c'
+					tab:SetFormattedText(CH.TabStyles[CH.db.tabSelector] or CH.TabStyles.ARROW1, hexColor, nameText, hexColor)
+				end
 			end
 
 			if CH.db.tabSelectedTextEnabled then
@@ -3706,13 +3707,14 @@ function CH:FCFTab_UpdateColors(tab, selected)
 				else
 					tab.Text:SetTextColor(1, 1, 1)
 				end
+
 				return -- using selected text color
 			end
 		end
 
 		if whisper then
-			if not selected then
-				tab:SetText(tab.whisperName or name)
+			if nameTextNotSecret and not selected then
+				tab:SetText(nameText)
 			end
 
 			local nameLower = not tab.classColor and E:NotSecretValue(name) and strlower(name)
@@ -3725,7 +3727,7 @@ function CH:FCFTab_UpdateColors(tab, selected)
 				tab.Text:SetTextColor(tab.classColor.r, tab.classColor.g, tab.classColor.b)
 			end
 		else
-			if not selected then
+			if nameTextNotSecret and not selected then
 				tab:SetText(name)
 			end
 
