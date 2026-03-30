@@ -3063,14 +3063,11 @@ function CH:CheckLFGRoles()
 		lfgRoles[PLAYER_NAME] = CH.RoleIcons[E.myrole]
 	end
 
-	for guid, role in next, E.GroupRoles do
-		local unit = E.GroupUnitsByRole[role][guid]
-		if unit then
-			local name, realm = UnitName(unit)
-			if role and name then
-				name = (realm and realm ~= '' and name..'-'..realm) or name..'-'..PLAYER_REALM
-				lfgRoles[name] = CH.RoleIcons[role]
-			end
+	for unit, role in next, E.GroupRoles do
+		local name, realm = UnitName(unit)
+		if role and name then
+			name = (realm and realm ~= '' and name..'-'..realm) or name..'-'..PLAYER_REALM
+			lfgRoles[name] = CH.RoleIcons[role]
 		end
 	end
 end

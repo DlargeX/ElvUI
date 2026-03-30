@@ -6,23 +6,15 @@ local UnitIsTapDenied = UnitIsTapDenied
 
 function NP:ThreatIndicator_PreUpdate(unit, pass)
 	local targetUnit, db = unit..'target', NP.db.threat
-	local npcID, unitGUID = NP:UnitNPCID(targetUnit)
-
-	local targetGUID = E:UnitExists(targetUnit) and not UnitIsUnit(targetUnit, 'player') and unitGUID
-	local targetRole = E.GroupRoles[targetGUID] or 'NONE'
-	local targetTank = targetRole == 'TANK' or (db.beingTankedByPet and E.ThreatPets[npcID])
-
-	local isTank = E.myrole == 'TANK' or E.GroupRoles[E.myguid] == 'TANK'
-	local offTank = isTank and (targetTank or E:UnitTankedByGroup(unit)) and db.beingTankedByTank
+	local isTank = E.myrole == 'TANK' or E.GroupRoles.player == 'TANK'
+	local offTank = isTank and (E:UnitExists(targetUnit) and not UnitIsUnit(targetUnit, 'player')) and ((db.beingTankedByPet and E.ThreatPets[NP:UnitNPCID(targetUnit)]) or (db.beingTankedByTank and E:UnitTankedByGroup(targetUnit)))
 	local useSolo = not E.IsInGroup and db.useSoloColor
 
 	if pass then
-		return isTank, offTank, useSolo, targetGUID, targetRole
+		return isTank, offTank, useSolo
 	else
 		self.__owner.threatScale = nil
 
-		self.threatRole = targetRole
-		self.threatGUID = targetGUID
 		self.useSolo = useSolo
 		self.offTank = offTank
 		self.isTank = isTank

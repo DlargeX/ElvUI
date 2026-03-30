@@ -41,7 +41,6 @@ local UnitClassification = UnitClassification
 local UnitExists = UnitExists
 local UnitFactionGroup = UnitFactionGroup
 local UnitGroupRolesAssigned = UnitGroupRolesAssigned
-local UnitGUID = UnitGUID
 local UnitHasVehicleUI = UnitHasVehicleUI
 local UnitIsAFK = UnitIsAFK
 local UnitIsDND = UnitIsDND
@@ -49,6 +48,7 @@ local UnitIsMercenary = UnitIsMercenary
 local UnitIsPlayer = UnitIsPlayer
 local UnitIsVisible = UnitIsVisible
 local UnitSex = UnitSex
+local UnitIsUnit = UnitIsUnit
 local UnitThreatSituation = UnitThreatSituation
 local UnitSelectionType = UnitSelectionType
 
@@ -1371,7 +1371,7 @@ do -- complicated backwards compatible menu
 end
 
 function E:UnitTankedByGroup(unit)
-	for _, unitToken in next, E.GroupUnitsByRole.TANK do
+	for unitToken in next, E.GroupUnitsByRole.TANK do
 		if E:GetThreatSituation(unit, unitToken) == 3 then
 			return unitToken
 		end
@@ -1403,11 +1403,14 @@ function E:GROUP_ROSTER_UPDATE()
 	local group = isInRaid and 'raid' or 'party'
 	for i = 1, (isInRaid and GetNumGroupMembers()) or GetNumSubgroupMembers() do
 		local unit = group..i
-		local guid = UnitGUID(unit)
-		local role = E:NotSecretValue(guid) and guid and (not E.allowRoles and (GetPartyAssignment('MAINTANK', unit) and 'TANK' or 'NONE') or UnitGroupRolesAssigned(unit))
+		local role = not E.allowRoles and (GetPartyAssignment('MAINTANK', unit) and 'TANK' or 'NONE') or UnitGroupRolesAssigned(unit)
 		if role then
-			E.GroupRoles[guid] = role
-			E.GroupUnitsByRole[role][guid] = unit
+			if UnitIsUnit(unit, 'player') then
+				unit = 'player'
+			end
+
+			E.GroupRoles[unit] = role
+			E.GroupUnitsByRole[role][unit] = true
 		end
 	end
 end

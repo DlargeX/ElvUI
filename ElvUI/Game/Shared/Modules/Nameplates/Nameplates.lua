@@ -1,5 +1,6 @@
 local E, L, V, P, G = unpack(ElvUI)
 local NP = E:GetModule('NamePlates')
+local UF = E:GetModule('UnitFrames')
 local LSM = E.Libs.LSM
 local ElvUF = E.oUF
 
@@ -315,6 +316,8 @@ function NP:StylePlate(nameplate)
 	nameplate:SetScale(E.Retail and 1 or E.uiscale)
 	nameplate:ClearAllPoints()
 	nameplate:Point('CENTER')
+
+	nameplate.blizzAuras = { BuffList = {}, DebuffList = {}, CrowdControlList = {} }
 
 	nameplate.RaisedElement = NP:Construct_RaisedELement(nameplate)
 	nameplate.Health = NP:Construct_Health(nameplate)
@@ -861,7 +864,39 @@ function NP:CheckDeath(event, unit)
 	end
 end
 
-function NP:NamePlateCallBack(event, unit)
+function NP:AuraFilter(...)
+	if NP.db.useBlizzardAuras then
+		return true -- already filtered by blizzard
+	else
+		return UF.AuraFilter(self, ...)
+	end
+end
+
+function NP:BlizzardPlate_RefreshList(listFrame, aurasList)
+	if not NP.db.useBlizzardAuras then return end
+
+	local blizzPlate = self:GetParent()
+	local plate = blizzPlate and blizzPlate:GetParent()
+
+	local nameplate = plate and plate.unitFrame
+	local blizzAuras = nameplate and nameplate.blizzAuras
+	local list = blizzAuras and ((aurasList == self.buffList and blizzAuras.BuffList) or (aurasList == self.debuffList and blizzAuras.DebuffList) or (aurasList == self.crowdControlList and blizzAuras.CrowdControlList))
+	if not list then return end
+
+	wipe(list)
+
+	if listFrame:IsShown() then
+		NP:BlizzardAuras_GetAuras(aurasList, list)
+	end
+end
+
+function NP:BlizzardPlate_OnEvent(event, unit, updateInfo)
+	if not NP.db.useBlizzardAuras or (event ~= 'UNIT_AURA') then return end
+
+	NP:NamePlateCallBack(event, unit, updateInfo)
+end
+
+function NP:NamePlateCallBack(event, unit, updateInfo)
 	local success, plate = pcall(C_NamePlate_GetNamePlateForUnit, unit)
 	if not success or not plate then return end -- prevent error on restricted units
 
@@ -869,7 +904,12 @@ function NP:NamePlateCallBack(event, unit)
 	if not nameplate or not nameplate.UpdateAllElements then return end -- prevent error with plater
 	if nameplate.widgetsOnly then return end -- not required to update this one
 
-	if event == 'UNIT_FACTION' then
+	if event == 'UNIT_AURA' then
+		local element = nameplate.Buffs or nameplate.Debuffs or nameplate.Auras
+		if element then -- any of them will work, oUF will handle all three
+			element.UpdateAuras(nameplate, event, unit, updateInfo)
+		end
+	elseif event == 'UNIT_FACTION' then
 		NP.UNIT_FACTION(nameplate, event, unit)
 	elseif event == 'UNIT_HEALTH' or event == 'UNIT_MAXHEALTH' then
 		NP.CheckDeath(nameplate, event, unit)
@@ -966,6 +1006,37 @@ function NP:SetStatusBarColor(bar, r, g, b)
 
 	if bar.bg then
 		bar.bg:SetVertexColor(r, g, b, NP.multiplier)
+	end
+end
+
+function NP:GetBlizzardAuras(nameplate, which)
+	local blizzAuras = nameplate.blizzAuras
+	if not blizzAuras then return end
+
+	return NP.db.useBlizzardAuras and blizzAuras[which] or nil
+end
+
+function NP:GetBlizzardCrowdControl(nameplate)
+	return NP:GetBlizzardAuras(nameplate, 'CrowdControlList')
+end
+
+function NP:GetBlizzardBuffs(nameplate)
+	return NP:GetBlizzardAuras(nameplate, 'BuffList')
+end
+
+function NP:GetBlizzardDebuffs(nameplate)
+	return NP:GetBlizzardAuras(nameplate, 'DebuffList')
+end
+
+do
+	local ourList
+	function NP:BlizzardAuras_IterateAuras(aura)
+		ourList[self] = aura -- self is auraInstanceID
+	end
+
+	function NP:BlizzardAuras_GetAuras(aurasList, list)
+		ourList = list -- the object we want to populate
+		aurasList:Iterate(NP.BlizzardAuras_IterateAuras)
 	end
 end
 

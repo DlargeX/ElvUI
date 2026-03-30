@@ -151,8 +151,8 @@ local function CreateButton(element, index)
 	return button
 end
 
-local function customFilter(element, unit, button, name)
-	if (element.onlyShowPlayer and button.isPlayer) or (not element.onlyShowPlayer and name) then
+local function customFilter(element, unit, button, aura)
+	if (element.onlyShowPlayer and button.isPlayer) or (not element.onlyShowPlayer and aura.auraInstanceID) then
 		return true
 	end
 end
@@ -353,7 +353,8 @@ local function filterIcons(frame, which, unit, filter, limit, offset, dontHide)
 	local index = 1
 	local element = frame[which]
 	local forceShow = element.forceShow
-	local unitAuraFiltered = AuraFiltered[filter][unit]
+
+	local unitAuraFiltered = (element.GetBlizzardAuras and element:GetBlizzardAuras(frame)) or AuraFiltered[filter][unit]
 	local auraInstanceID, aura = next(unitAuraFiltered)
 	while (aura or forceShow) and (visible < limit) do
 		local result = updateAura(frame, which, unit, aura, index, offset, filter, visible)
@@ -491,6 +492,7 @@ local function Enable(self)
 			-- check if there's any anchoring restrictions
 			buffs.__restricted = not pcall(self.GetCenter, self)
 			buffs.ForceUpdate = ForceUpdate
+			buffs.UpdateAuras = UpdateAuras
 			buffs.active = {}
 
 			buffs.createdButtons = buffs.createdButtons or 0
@@ -508,6 +510,7 @@ local function Enable(self)
 			-- check if there's any anchoring restrictions
 			debuffs.__restricted = not pcall(self.GetCenter, self)
 			debuffs.ForceUpdate = ForceUpdate
+			debuffs.UpdateAuras = UpdateAuras
 			debuffs.active = {}
 
 			debuffs.createdButtons = debuffs.createdButtons or 0
@@ -525,6 +528,7 @@ local function Enable(self)
 			-- check if there's any anchoring restrictions
 			auras.__restricted = not pcall(self.GetCenter, self)
 			auras.ForceUpdate = ForceUpdate
+			auras.UpdateAuras = UpdateAuras
 			auras.active = {}
 
 			auras.createdButtons = auras.createdButtons or 0

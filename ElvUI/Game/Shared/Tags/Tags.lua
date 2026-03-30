@@ -1063,13 +1063,11 @@ for _, var in ipairs({4,8,10,15,20,25,30,35,40}) do
 		local inRange = 0
 
 		if UnitIsConnected(unit) then
-			for _, units in next, E.GroupUnitsByRole do
-				for _, unitToken in next, units do
-					if UnitIsConnected(unitToken) and not UnitIsUnit(unit, unitToken) then
-						local distance = E:GetDistance(unit, unitToken)
-						if distance and distance <= var then
-							inRange = inRange + 1
-						end
+			for unitToken in next, E.GroupRoles do
+				if UnitIsConnected(unitToken) and not UnitIsUnit(unit, unitToken) then
+					local distance = E:GetDistance(unit, unitToken)
+					if distance and distance <= var then
+						inRange = inRange + 1
 					end
 				end
 			end

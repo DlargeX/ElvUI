@@ -1618,6 +1618,7 @@ do
 	local SetFrameUp = {}
 	local SetFrameUnit = {}
 	local SetFrameHidden = {}
+	local NameplateHooked = {}
 	local DisabledElements = {}
 	local AllowedFuncs = {
 		[_G.DefaultCompactUnitFrameSetup] = true
@@ -1662,6 +1663,22 @@ do
 		frame:UnregisterAllEvents()
 
 		if isNamePlate then
+			local aurasFrame = E.Retail and frame.AurasFrame
+			if aurasFrame then
+				if NP.db.useBlizzardAuras then
+					frame:RegisterEvent('UNIT_AURA')
+				else -- assume we can have this off here
+					frame:UnregisterEvent('UNIT_AURA')
+				end
+
+				if not NameplateHooked[frame] then
+					NameplateHooked[frame] = true
+
+					hooksecurefunc(aurasFrame, 'RefreshList', NP.BlizzardPlate_RefreshList)
+					hooksecurefunc(frame, 'OnEvent', NP.BlizzardPlate_OnEvent)
+				end
+			end
+
 			pcall(frame.SetAlpha, frame, 0)
 		else
 			pcall(frame.Hide, frame)
