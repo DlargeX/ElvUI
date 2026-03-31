@@ -723,7 +723,8 @@ end
 function NP:NAME_PLATE_UNIT_ADDED(_, unit)
 	if not unit then unit = self.unit end
 
-	self.blizzPlate = self:GetParent().UnitFrame
+	local plate = self:GetParent()
+	self.blizzPlate = plate.UnitFrame
 	self.widgetsOnly = E.Retail and self.blizzPlate and UnitNameplateShowsWidgetsOnly(unit)
 	self.widgetSet = E.Retail and UnitWidgetSet(unit)
 	self.classification = UnitClassification(unit)
@@ -872,7 +873,7 @@ function NP:AuraFilter(...)
 	end
 end
 
-function NP:BlizzardPlate_RefreshList(listFrame, aurasList)
+function NP:BlizzardPlate_RefreshList(listFrame, auraList)
 	if not NP.db.useBlizzardAuras then return end
 
 	local blizzPlate = self:GetParent()
@@ -880,20 +881,28 @@ function NP:BlizzardPlate_RefreshList(listFrame, aurasList)
 
 	local nameplate = plate and plate.unitFrame
 	local blizzAuras = nameplate and nameplate.blizzAuras
-	local list = blizzAuras and ((aurasList == self.buffList and blizzAuras.BuffList) or (aurasList == self.debuffList and blizzAuras.DebuffList) or (aurasList == self.crowdControlList and blizzAuras.CrowdControlList))
-	if not list then return end
+	if not blizzAuras then return end
 
-	wipe(list)
+	local list
+	if listFrame == self.BuffListFrame and auraList == self.buffList then
+		list = blizzAuras.BuffList
+	elseif listFrame == self.DebuffListFrame and auraList == self.debuffList then
+		list = blizzAuras.DebuffList
+	elseif listFrame == self.CrowdControlListFrame and auraList == self.crowdControlList then
+		list = blizzAuras.CrowdControlList
+	end
 
-	if listFrame:IsShown() then
-		NP:BlizzardAuras_GetAuras(aurasList, list)
+	if list then
+		nameplate.allowAuraUpdate = true
+
+		NP:BlizzardAuras_UpdateAuras(list, listFrame, auraList)
 	end
 end
 
-function NP:BlizzardPlate_OnEvent(event, unit, updateInfo)
-	if not NP.db.useBlizzardAuras or (event ~= 'UNIT_AURA') then return end
+function NP:BlizzardPlate_RefreshAuras(updateInfo)
+	if not NP.db.useBlizzardAuras then return end
 
-	NP:NamePlateCallBack(event, unit, updateInfo)
+	NP:NamePlateCallBack('FAKE_REFRESH_AURAS', self.unitToken, updateInfo)
 end
 
 function NP:NamePlateCallBack(event, unit, updateInfo)
@@ -904,7 +913,11 @@ function NP:NamePlateCallBack(event, unit, updateInfo)
 	if not nameplate or not nameplate.UpdateAllElements then return end -- prevent error with plater
 	if nameplate.widgetsOnly then return end -- not required to update this one
 
-	if event == 'UNIT_AURA' then
+	if event == 'FAKE_REFRESH_AURAS' then
+		if not nameplate.allowAuraUpdate then return end
+
+		nameplate.allowAuraUpdate = nil
+
 		local element = nameplate.Buffs or nameplate.Debuffs or nameplate.Auras
 		if element then -- any of them will work, oUF will handle all three
 			element.UpdateAuras(nameplate, event, unit, updateInfo)
@@ -1009,35 +1022,30 @@ function NP:SetStatusBarColor(bar, r, g, b)
 	end
 end
 
-function NP:GetBlizzardAuras(nameplate, which)
-	local blizzAuras = nameplate.blizzAuras
-	if not blizzAuras then return end
+function NP:BlizzardAuras_UpdateAuras(list, listFrame, auraList)
+	wipe(list)
 
-	return NP.db.useBlizzardAuras and blizzAuras[which] or nil
+	for _, child in next, { listFrame:GetChildren() } do
+		list[child.auraInstanceID] = auraList[child.auraInstanceID] or nil
+	end
+end
+
+function NP:BlizzardAuras_GetAuras(nameplate, which)
+	if not NP.db.useBlizzardAuras or not nameplate.blizzAuras then return end
+
+	return nameplate.blizzAuras[which] or nil
 end
 
 function NP:GetBlizzardCrowdControl(nameplate)
-	return NP:GetBlizzardAuras(nameplate, 'CrowdControlList')
+	return NP:BlizzardAuras_GetAuras(nameplate, 'CrowdControlList')
 end
 
 function NP:GetBlizzardBuffs(nameplate)
-	return NP:GetBlizzardAuras(nameplate, 'BuffList')
+	return NP:BlizzardAuras_GetAuras(nameplate, 'BuffList')
 end
 
 function NP:GetBlizzardDebuffs(nameplate)
-	return NP:GetBlizzardAuras(nameplate, 'DebuffList')
-end
-
-do
-	local ourList
-	function NP:BlizzardAuras_IterateAuras(aura)
-		ourList[self] = aura -- self is auraInstanceID
-	end
-
-	function NP:BlizzardAuras_GetAuras(aurasList, list)
-		ourList = list -- the object we want to populate
-		aurasList:Iterate(NP.BlizzardAuras_IterateAuras)
-	end
+	return NP:BlizzardAuras_GetAuras(nameplate, 'DebuffList')
 end
 
 function NP:Initialize()

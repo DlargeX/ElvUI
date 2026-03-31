@@ -73,6 +73,11 @@ function PA:CreateAnchor(aura, parent, unit, index, db)
 	local previousAura = parent.auraIcons[index]
 	if previousAura then -- clear any old ones
 		PA:RemoveAura(previousAura)
+
+		if previousAura.anchorID then
+			reconfigure[parent] = 2
+			return -- combat stopped it
+		end
 	end
 
 	if not unit then -- try to get the unit token
@@ -213,7 +218,7 @@ function PA:CreateAura(parent, unit, index, db)
 	return aura
 end
 
-function PA:SetupPrivateAuras(parent, unit)
+function PA:SetupAuras(parent, unit)
 	local db = parent and parent.db
 	if not db then return end
 
@@ -226,13 +231,13 @@ function PA:SetupPrivateAuras(parent, unit)
 	end
 end
 
-function PA:Reconfigure()
+function PA:ReconfigureAuras()
 	for parent, value in next, reconfigure do
 		if value == 1 then
 			PA:RaidWarning_Reposition()
 		else
 			PA:RemoveAuras(parent)
-			PA:SetupPrivateAuras(parent)
+			PA:SetupAuras(parent)
 		end
 
 		reconfigure[parent] = nil
@@ -245,7 +250,7 @@ function PA:Update()
 	if E.db.general.privateAuras.enable then
 		PA.Auras:Size(E.db.general.privateAuras.icon.size)
 
-		PA:SetupPrivateAuras(PA.Auras, 'player')
+		PA:SetupAuras(PA.Auras, 'player')
 
 		E:EnableMover(PA.Auras.mover.name)
 	else
@@ -253,7 +258,7 @@ function PA:Update()
 	end
 end
 
-function PA:Update_RaidWarning()
+function PA:RaidWarning_Update()
 	PA:RaidWarning_Rescale()
 	PA.RaidWarning_Reparent(_G.PrivateRaidBossEmoteFrameAnchor)
 end
@@ -313,13 +318,13 @@ function PA:Initialize()
 	E:CreateMover(PA.Auras, 'PrivateAurasMover', L["Private Auras"], nil, nil, nil, nil, nil, 'auras,privateAuras')
 	PA:Update()
 
-	PA:RegisterEvent('PLAYER_REGEN_ENABLED', 'Reconfigure')
+	PA:RegisterEvent('PLAYER_REGEN_ENABLED', 'ReconfigureAuras')
 
 	local raidWarning = _G.PrivateRaidBossEmoteFrameAnchor
 	if raidWarning then
 		E:CreateMover(raidWarning, 'PrivateRaidWarningMover', L["Private Raid Warning"])
 
-		PA:Update_RaidWarning()
+		PA:RaidWarning_Update()
 
 		hooksecurefunc(C_UnitAuras, 'SetPrivateWarningTextAnchor', PA.RaidWarning_Reposition)
 		hooksecurefunc(raidWarning, 'SetPoint', PA.RaidWarning_Reposition)

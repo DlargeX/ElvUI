@@ -167,15 +167,11 @@ end
 function NP:Update_Auras(nameplate)
 	local db = NP:PlateDB(nameplate)
 
+	nameplate.usingBlizzardAuras = NP.db.useBlizzardAuras
+
 	if db.auras.enable or db.debuffs.enable or db.buffs.enable then
 		if not nameplate:IsElementEnabled('Auras') then
 			nameplate:EnableElement('Auras')
-		end
-
-		if NP.db.useBlizzardAuras then -- oUF wont need this we feed it the event
-			nameplate:UnregisterEvent('UNIT_AURA')
-		elseif not nameplate:IsEventRegistered('UNIT_AURA') then
-			nameplate:RegisterEvent('UNIT_AURA')
 		end
 
 		nameplate.Auras_:ClearAllPoints()

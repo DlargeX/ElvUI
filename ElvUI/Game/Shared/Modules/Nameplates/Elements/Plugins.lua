@@ -328,6 +328,6 @@ function NP:Update_PrivateAuras(nameplate, disable)
 		element:Point(E.InversePoints[db.parent.point], nameplate, db.parent.point, db.parent.offsetX, db.parent.offsetY)
 		element:Size(db.icon.size)
 
-		PA:SetupPrivateAuras(element)
+		PA:SetupAuras(element)
 	end
 end

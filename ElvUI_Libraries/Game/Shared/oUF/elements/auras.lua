@@ -151,7 +151,7 @@ local function CreateButton(element, index)
 	return button
 end
 
-local function customFilter(element, unit, button, aura)
+local function customFilter(frame, element, unit, button, aura)
 	if (element.onlyShowPlayer and button.isPlayer) or (not element.onlyShowPlayer and aura.auraInstanceID) then
 		return true
 	end
@@ -238,7 +238,7 @@ local function updateAura(frame, which, unit, aura, index, offset, filter, visib
 
 	local show = not element.forceCreate
 	if not (forceShow or element.forceCreate) then
-		show = (element.CustomFilter or customFilter) (element, unit, button, aura, name, icon,
+		show = (element.CustomFilter or customFilter) (frame, element, unit, button, aura, name, icon,
 			applications, dispelName, duration, expirationTime, sourceUnit, isStealable, nameplateShowPersonal, spellId,
 			canApplyAura, isBossAura, isFromPlayerOrPlayerPet, nameplateShowAll, timeMod)
 	end
@@ -388,7 +388,11 @@ local function filterIcons(frame, which, unit, filter, limit, offset, dontHide)
 end
 
 local function UpdateAuras(self, event, unit, updateInfo)
-	if oUF:ShouldSkipAuraUpdate(self, event, unit, updateInfo) then return end
+	if self.usingBlizzardAuras then
+		if event == 'UNIT_AURA' then return end -- we send a fake event: FAKE_REFRESH_AURAS
+	elseif oUF:ShouldSkipAuraUpdate(self, event, unit, updateInfo) then
+		return
+	end
 
 	local auras = self.Auras
 	if(auras) then
@@ -466,7 +470,7 @@ local function UpdateAuras(self, event, unit, updateInfo)
 end
 
 local function Update(self, event, unit)
-	if (self.isForced and event ~= 'ElvUI_UpdateAllElements') or (self.unit ~= unit) then return end
+	if ((self.isForced or self.usingBlizzardAuras) and event ~= 'ElvUI_UpdateAllElements') or (self.unit ~= unit) then return end
 
 	-- Assume no event means someone wants to re-anchor things. This is usually done by UpdateAllElements and :ForceUpdate.
 	if not event or event == 'ForceUpdate' or event == 'ElvUI_UpdateAllElements' then

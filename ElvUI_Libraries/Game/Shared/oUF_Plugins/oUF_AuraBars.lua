@@ -105,8 +105,8 @@ local function CreateAuraBar(element, index)
 	return bar
 end
 
-local function CustomFilter(element, unit, bar, aura, name)
-	if (element.onlyShowPlayer and bar.isPlayer) or (not element.onlyShowPlayer and name) then
+local function CustomFilter(frame, element, unit, bar, aura)
+	if (element.onlyShowPlayer and bar.isPlayer) or (not element.onlyShowPlayer and aura.auraInstanceID) then
 		return true
 	end
 end
@@ -160,7 +160,7 @@ local function UpdateBar(element, bar)
 	end
 end
 
-local function AuraUpdate(element, unit, aura, index, offset, filter, isDebuff, visible)
+local function AuraUpdate(frame, element, unit, aura, index, offset, filter, isDebuff, visible)
 	local name, texture, count, debuffType, duration, expiration, source, isStealable, nameplateShowPersonal, spellID, canApplyAura, isBossDebuff, castByPlayer, nameplateShowAll, modRate, effect1, effect2, effect3 = oUF:UnpackAuraData(aura)
 	if not name then return end
 
@@ -208,7 +208,7 @@ local function AuraUpdate(element, unit, aura, index, offset, filter, isDebuff, 
 		end
 	end
 
-	local show = (element.CustomFilter or CustomFilter) (element, unit, bar, aura, name, texture,
+	local show = (element.CustomFilter or CustomFilter) (frame, element, unit, bar, aura, name, texture,
 		count, debuffType, duration, expiration, source, isStealable, nameplateShowPersonal, spellID,
 		canApplyAura, isBossDebuff, castByPlayer, nameplateShowAll, modRate, effect1, effect2, effect3)
 
@@ -245,7 +245,7 @@ local function SetPosition(element, from, to)
 	end
 end
 
-local function FilterBars(element, unit, filter, limit, isDebuff, offset, dontHide)
+local function FilterBars(frame, element, unit, filter, limit, isDebuff, offset, dontHide)
 	if(not offset) then offset = 0 end
 	local visible = 0
 	local hidden = 0
@@ -254,7 +254,7 @@ local function FilterBars(element, unit, filter, limit, isDebuff, offset, dontHi
 	local unitAuraFiltered = AuraFiltered[filter][unit]
 	local auraInstanceID, aura = next(unitAuraFiltered)
 	while aura and (visible < limit) do
-		local result = AuraUpdate(element, unit, aura, index, offset, filter, isDebuff, visible)
+		local result = AuraUpdate(frame, element, unit, aura, index, offset, filter, isDebuff, visible)
 		if result == VISIBLE then
 			visible = visible + 1
 		elseif result == HIDDEN then
@@ -287,7 +287,7 @@ local function UpdateAuras(self, event, unit, updateInfo)
 	local isEnemy = UnitIsEnemy(unit, 'player')
 	local reaction = UnitReaction(unit, 'player')
 	local filter = (not isEnemy and (not reaction or reaction > 4) and (element.friendlyAuraType or 'HELPFUL')) or element.enemyAuraType or 'HARMFUL'
-	local visibleAuras = FilterBars(element, unit, filter, element.maxBars, filter == 'HARMFUL', 0)
+	local visibleAuras = FilterBars(self, element, unit, filter, element.maxBars, filter == 'HARMFUL', 0)
 
 	element.visibleAuras = visibleAuras
 

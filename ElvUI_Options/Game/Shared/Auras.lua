@@ -116,7 +116,7 @@ Auras.args.privateAuras.args.duration.args.offsetX = ACH:Range(L["X-Offset"], ni
 Auras.args.privateAuras.args.duration.args.offsetY = ACH:Range(L["Y-Offset"], nil, 7, { min = -60, max = 60, step = 1 })
 Auras.args.privateAuras.args.duration.inline = true
 
-Auras.args.privateAuras.args.raidWarning = ACH:Group(L["Raid Warning"], nil, 30, nil, function(info) return E.db.general.privateRaidWarning[info[#info]] end, function(info, value) E.db.general.privateRaidWarning[info[#info]] = value; PA:Update_RaidWarning() end)
+Auras.args.privateAuras.args.raidWarning = ACH:Group(L["Raid Warning"], nil, 30, nil, function(info) return E.db.general.privateRaidWarning[info[#info]] end, function(info, value) E.db.general.privateRaidWarning[info[#info]] = value; PA:RaidWarning_Update() end)
 Auras.args.privateAuras.args.raidWarning.args.scale = ACH:Range(L["Scale"], nil, 1, { min = 0.5, max = 4, step = 0.01, bigStep = 0.1 })
 Auras.args.privateAuras.args.raidWarning.inline = true
 

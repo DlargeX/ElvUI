@@ -672,7 +672,7 @@ function UF:Configure_PrivateAuras(frame)
 		element:Point(E.InversePoints[db.parent.point], frame, db.parent.point, db.parent.offsetX, db.parent.offsetY)
 		element:Size(db.icon.size)
 
-		PA:SetupPrivateAuras(element)
+		PA:SetupAuras(element)
 	end
 end
 
@@ -1666,16 +1666,14 @@ do
 			local aurasFrame = E.Retail and frame.AurasFrame
 			if aurasFrame then
 				if NP.db.useBlizzardAuras then
-					frame:RegisterEvent('UNIT_AURA')
-				else -- assume we can have this off here
-					frame:UnregisterEvent('UNIT_AURA')
+					frame:RegisterUnitEvent('UNIT_AURA', frame.unit)
 				end
 
 				if not NameplateHooked[frame] then
 					NameplateHooked[frame] = true
 
 					hooksecurefunc(aurasFrame, 'RefreshList', NP.BlizzardPlate_RefreshList)
-					hooksecurefunc(frame, 'OnEvent', NP.BlizzardPlate_OnEvent)
+					hooksecurefunc(aurasFrame, 'RefreshAuras', NP.BlizzardPlate_RefreshAuras)
 				end
 			end
 

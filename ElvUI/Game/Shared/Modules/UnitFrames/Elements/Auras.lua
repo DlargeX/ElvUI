@@ -804,9 +804,9 @@ function UF:VerifyFilter(button, aura)
 	end
 end
 
-function UF:AuraFilter(unit, button, aura, name, icon, count, debuffType, duration, expiration, source, isStealable, nameplateShowPersonal, spellID, canApplyAura, isBossAura, castByPlayer, nameplateShowAll)
+function UF:AuraFilter(element, unit, button, aura, name, icon, count, debuffType, duration, expiration, source, isStealable, nameplateShowPersonal, spellID, canApplyAura, isBossAura, castByPlayer, nameplateShowAll)
 	if not name then return end -- checking for an aura that is not there, pass nil to break while loop
-	local db = self.db
+	local db = element.db
 
 	-- this should be secret safe, rest are populated in oUF or AuraPopulate
 	button.isFriend = UnitIsFriend('player', unit) and not UnitCanAttack('player', unit)
@@ -820,18 +820,18 @@ function UF:AuraFilter(unit, button, aura, name, icon, count, debuffType, durati
 		button.priority = 0
 
 		return UF:VerifyFilter(button, aura)
-	elseif UF:AuraStacks(self, db, button, name, icon, count, spellID, source, castByPlayer) then
+	elseif UF:AuraStacks(element, db, button, name, icon, count, spellID, source, castByPlayer) then
 		return false -- stacking so dont allow it
 	end
 
 	local noDuration, allowDuration = UF:AuraDuration(db, duration)
-	if not allowDuration or not self.filterList then
+	if not allowDuration or not element.filterList then
 		button.priority = 0
 
 		return allowDuration -- Allow all auras to be shown when the filter list is empty, while obeying duration sliders
 	else
-		local myPet, otherPet, canDispel, unitIsCaster = UF:AuraPopulate(self, db, unit, button, name, icon, count, debuffType, duration, expiration, source, isStealable, spellID)
-		local pass, priority = UF:CheckFilter(source, name, spellID, canDispel, button.isFriend, button.isPlayer, unitIsCaster, myPet, otherPet, isBossAura, noDuration, castByPlayer, nameplateShowAll or (nameplateShowPersonal and (button.isPlayer or myPet)), E.MountIDs[spellID], self.filterList)
+		local myPet, otherPet, canDispel, unitIsCaster = UF:AuraPopulate(element, db, unit, button, name, icon, count, debuffType, duration, expiration, source, isStealable, spellID)
+		local pass, priority = UF:CheckFilter(source, name, spellID, canDispel, button.isFriend, button.isPlayer, unitIsCaster, myPet, otherPet, isBossAura, noDuration, castByPlayer, nameplateShowAll or (nameplateShowPersonal and (button.isPlayer or myPet)), E.MountIDs[spellID], element.filterList)
 
 		button.priority = priority or 0 -- This is the only difference from auarbars code
 
