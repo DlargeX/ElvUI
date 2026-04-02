@@ -89,7 +89,6 @@ end
 
 function NP:Construct_TargetIndicator(nameplate)
 	local TargetIndicator = CreateFrame('Frame', '$parentTargetIndicator', nameplate)
-	TargetIndicator:SetFrameLevel(0)
 
 	TargetIndicator.Shadow = CreateFrame('Frame', nil, TargetIndicator, 'BackdropTemplate')
 	TargetIndicator.Shadow:Hide()
@@ -118,6 +117,8 @@ function NP:Update_TargetIndicator(nameplate)
 
 	local tdb = NP.db.units.TARGET
 	local indicator = nameplate.TargetIndicator
+	indicator:SetFrameLevel(0)
+
 	indicator.arrow = E.Media.Arrows[NP.db.units.TARGET.arrow] or E.Media.Arrows.Arrow9
 	indicator.lowHealthThreshold = NP.db.lowHealthThreshold
 	indicator.preferGlowColor = NP.db.colors.preferGlowColor

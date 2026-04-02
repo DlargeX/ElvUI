@@ -26,7 +26,8 @@ local _, ns = ...
 local oUF = ns.oUF
 
 local UnitHasIncomingResurrection = UnitHasIncomingResurrection
-local RESURRECT_ICON = oUF.isRetail and [[Interface\RaidFrame\RaidFrame-Icon-Rez]] or [[Interface\RaidFrame\Raid-Icon-Rez]]
+local RESURRECT_ICON = [[Interface\RaidFrame\Raid-Icon-Rez]]
+local RESURRECT_ATLAS = 'RaidFrame-Icon-Rez'
 
 local function Update(self, event, unit)
 	if(self.unit ~= unit) then return end
@@ -84,7 +85,11 @@ local function Enable(self)
 		self:RegisterEvent('INCOMING_RESURRECT_CHANGED', Path)
 
 		if(element:IsObjectType('Texture') and not element:GetTexture()) then
-			element:SetTexture(RESURRECT_ICON)
+			if oUF.isRetail then
+				element:SetAtlas(RESURRECT_ATLAS)
+			else
+				element:SetTexture(RESURRECT_ICON)
+			end
 		end
 
 		return true

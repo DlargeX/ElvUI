@@ -16,7 +16,6 @@ function UF:Configure_ResurrectionIcon(frame)
 
 	if db.resurrectIcon.enable then
 		frame:EnableElement('ResurrectIndicator')
-		RI:Show()
 		RI:Size(db.resurrectIcon.size)
 
 		local attachPoint = UF:GetObjectAnchorPoint(frame, db.resurrectIcon.attachToObject)
@@ -24,6 +23,5 @@ function UF:Configure_ResurrectionIcon(frame)
 		RI:Point(db.resurrectIcon.attachTo, attachPoint, db.resurrectIcon.attachTo, db.resurrectIcon.xOffset, db.resurrectIcon.yOffset)
 	else
 		frame:DisableElement('ResurrectIndicator')
-		RI:Hide()
 	end
 end

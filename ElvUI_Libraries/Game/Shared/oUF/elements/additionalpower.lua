@@ -59,7 +59,7 @@ local StatusBarInterpolation = Enum.StatusBarInterpolation
 local MANA = { powerName = 'MANA', powerType = 0 }
 local POWER_NAME = _G.ADDITIONAL_POWER_BAR_NAME or 'MANA'
 local POWER_INDEX = _G.ADDITIONAL_POWER_BAR_INDEX or 0
-local ALT_POWER_INFO = _G.ALT_POWER_BAR_PAIR_DISPLAY_INFO or {
+local ALT_POWER_INFO = _G.ALT_POWER_BAR_PAIR_DISPLAY_INFO and CopyTable(_G.ALT_POWER_BAR_PAIR_DISPLAY_INFO) or {
 	DRUID = { [8] = CopyTable(MANA) },		-- LunarPower
 	SHAMAN = { [11] = CopyTable(MANA) },	-- Maelstrom
 	PRIEST = { [13] = CopyTable(MANA) }		-- Insanity
@@ -256,7 +256,14 @@ local function Enable(self, unit)
 		self:RegisterEvent('UNIT_DISPLAYPOWER', VisibilityPath)
 
 		if(not element.displayPairs) then
-			element.displayPairs = CopyTable(ALT_POWER_INFO)
+			local info = ALT_POWER_INFO
+
+			-- add druid info, if needed
+			if not info.DRUID then info.DRUID = {} end
+			if not info.DRUID[1] then info.DRUID[1] = CopyTable(MANA) end
+			if not info.DRUID[3] then info.DRUID[3] = CopyTable(MANA) end
+
+			element.displayPairs = info
 		end
 
 		if(element:IsObjectType('StatusBar') and not element:GetStatusBarTexture()) then

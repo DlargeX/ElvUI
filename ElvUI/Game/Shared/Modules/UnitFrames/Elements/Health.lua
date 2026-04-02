@@ -355,15 +355,13 @@ function UF:PostUpdateHealthColor(unit, color)
 	end
 end
 
-function UF:PostUpdateHealth(_, cur)
+function UF:PostUpdateHealth()
 	local parent = self:GetParent()
-	if parent.isForced then
-		self.cur = random(1, 100)
-		self.max = 100
+	if not parent.isForced then return end
 
-		self:SetMinMaxValues(0, self.max)
-		self:SetValue(self.cur)
-	elseif parent.ResurrectIndicator then
-		parent.ResurrectIndicator:SetAlpha((E:NotSecretValue(cur) and cur == 0) and 1 or 0)
-	end
+	self.cur = random(1, 100)
+	self.max = 100
+
+	self:SetMinMaxValues(0, self.max)
+	self:SetValue(self.cur)
 end

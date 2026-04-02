@@ -2187,13 +2187,11 @@ function CH:MessageFormatter(frame, info, chatType, chatGroup, chatTarget, chann
 	local senderLink = linkSender and playerLink or arg2
 	if usingDifferentLanguage then
 		body = format(_G['CHAT_'..chatType..'_GET']..'[%s] %s', pflag..senderLink, arg3, message) -- arg3 is language header
-	elseif not isProtected and chatType == 'GUILD_ITEM_LOOTED' then
-		body = gsub(message, '$s', senderLink, 1)
-	elseif not isProtected and realm and chatType == 'TEXT_EMOTE' then
-		local classLink = playerLink and (info.colorNameByClass and gsub(playerLink, '(|h|c.-)|r|h$','%1-'..realm..'|r|h') or gsub(playerLink, '(|h.-)|h$','%1-'..realm..'|h'))
-		body = classLink and gsub(message, arg2..'%-'..realm, pflag..classLink, 1) or message
+	elseif chatType == 'GUILD_ITEM_LOOTED' then
+		body = not isProtected and gsub(message, '$s', senderLink, 1) or message
 	elseif chatType == 'TEXT_EMOTE' then
-		body = (E:NotSecretValue(arg2) and arg2 ~= senderLink) and gsub(message, arg2, senderLink, 1) or message
+		local classLink = realm and playerLink and not isProtected and (info.colorNameByClass and gsub(playerLink, '(|h|c.-)|r|h$','%1-'..realm..'|r|h') or gsub(playerLink, '(|h.-)|h$','%1-'..realm..'|h'))
+		body = (classLink and gsub(message, arg2..'%-'..realm, pflag..classLink, 1)) or ((E:NotSecretValue(arg2) and arg2 ~= senderLink) and gsub(message, arg2, senderLink, 1)) or message
 	else
 		body = format(_G['CHAT_'..chatType..'_GET']..message, pflag..senderLink)
 	end
@@ -3778,7 +3776,7 @@ function CH:VoiceOverlay(event, ...)
 	if event == 'VOICE_CHAT_CHANNEL_MEMBER_SPEAKING_STATE_CHANGED' then
 		local memberID, channelID, isTalking = ...
 
-		if isTalking then
+		if E:NotSecretValue(isTalking) and isTalking then
 			CH.TalkingList[memberID] = channelID
 			CH:ConfigureHead(memberID, channelID)
 		else

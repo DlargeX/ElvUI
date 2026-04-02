@@ -24,13 +24,13 @@ function NP:Castbar_CheckInterrupt(unit)
 
 	local notInterruptible = E:NotSecretValue(self.notInterruptible) and self.notInterruptible
 	if notInterruptible and UnitCanAttack('player', unit) then
-		self:SetStatusBarColor(NP.db.colors.castNoInterruptColor.r, NP.db.colors.castNoInterruptColor.g, NP.db.colors.castNoInterruptColor.b, NP.db.colors.castNoInterruptColor.a)
+		NP:SetStatusBarColor(self, NP.db.colors.castNoInterruptColor.r, NP.db.colors.castNoInterruptColor.g, NP.db.colors.castNoInterruptColor.b, NP.db.colors.castNoInterruptColor.a)
 
 		if self.Icon and NP.db.colors.castbarDesaturate then
 			self.Icon:SetDesaturated(true)
 		end
 	else
-		self:SetStatusBarColor(NP.db.colors.castColor.r, NP.db.colors.castColor.g, NP.db.colors.castColor.b, NP.db.colors.castColor.a)
+		NP:SetStatusBarColor(self, NP.db.colors.castColor.r, NP.db.colors.castColor.g, NP.db.colors.castColor.b, NP.db.colors.castColor.a)
 
 		if self.Icon then
 			self.Icon:SetDesaturated(false)
@@ -109,7 +109,7 @@ function NP:Castbar_PostCastStart(unit)
 end
 
 function NP:Castbar_PostCastFail()
-	self:SetStatusBarColor(NP.db.colors.castInterruptedColor.r, NP.db.colors.castInterruptedColor.g, NP.db.colors.castInterruptedColor.b)
+	NP:SetStatusBarColor(self, NP.db.colors.castInterruptedColor.r, NP.db.colors.castInterruptedColor.g, NP.db.colors.castInterruptedColor.b)
 end
 
 function NP:Castbar_PostCastInterruptible(unit)
@@ -117,7 +117,7 @@ function NP:Castbar_PostCastInterruptible(unit)
 end
 
 function NP:Castbar_PostCastInterrupted(unit, spellID, interruptedBy)
-	self:SetStatusBarColor(NP.db.colors.castInterruptedColor.r, NP.db.colors.castInterruptedColor.g, NP.db.colors.castInterruptedColor.b)
+	NP:SetStatusBarColor(self, NP.db.colors.castInterruptedColor.r, NP.db.colors.castInterruptedColor.g, NP.db.colors.castInterruptedColor.b)
 
 	if not interruptedBy then return end
 
@@ -143,8 +143,6 @@ function NP:Construct_Castbar(nameplate)
 	local castbarTexture = LSM:Fetch('statusbar', NP.db.statusbar)
 
 	local castbar = CreateFrame('StatusBar', '$parentCastbar', nameplate)
-	castbar:SetFrameStrata(nameplate:GetFrameStrata())
-	castbar:SetFrameLevel(5)
 	castbar:CreateBackdrop('Transparent', nil, nil, nil, nil, true)
 	castbar:SetStatusBarTexture(castbarTexture)
 
@@ -196,7 +194,7 @@ function NP:Construct_Castbar(nameplate)
 		castbar.TargetText:SetText(E.myname)
 		castbar.Time:SetText('3.1')
 		castbar.Icon:SetTexture([[Interface\Icons\Achievement_Character_Pandaren_Female]])
-		castbar:SetStatusBarColor(NP.db.colors.castColor.r, NP.db.colors.castColor.g, NP.db.colors.castColor.b, NP.db.colors.castColor.a)
+		NP:SetStatusBarColor(castbar, NP.db.colors.castColor.r, NP.db.colors.castColor.g, NP.db.colors.castColor.b, NP.db.colors.castColor.a)
 	end
 
 	return castbar
@@ -244,6 +242,7 @@ function NP:Update_Castbar(nameplate)
 		castbar.channelTimeFormat = db.channelTimeFormat
 		castbar.pipColor = NP.db.colors.empoweredCast
 
+		castbar:SetFrameLevel(5)
 		castbar:ClearAllPoints()
 		castbar:Point(E.InversePoints[db.anchorPoint], nameplate, db.anchorPoint, db.xOffset, db.yOffset)
 		castbar:Size(db.width, db.height)

@@ -71,6 +71,7 @@ UF.badHeaderPoints = {
 UF.headerFunctions = {}
 UF.classMaxResourceBar = { -- also used by Nameplates
 	DEATHKNIGHT = 6,
+	DEMONHUNTER = 6,
 	SHAMAN = E.Retail and 10 or nil,
 	PALADIN = 5,
 	WARLOCK = 5,
@@ -79,7 +80,8 @@ UF.classMaxResourceBar = { -- also used by Nameplates
 	MAGE = 4,
 	ROGUE = 7,
 	DRUID = 5,
-	PRIEST = 3
+	PRIEST = 3,
+	HUNTER = 3
 }
 
 function UF:GetAuraSortTime(which, a, b)
@@ -561,9 +563,11 @@ function UF:UpdateColors()
 	if not ElvUF.colors.ClassBars.MAGE then ElvUF.colors.ClassBars.MAGE = {} end
 	ElvUF.colors.ClassBars.MAGE.FROST_ICICLES = E:SetColorTable(ElvUF.colors.ClassBars.MAGE.FROST_ICICLES, db.classResources.MAGE.FROST_ICICLES)
 	ElvUF.colors.ClassBars.MAGE.ARCANE_CHARGES = E:SetColorTable(ElvUF.colors.ClassBars.MAGE.ARCANE_CHARGES, db.classResources.MAGE.ARCANE_CHARGES)
+	ElvUF.colors.ClassBars.MAGE.FIRE_BLAST = E:SetColorTable(ElvUF.colors.ClassBars.MAGE.FIRE_BLAST, db.classResources.MAGE.FIRE_BLAST)
 
 	if not ElvUF.colors.ClassBars.DEMONHUNTER then ElvUF.colors.ClassBars.DEMONHUNTER = {} end
 	ElvUF.colors.ClassBars.DEMONHUNTER.SOUL_FRAGMENTS = E:SetColorTable(ElvUF.colors.ClassBars.DEMONHUNTER.SOUL_FRAGMENTS, db.classResources.DEMONHUNTER.SOUL_FRAGMENTS)
+	ElvUF.colors.ClassBars.DEMONHUNTER.SOUL_CLEAVE = E:SetColorTable(ElvUF.colors.ClassBars.DEMONHUNTER.SOUL_CLEAVE, db.classResources.DEMONHUNTER.SOUL_CLEAVE)
 
 	if not ElvUF.colors.ClassBars.WARLOCK then ElvUF.colors.ClassBars.WARLOCK = {} end
 	ElvUF.colors.ClassBars.WARLOCK.SOUL_SHARDS = E:SetColorTable(ElvUF.colors.ClassBars.WARLOCK.SOUL_SHARDS, db.classResources.WARLOCK.SOUL_SHARDS)

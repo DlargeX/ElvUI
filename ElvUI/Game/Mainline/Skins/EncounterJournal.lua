@@ -317,10 +317,12 @@ local function CollapseSetAtlas(collapse, atlas)
 end
 
 local function CollapseMouseUp(btn)
-	btn:OnClick() -- is this safe?
+	if btn.button then -- is this safe?
+		btn.button:OnClick()
+	end
 end
 
-local function CreateCollapseButton(frame, collapse)
+local function CreateCollapseButton(frame, button, collapse)
 	local btn = CreateFrame('Button', nil, frame)
 	btn:Point('TOPLEFT', collapse)
 	btn:StripTextures()
@@ -328,6 +330,14 @@ local function CreateCollapseButton(frame, collapse)
 	btn:SetFrameLevel(4)
 	btn:Size(17)
 	btn:Hide()
+
+	if not btn.button then
+		btn.button = button
+	end
+
+	if not btn.collapse then
+		btn.collapse = collapse
+	end
 
 	if not btn.minus then
 		btn.minus = btn:CreateTexture(nil, 'OVERLAY', nil, 1)
@@ -357,7 +367,7 @@ local function HandleCollapseButtons(frame)
 	for _, button in next, { frame.ScrollTarget:GetChildren() } do
 		local collapse = button.HeaderCollapseIndicator
 		if collapse and not collapse.collapseIndicator then
-			collapse.collapseIndicator = CreateCollapseButton(frame, collapse)
+			collapse.collapseIndicator = CreateCollapseButton(frame, button, collapse)
 			collapse:SetAlpha(0)
 		end
 	end

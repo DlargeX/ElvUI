@@ -7,7 +7,7 @@ local ElvUF = E.oUF
 local _G = _G
 local pcall, hooksecurefunc = pcall, hooksecurefunc
 local next, strsplit, tonumber = next, strsplit, tonumber
-local pairs, ipairs, wipe, tinsert = pairs, ipairs, wipe, tinsert
+local pairs, wipe, tinsert = pairs, wipe, tinsert
 
 local CreateFrame = CreateFrame
 local IsInInstance = IsInInstance
@@ -19,7 +19,6 @@ local UnitCreatureType = UnitCreatureType
 local UnitFactionGroup = UnitFactionGroup
 local UnitGUID = UnitGUID
 local UnitIsBattlePet = UnitIsBattlePet
-local UnitIsDead = UnitIsDead
 local UnitIsEnemy = UnitIsEnemy
 local UnitIsFriend = UnitIsFriend
 local UnitIsGameObject = UnitIsGameObject
@@ -31,6 +30,7 @@ local UnitReaction = UnitReaction
 local UnitWidgetSet = UnitWidgetSet
 
 local UnitNameplateShowsWidgetsOnly = UnitNameplateShowsWidgetsOnly
+local IsAuraFilteredOutByInstanceID = C_UnitAuras.IsAuraFilteredOutByInstanceID
 
 local C_NamePlate_GetNamePlateForUnit = C_NamePlate.GetNamePlateForUnit
 local C_NamePlate_SetNamePlateEnemySize = C_NamePlate.SetNamePlateEnemySize
@@ -240,7 +240,6 @@ end
 
 function NP:Construct_RaisedELement(nameplate)
 	local RaisedElement = CreateFrame('Frame', '$parent_RaisedElement', nameplate)
-	RaisedElement:SetFrameStrata(nameplate:GetFrameStrata())
 	RaisedElement:SetFrameLevel(10)
 	RaisedElement:SetAllPoints()
 	RaisedElement:EnableMouse(false)
@@ -352,6 +351,57 @@ function NP:StylePlate(nameplate)
 	hooksecurefunc(nameplate, 'UpdateAllElements', NP.PostUpdateAllElements)
 end
 
+do
+	local elements = {
+		'QuestIcons',
+		'Highlight',
+		'Portrait',
+		'PVPRole'
+	}
+
+	function NP:ReparentNotNameonly(nameplate, parent)
+		for _, name in next, elements do
+			local element = nameplate[name]
+			if element then
+				element:SetParent(parent or nameplate)
+			end
+		end
+	end
+end
+
+do
+	local elements = {
+		'Health',
+		'HealthPrediction',
+		'Power',
+		'ClassificationIndicator',
+		'Castbar',
+		'ThreatIndicator',
+		'TargetIndicator',
+		'ClassPower',
+		'PvPIndicator',
+		'PvPClassificationIndicator',
+		'Auras_',
+		'Buffs_',
+		'Debuffs_'
+	}
+
+	if E.myclass == 'DEATHKNIGHT' then
+		tinsert(elements, 'Runes')
+	elseif E.myclass == 'MONK' then
+		tinsert(elements, 'Stagger')
+	end
+
+	function NP:ReparentElements(nameplate, parent)
+		for _, name in next, elements do
+			local element = nameplate[name]
+			if element then
+				element:SetParent(parent or nameplate)
+			end
+		end
+	end
+end
+
 function NP:UpdatePlate(nameplate, updateBase)
 	NP:Update_RaidTargetIndicator(nameplate)
 	NP:Update_PVPRole(nameplate)
@@ -367,6 +417,9 @@ function NP:UpdatePlate(nameplate, updateBase)
 			nameplate.ClassPower:SetAlpha(0)
 		end
 	elseif updateBase and db.enable then
+		NP:ReparentElements(nameplate)
+		NP:ReparentNotNameonly(nameplate)
+
 		NP:Update_Tags(nameplate)
 		NP:Update_Health(nameplate)
 		NP:Update_HealthPrediction(nameplate)
@@ -388,49 +441,15 @@ function NP:UpdatePlate(nameplate, updateBase)
 		if nameplate == NP.PlayerFrame then
 			NP:Update_Fader(nameplate)
 		end
-	elseif db.enable then
-		NP:Update_Health(nameplate, true) -- this will only reset the ouf vars so it won't hold stale threat ones
 	end
-end
-
-NP.DisableInNotNameOnly = {
-	'QuestIcons',
-	'Highlight',
-	'Portrait',
-	'PVPRole'
-}
-
-NP.DisableElements = {
-	'Health',
-	'HealthPrediction',
-	'Power',
-	'ClassificationIndicator',
-	'Castbar',
-	'ThreatIndicator',
-	'TargetIndicator',
-	'ClassPower',
-	'PvPIndicator',
-	'PvPClassificationIndicator',
-	'Auras'
-}
-
-if E.myclass == 'DEATHKNIGHT' then
-	tinsert(NP.DisableElements, 'Runes')
-elseif E.myclass == 'MONK' then
-	tinsert(NP.DisableElements, 'Stagger')
 end
 
 function NP:DisablePlate(nameplate, nameOnly, hideRaised)
-	for _, element in ipairs(NP.DisableElements) do
-		if nameplate:IsElementEnabled(element) then
-			nameplate:DisableElement(element)
-		end
-	end
-
 	if hideRaised and nameplate.RaisedElement:IsShown() then
-		nameplate.RaisedElement:Hide()
+		nameplate.RaisedElement:Hide() -- reshown by NAME_PLATE_UNIT_ADDED
 	end
 
+	NP:ReparentElements(nameplate, E.HiddenFrame)
 	NP:Update_PrivateAuras(nameplate, true)
 
 	if nameOnly then
@@ -460,11 +479,7 @@ function NP:DisablePlate(nameplate, nameOnly, hideRaised)
 			NP:SetupTarget(nameplate, true)
 		end
 	else
-		for _, element in ipairs(NP.DisableInNotNameOnly) do
-			if nameplate:IsElementEnabled(element) then
-				nameplate:DisableElement(element)
-			end
-		end
+		NP:ReparentNotNameonly(nameplate, E.HiddenFrame)
 	end
 end
 
@@ -712,12 +727,7 @@ function NP:UpdatePlateBase(nameplate)
 end
 
 function NP:PLAYER_TARGET_CHANGED(_, unit)
-	if self then
-		self.isDead = UnitIsDead(unit)
-	end
-
-	-- pass it, even as nil here
-	NP:SetupTarget(self)
+	NP:SetupTarget(self) -- pass it, even as nil here
 end
 
 function NP:NAME_PLATE_UNIT_ADDED(_, unit)
@@ -734,7 +744,6 @@ function NP:NAME_PLATE_UNIT_ADDED(_, unit)
 	self.isFriend = UnitIsFriend('player', unit)
 	self.isEnemy = UnitIsEnemy('player', unit)
 	self.isPlayer = UnitIsPlayer(unit)
-	self.isDead = UnitIsDead(unit)
 	self.isGameObject = UnitIsGameObject(unit)
 	self.isPVPSanctuary = UnitIsPVPSanctuary(unit)
 	self.isBattlePet = not E.Classic and UnitIsBattlePet(unit)
@@ -781,7 +790,7 @@ function NP:NAME_PLATE_UNIT_ADDED(_, unit)
 		self.widgetContainer:SetPoint(E.InversePoints[point], self, point, db.xOffset, db.yOffset)
 	end
 
-	if self.widgetsOnly or self.isGameObject or (self.isDead and not self.isPlayer) then
+	if self.widgetsOnly or self.isGameObject then
 		NP:DisablePlate(self, nil, true)
 
 		self.previousType = nil -- dont get the plate stuck for next unit
@@ -841,28 +850,22 @@ function NP:NAME_PLATE_UNIT_REMOVED(event, unit)
 	self.npcID = nil -- just cause
 end
 
-function NP:UNIT_FACTION(event, unit)
+function NP:UNIT_FACTION(_, unit)
+	if not unit or self.unit ~= unit then return end
+
+	self.isMe = UnitIsUnit(unit, 'player')
 	self.reaction = UnitReaction('player', unit) -- Player Reaction
 	self.repReaction = UnitReaction(unit, 'player') -- Reaction to Player
 	self.isFriend = UnitIsFriend('player', unit)
 	self.isEnemy = UnitIsEnemy('player', unit)
 	self.faction = UnitFactionGroup(unit)
+	self.isPVPSanctuary = UnitIsPVPSanctuary(unit)
 	self.battleFaction = E:GetUnitBattlefieldFaction(unit)
 	self.classColor = (self.isPlayer and E:ClassColor(self.classFile)) or (self.repReaction and NP.Colors.reactions[self.repReaction]) or nil
 
 	NP:UpdatePlateType(self)
 	NP:UpdatePlateSize(self)
 	NP:UpdatePlateBase(self)
-end
-
-function NP:CheckDeath(event, unit)
-	self.isDead = UnitIsDead(unit)
-
-	if self.isDead and not self.isPlayer then
-		NP:DisablePlate(self, nil, true)
-
-		self.previousType = nil -- dont get the plate stuck for next unit
-	end
 end
 
 function NP:AuraFilter(...)
@@ -883,19 +886,19 @@ function NP:BlizzardPlate_RefreshList(listFrame, auraList)
 	local blizzAuras = nameplate and nameplate.blizzAuras
 	if not blizzAuras then return end
 
-	local list
+	local list, filter
 	if listFrame == self.BuffListFrame and auraList == self.buffList then
-		list = blizzAuras.BuffList
+		list, filter = blizzAuras.BuffList, 'HELPFUL|INCLUDE_NAME_PLATE_ONLY'
 	elseif listFrame == self.DebuffListFrame and auraList == self.debuffList then
-		list = blizzAuras.DebuffList
+		list, filter = blizzAuras.DebuffList, 'HARMFUL|INCLUDE_NAME_PLATE_ONLY|PLAYER'
 	elseif listFrame == self.CrowdControlListFrame and auraList == self.crowdControlList then
-		list = blizzAuras.CrowdControlList
+		list, filter = blizzAuras.CrowdControlList, 'HARMFUL|INCLUDE_NAME_PLATE_ONLY'
 	end
 
 	if list then
 		nameplate.allowAuraUpdate = true
 
-		NP:BlizzardAuras_UpdateAuras(list, listFrame, auraList)
+		NP:BlizzardAuras_UpdateAuras(list, listFrame, auraList, filter)
 	end
 end
 
@@ -924,8 +927,6 @@ function NP:NamePlateCallBack(event, unit, updateInfo)
 		end
 	elseif event == 'UNIT_FACTION' then
 		NP.UNIT_FACTION(nameplate, event, unit)
-	elseif event == 'UNIT_HEALTH' or event == 'UNIT_MAXHEALTH' then
-		NP.CheckDeath(nameplate, event, unit)
 	end
 end
 
@@ -1022,11 +1023,11 @@ function NP:SetStatusBarColor(bar, r, g, b)
 	end
 end
 
-function NP:BlizzardAuras_UpdateAuras(list, listFrame, auraList)
+function NP:BlizzardAuras_UpdateAuras(list, listFrame, auraList, filter)
 	wipe(list)
 
 	for _, child in next, { listFrame:GetChildren() } do
-		list[child.auraInstanceID] = auraList[child.auraInstanceID] or nil
+		list[child.auraInstanceID] = not IsAuraFilteredOutByInstanceID(child.unitToken, child.auraInstanceID, filter) and auraList[child.auraInstanceID] or nil
 	end
 end
 
@@ -1142,11 +1143,9 @@ function NP:Initialize()
 	NP:RegisterEvent('PLAYER_REGEN_ENABLED')
 	NP:RegisterEvent('PLAYER_REGEN_DISABLED')
 	NP:RegisterEvent('PLAYER_ENTERING_WORLD')
-	NP:RegisterEvent('UNIT_FACTION', 'NamePlateCallBack')
-	NP:RegisterEvent('UNIT_HEALTH', 'NamePlateCallBack')
-	NP:RegisterEvent('UNIT_MAXHEALTH', 'NamePlateCallBack')
 	NP:RegisterEvent('PLAYER_UPDATE_RESTING', 'EnviromentConditionals')
 	NP:RegisterEvent('ZONE_CHANGED_NEW_AREA', 'EnviromentConditionals')
+	NP:RegisterEvent('UNIT_FACTION', 'NamePlateCallBack')
 
 	if not E.Retail then
 		NP:RegisterEvent('COMBAT_LOG_EVENT_UNFILTERED')

@@ -4,9 +4,8 @@ local NP = E:GetModule('NamePlates')
 local ACD = E.Libs.AceConfigDialog
 local ACH = E.Libs.ACH
 
-local pairs, type, strsplit = pairs, type, strsplit
-local wipe, next, tonumber = wipe, next, tonumber
-local format = format
+local wipe, next, pairs, type = wipe, next, pairs, type
+local format, tonumber, strsplit = format, tonumber, strsplit
 
 local IsShiftKeyDown = IsShiftKeyDown
 local IsControlKeyDown = IsControlKeyDown
@@ -195,8 +194,8 @@ local function GetUnitSettings(unit, name)
 	group.args.healthGroup.args.textGroup.args.format = ACH:Input(L["Text Format"], nil, 6, nil, TEXT_FORMAT_WIDTH)
 	group.args.healthGroup.args.textGroup.args.text_reset = ACH:Execute(L["Reset Text"], L["Reset the Text Format to default."], 7, function() E.db.nameplates.units[unit].health.text.format = P.nameplates.units[unit].health.text.format NP:ConfigureAll() end)
 
-	group.args.healthGroup.args.useClassificationColor = ACH:Toggle(L["Use Classification Color"], nil, 10)
-	group.args.healthGroup.args.useClassificationColorInInstance = ACH:Toggle(E.NewSign..L["In Instances"], L["Use classification color only in instances."], 11, nil, nil, nil, nil, nil, nil, function() return not E.db.nameplates.units[unit].health.useClassificationColor end)
+	group.args.healthGroup.args.useClassificationColor = ACH:Toggle(L["Classification Color"], nil, 10)
+	group.args.healthGroup.args.useClassificationColorInInstance = ACH:Toggle(L["In Instances"], L["Use classification color only in instances."], 11, nil, nil, nil, nil, nil, nil, function() return not E.db.nameplates.units[unit].health.useClassificationColor end)
 
 	group.args.healthGroup.args.textGroup.args.fontGroup = ACH:Group('', nil, 20)
 	group.args.healthGroup.args.textGroup.args.fontGroup.inline = true
@@ -456,7 +455,7 @@ NamePlates.generalGroup.args.motionType = ACH:Select(L["UNIT_NAMEPLATES_TYPES"],
 NamePlates.generalGroup.args.showEnemyCombat = ACH:Select(L["Enemy Combat Toggle"], L["Control enemy nameplates toggling on or off when in combat."], 2, { DISABLED = L["Disable"], TOGGLE_ON = L["Toggle On While In Combat"], TOGGLE_OFF = L["Toggle Off While In Combat"] }, nil, nil, nil, function(info, value) E.db.nameplates[info[#info]] = value NP:PLAYER_REGEN_ENABLED() end)
 NamePlates.generalGroup.args.showFriendlyCombat = ACH:Select(L["Friendly Combat Toggle"], L["Control friendly nameplates toggling on or off when in combat."], 3, { DISABLED = L["Disable"], TOGGLE_ON = L["Toggle On While In Combat"], TOGGLE_OFF = L["Toggle Off While In Combat"] }, nil, nil, nil, function(info, value) E.db.nameplates[info[#info]] = value NP:PLAYER_REGEN_ENABLED() end)
 NamePlates.generalGroup.args.spacer1 = ACH:Spacer(5)
-NamePlates.generalGroup.args.useBlizzardAuras = ACH:Toggle(E.NewSign..L["Blizzard Auras"], nil, 6)
+NamePlates.generalGroup.args.useBlizzardAuras = ACH:Toggle(E.NewSign..L["Blizzard Auras"], L["Displays Buffs and Debuffs exactly like on default Blizzard Nameplates. This option disables all ElvUI filters."], 6)
 NamePlates.generalGroup.args.clampToScreen = ACH:Toggle(L["Clamp Nameplates"], L["Clamp nameplates to the top of the screen when outside of view."], 7)
 NamePlates.generalGroup.args.highlight = ACH:Toggle(L["Hover Highlight"], nil, 8)
 NamePlates.generalGroup.args.fadeIn = ACH:Toggle(L["Alpha Fading"], nil, 9)
@@ -597,9 +596,10 @@ NamePlates.generalGroup.args.threatGroup.args.goodScale = ACH:Range(L["Good Scal
 NamePlates.generalGroup.args.threatGroup.args.badScale = ACH:Range(L["Bad Scale"], nil, 2, { min = .5, max = 1.5, step = .01, isPercent = true }, nil, nil, nil, function() return not E.db.nameplates.threat.enable end)
 NamePlates.generalGroup.args.threatGroup.args.useThreatColor = ACH:Toggle(L["Use Threat Color"], nil, 3)
 NamePlates.generalGroup.args.threatGroup.args.useSoloColor = ACH:Toggle(L["Use Solo Color"], L["Use solo threat color when not in a group."], 4, nil, nil, nil, nil, nil, function() return not E.db.nameplates.threat.useThreatColor end)
-NamePlates.generalGroup.args.threatGroup.args.beingTankedByTank = ACH:Toggle(L["Off Tank"], L["Use Off Tank Color when another Tank has threat."], 5, nil, nil, nil, nil, nil, function() return not E.db.nameplates.threat.useThreatColor end)
-NamePlates.generalGroup.args.threatGroup.args.beingTankedByPet = ACH:Toggle(L["Off Tank (Pets)"], nil, 6, nil, nil, nil, nil, nil, function() return not E.db.nameplates.threat.useThreatColor end)
-NamePlates.generalGroup.args.threatGroup.args.indicator = ACH:Toggle(L["Show Icon"], nil, 7, nil, nil, nil, nil, nil, function() return not E.db.nameplates.threat.enable end)
+NamePlates.generalGroup.args.threatGroup.args.skipGoodColor = ACH:Toggle(E.NewSign..L["Skip Good Color"], L["Threat wont set the good color to health.\n\n|cffff3333Note:|r Useful for Classification color."], 5)
+NamePlates.generalGroup.args.threatGroup.args.beingTankedByTank = ACH:Toggle(L["Off Tank"], L["Use Off Tank Color when another Tank has threat."], 6, nil, nil, nil, nil, nil, function() return not E.db.nameplates.threat.useThreatColor end)
+NamePlates.generalGroup.args.threatGroup.args.beingTankedByPet = ACH:Toggle(L["Off Tank (Pets)"], nil, 7, nil, nil, nil, nil, nil, function() return not E.db.nameplates.threat.useThreatColor end)
+NamePlates.generalGroup.args.threatGroup.args.indicator = ACH:Toggle(L["Show Icon"], nil, 8, nil, nil, nil, nil, nil, function() return not E.db.nameplates.threat.enable end)
 
 NamePlates.generalGroup.args.widgetGroup = ACH:Group(L["Widget"], nil, 90, nil, function(info) return E.db.nameplates.widgets[info[#info]] end, function(info, value) E.db.nameplates.widgets[info[#info]] = value NP:ConfigureAll() end)
 NamePlates.generalGroup.args.widgetGroup.args.xOffset = ACH:Range(L["X-Offset"], nil, 1, { min = -100, max = 100, step = 1 })
@@ -672,12 +672,10 @@ do
 		eliteMini = { order = 3, name = L["Elite Mini"] },
 		rareelite = { order = 4, name = L["Rare Elite"] },
 		rare = { order = 5, name = L["Rare"] },
-		caster = { order = 6, name = L["Caster"] },
-		melee = { order = 7, name = L["Melee"] }
+		caster = { order = 6, name = L["Caster"] }
 	}
 
-	for key in next, NP.db.colors.classification do
-		local info = data[key]
+	for key, info in next, data do
 		NamePlates.colorsGroup.args.classification.args[key] = ACH:Color(info.name, nil, info.order)
 	end
 end

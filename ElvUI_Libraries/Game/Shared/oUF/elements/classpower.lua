@@ -46,10 +46,12 @@ local SPEC_MAGE_FIRE = SPEC_MAGE_FIRE or 2
 local SPEC_MAGE_FROST = SPEC_MAGE_FROST or 3
 local SPEC_PRIEST_SHADOW = SPEC_PRIEST_SHADOW or 3
 local SPEC_MONK_WINDWALKER = SPEC_MONK_WINDWALKER or 3
+local SPEC_HUNTER_SURVIVAL = SPEC_HUNTER_SURVIVAL or 3
 local SPEC_SHAMAN_ELEMENTAL = SPEC_SHAMAN_ELEMENTAL or 1
 local SPEC_SHAMAN_ENHANCEMENT = SPEC_SHAMAN_ENHANCEMENT or 2
 local SPEC_WARLOCK_DEMONOLOGY = SPEC_WARLOCK_DEMONOLOGY or 2
 local SPEC_WARLOCK_DESTRUCTION = SPEC_WARLOCK_DESTRUCTION or 3
+local SPEC_DEMONHUNTER_VENGEANCE = SPEC_DEMONHUNTER_VENGEANCE or 2
 local SPEC_DEMONHUNTER_DEVOURER = SPEC_DEMONHUNTER_DEVOURER or 3
 local SPEC_EVOKER_AUGMENTATION = SPEC_EVOKER_AUGMENTATION or 3
 
@@ -69,9 +71,13 @@ local POWERTYPE_SHADOW_ORBS = Enum.PowerType.ShadowOrbs or 28
 local POWERTYPE_ICICLES = -1
 local POWERTYPE_MAELSTROM = -2
 local POWERTYPE_FIREBLAST = -3
-local POWERTYPE_SOUL_FRAGMENTS = -4 -- wait this isnt fake kek
-local POWERTYPE_EBON_MIGHT = -5 -- wait this isnt fake either
+local POWERTYPE_SPEAR_TIP = -4
+local POWERTYPE_SOUL_CLEAVE = -5
+local POWERTYPE_SOUL_FRAGMENTS = -6 -- wait this isnt fake kek
+local POWERTYPE_EBON_MIGHT = -7 -- wait this isnt fake either
 
+local SPELL_SPEAR_TIP = 260286
+local SPELL_SOUL_CLEAVE = 228477
 local SPELL_FIRE_BLAST = 108853 -- currently can be secret; so not allowing it
 local SPELL_EBON_MIGHT = 395296
 local SPELL_DARK_HEART = 1225789
@@ -101,6 +107,7 @@ local GetCollapsingStarCost = GetCollapsingStarCost
 local GetComboPoints = GetComboPoints
 
 local GetSpellCharges = C_Spell.GetSpellCharges
+local GetSpellCastCount = C_Spell.GetSpellCastCount
 local GetPlayerAuraBySpellID = C_UnitAuras.GetPlayerAuraBySpellID
 local GetSpellMaxCumulativeAuraApplications = C_Spell.GetSpellMaxCumulativeAuraApplications
 local GetSpecialization = C_SpecializationInfo.GetSpecialization or GetSpecialization
@@ -115,7 +122,9 @@ local ClassPowerType = {
 	[POWERTYPE_ARCANE_CHARGES] = 'ARCANE_CHARGES',
 	[POWERTYPE_ICICLES] = 'FROST_ICICLES',
 	[POWERTYPE_MAELSTROM] = 'MAELSTROM',
-	[POWERTYPE_FIREBLAST] = 'FIREBLAST',
+	[POWERTYPE_FIREBLAST] = 'FIRE_BLAST',
+	[POWERTYPE_SOUL_CLEAVE] = 'SOUL_CLEAVE',
+	[POWERTYPE_SPEAR_TIP] = 'SPEAR_TIP',
 	[POWERTYPE_ESSENCE] = 'ESSENCE',
 	[POWERTYPE_HOLY_POWER] = 'HOLY_POWER',
 	[POWERTYPE_SOUL_SHARDS] = 'SOUL_SHARDS',
@@ -129,6 +138,8 @@ local ClassPowerMax = {
 	[POWERTYPE_EBON_MIGHT] = 20,
 	[POWERTYPE_DEMONIC_FURY] = 1,
 	[POWERTYPE_BURNING_EMBERS] = 4,
+	[POWERTYPE_SPEAR_TIP] = 3,
+	[POWERTYPE_SOUL_CLEAVE] = 6,
 	[POWERTYPE_MAELSTROM] = 10,
 	[POWERTYPE_FIREBLAST] = 3,
 	[POWERTYPE_ICICLES] = 5,
@@ -139,6 +150,8 @@ local PoweredByCharges = {
 }
 
 local PoweredByAuras = {
+	[POWERTYPE_SPEAR_TIP] = oUF.isRetail,
+	[POWERTYPE_SOUL_CLEAVE] = oUF.isRetail,
 	[POWERTYPE_EBON_MIGHT] = oUF.isRetail,
 	[POWERTYPE_SOUL_FRAGMENTS] = oUF.isRetail,
 	[POWERTYPE_ARCANE_CHARGES] = oUF.isMists,
@@ -189,7 +202,11 @@ end
 
 local function CheckSpellCharges(spellID)
 	local info = GetSpellCharges(spellID)
-	return (info and info.currentCharges) or nil
+	return (info and info.currentCharges) or 0
+end
+
+local function CheckCastCount(spellID)
+	return GetSpellCastCount(spellID) or 0
 end
 
 local watcher = CreateFrame('Frame')
@@ -270,6 +287,8 @@ local function Update(self, element, event, unit, powerType)
 			current = UnitPower(unit, powerID, true) / displayMod
 		elseif oUF.isRetail and classPowerID == POWERTYPE_FIREBLAST then
 			current = CheckSpellCharges(SPELL_FIRE_BLAST)
+		elseif oUF.isRetail and classPowerID == POWERTYPE_SOUL_CLEAVE then
+			current = CheckCastCount(SPELL_SOUL_CLEAVE)
 		elseif oUF.isRetail and classPowerID == POWERTYPE_EBON_MIGHT then
 			local duration = GetDuration(SPELL_EBON_MIGHT)
 
@@ -283,6 +302,8 @@ local function Update(self, element, event, unit, powerType)
 			current = GetApplications(SPELL_FROST_ICICLES, 'HELPFUL')
 		elseif classPowerID == POWERTYPE_MAELSTROM then
 			current = GetApplications(SPELL_MAELSTROM, 'HELPFUL')
+		elseif classPowerID == POWERTYPE_SPEAR_TIP then
+			current = GetApplications(SPELL_SPEAR_TIP)
 		else
 			local cur = classic and GetComboPoints(unit, 'target') or UnitPower(unit, powerID, warlockDest)
 			current = warlockDest and (cur * 0.1) or warlockDemo and (cur * 0.001) or cur
@@ -311,6 +332,9 @@ local function Update(self, element, event, unit, powerType)
 
 			if devourerDemon then
 				bar:SetValue(current / powerMax)
+			elseif (classPowerID == POWERTYPE_SOUL_CLEAVE) or (classPowerID == POWERTYPE_SPEAR_TIP) or (classPowerID == POWERTYPE_FIREBLAST) then
+				bar:SetValue(current)
+				bar:SetMinMaxValues(i - 1, i)
 			elseif classPowerID == POWERTYPE_MANA then
 				bar:SetValue(current)
 				bar:SetMinMaxValues(0, powerMax)
@@ -388,19 +412,20 @@ local function Visibility(self, element, event, unit)
 		classPowerID = POWERTYPE_COMBO_POINTS
 	elseif myClass == 'MONK' then
 		classPowerID = (oUF.isMists or currentSpec == SPEC_MONK_WINDWALKER) and POWERTYPE_CHI or nil
+	elseif myClass == 'HUNTER' then
+		classPowerID = (oUF.isRetail and currentSpec == SPEC_HUNTER_SURVIVAL) and POWERTYPE_SPEAR_TIP or nil
 	elseif myClass == 'SHAMAN' then
 		classPowerID = oUF.isRetail and (currentSpec == SPEC_SHAMAN_ENHANCEMENT and POWERTYPE_MAELSTROM or currentSpec == SPEC_SHAMAN_ELEMENTAL and POWERTYPE_MANA) or nil
 	elseif myClass == 'EVOKER' and not element.which then
 		classPowerID = POWERTYPE_ESSENCE
 	elseif myClass == 'EVOKER' and element.which then
-		classPowerID = oUF.isRetail and (currentSpec == SPEC_EVOKER_AUGMENTATION and POWERTYPE_EBON_MIGHT) or nil
+		classPowerID = (oUF.isRetail and currentSpec == SPEC_EVOKER_AUGMENTATION) and POWERTYPE_EBON_MIGHT or nil
 	elseif myClass == 'DEMONHUNTER' then
-		classPowerID = oUF.isRetail and (currentSpec == SPEC_DEMONHUNTER_DEVOURER and POWERTYPE_SOUL_FRAGMENTS) or nil
+		classPowerID = oUF.isRetail and ((currentSpec == SPEC_DEMONHUNTER_DEVOURER and POWERTYPE_SOUL_FRAGMENTS) or (currentSpec == SPEC_DEMONHUNTER_VENGEANCE and POWERTYPE_SOUL_CLEAVE)) or nil
 	elseif myClass == 'WARLOCK' then
 		classPowerID = (not oUF.isMists and POWERTYPE_SOUL_SHARDS) or (currentSpec == SPEC_WARLOCK_DEMONOLOGY and POWERTYPE_DEMONIC_FURY) or (currentSpec == SPEC_WARLOCK_DESTRUCTION and POWERTYPE_BURNING_EMBERS) or (IsPlayerSpell(SPELL_SOULBURN) and POWERTYPE_SOUL_SHARDS) or nil
 	elseif myClass == 'MAGE' then
-		-- see SPELL_FIRE_BLAST note: (oUF.isRetail and currentSpec == SPEC_MAGE_FIRE and POWERTYPE_FIREBLAST)
-		classPowerID = (oUF.isRetail and currentSpec == SPEC_MAGE_FROST and POWERTYPE_ICICLES) or (currentSpec == SPEC_MAGE_ARCANE and POWERTYPE_ARCANE_CHARGES) or nil
+		classPowerID = oUF.isRetail and ((currentSpec == SPEC_MAGE_FROST and POWERTYPE_ICICLES) or (currentSpec == SPEC_MAGE_FIRE and POWERTYPE_FIREBLAST)) or (currentSpec == SPEC_MAGE_ARCANE and POWERTYPE_ARCANE_CHARGES) or nil
 	elseif myClass == 'PRIEST' then
 		classPowerID = (oUF.isRetail and currentSpec == SPEC_PRIEST_SHADOW and POWERTYPE_MANA) or (oUF.isMists and currentSpec == SPEC_PRIEST_SHADOW and POWERTYPE_SHADOW_ORBS) or nil
 	end

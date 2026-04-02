@@ -56,8 +56,6 @@ function NP:Construct_ClassPower(nameplate)
 	local ClassPower = CreateFrame('Frame', containerName, nameplate)
 	ClassPower:CreateBackdrop('Transparent', nil, nil, nil, nil, true)
 	ClassPower:Hide()
-	ClassPower:SetFrameStrata(nameplate:GetFrameStrata())
-	ClassPower:SetFrameLevel(5)
 
 	local texture = LSM:Fetch('statusbar', NP.db.statusbar)
 	local total = max(UF.classMaxResourceBar[E.myclass] or 0, MAX_COMBO_POINTS)
@@ -66,8 +64,6 @@ function NP:Construct_ClassPower(nameplate)
 		local barName = containerName..i
 		local bar = CreateFrame('StatusBar', barName, ClassPower)
 		bar:SetStatusBarTexture(texture)
-		bar:SetFrameStrata(nameplate:GetFrameStrata())
-		bar:SetFrameLevel(6)
 		NP.StatusBars[bar] = 'classpower'
 
 		bar.bg = ClassPower:CreateTexture(barName..'bg'..i, 'BORDER')
@@ -117,12 +113,17 @@ function NP:Update_ClassPower(nameplate)
 		nameplate.ClassPower:ClearAllPoints()
 		nameplate.ClassPower:Point('CENTER', anchor or nameplate, 'CENTER', db.classpower.xOffset, db.classpower.yOffset)
 		nameplate.ClassPower:Size(db.classpower.width, db.classpower.height)
+		nameplate.ClassPower:SetFrameLevel(5)
 
 		nameplate.ClassPower.classColor = db.classpower.classColor and E.myClassColor
 
 		for i = 1, #nameplate.ClassPower do
-			nameplate.ClassPower[i]:Hide()
-			nameplate.ClassPower[i].bg:Hide()
+			local button = nameplate.ClassPower[i]
+			if button then
+				button:SetFrameLevel(6)
+				button:Hide()
+				button.bg:Hide()
+			end
 		end
 
 		local maxButtons = nameplate.ClassPower.__max
@@ -130,20 +131,22 @@ function NP:Update_ClassPower(nameplate)
 			local Width = db.classpower.width / maxButtons
 			for i = 1, maxButtons do
 				local button = nameplate.ClassPower[i]
-				button:Show()
-				button.bg:Show()
-				button:ClearAllPoints()
+				if button then
+					button:Show()
+					button.bg:Show()
+					button:ClearAllPoints()
 
-				if i == 1 then
-					local width = Width - (maxButtons == 6 and 2 or 0)
-					button:Point('LEFT', nameplate.ClassPower, 'LEFT', 0, 0)
-					button:Size(width, db.classpower.height)
-				else
-					button:Point('LEFT', nameplate.ClassPower[i - 1], 'RIGHT', 1, 0)
-					button:Size(Width - 1, db.classpower.height)
+					if i == 1 then
+						local width = Width - (maxButtons == 6 and 2 or 0)
+						button:Point('LEFT', nameplate.ClassPower, 'LEFT', 0, 0)
+						button:Size(width, db.classpower.height)
+					else
+						button:Point('LEFT', nameplate.ClassPower[i - 1], 'RIGHT', 1, 0)
+						button:Size(Width - 1, db.classpower.height)
 
-					if i == maxButtons then
-						button:Point('RIGHT', nameplate.ClassPower)
+						if i == maxButtons then
+							button:Point('RIGHT', nameplate.ClassPower)
+						end
 					end
 				end
 			end
@@ -191,8 +194,6 @@ end
 function NP:Construct_Runes(nameplate)
 	local containerName = nameplate.frameName..'Runes'
 	local Runes = CreateFrame('Frame', containerName, nameplate)
-	Runes:SetFrameStrata(nameplate:GetFrameStrata())
-	Runes:SetFrameLevel(5)
 	Runes:CreateBackdrop('Transparent', nil, nil, nil, nil, true)
 	Runes:Hide()
 
@@ -232,6 +233,7 @@ function NP:Update_Runes(nameplate)
 		end
 
 		local anchor = target and NP:GetClassAnchor()
+		nameplate.Runes:SetFrameLevel(5)
 		nameplate.Runes:ClearAllPoints()
 		nameplate.Runes:Point('CENTER', anchor or nameplate, 'CENTER', db.classpower.xOffset, db.classpower.yOffset)
 		nameplate.Runes:Show()
@@ -270,8 +272,6 @@ end
 
 function NP:Construct_Stagger(nameplate)
 	local Stagger = CreateFrame('StatusBar', nameplate.frameName..'Stagger', nameplate)
-	Stagger:SetFrameStrata(nameplate:GetFrameStrata())
-	Stagger:SetFrameLevel(5)
 	Stagger:SetStatusBarTexture(LSM:Fetch('statusbar', NP.db.statusbar))
 	Stagger:CreateBackdrop('Transparent', nil, nil, nil, nil, true)
 	Stagger:Hide()
@@ -291,6 +291,7 @@ function NP:Update_Stagger(nameplate)
 		end
 
 		local anchor = target and NP:GetClassAnchor()
+		nameplate.Stagger:SetFrameLevel(5)
 		nameplate.Stagger:ClearAllPoints()
 		nameplate.Stagger:Point('CENTER', anchor or nameplate, 'CENTER', db.classpower.xOffset, db.classpower.yOffset)
 

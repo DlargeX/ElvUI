@@ -10,8 +10,6 @@ local CreateFrame = CreateFrame
 
 function NP:Construct_Auras(nameplate)
 	local Auras = CreateFrame('Frame', '$parentAuras', nameplate)
-	Auras:SetFrameStrata(nameplate:GetFrameStrata())
-	Auras:SetFrameLevel(5)
 	Auras:Size(1)
 	Auras.size = 27
 	Auras.num = 4
@@ -28,8 +26,6 @@ function NP:Construct_Auras(nameplate)
 	Auras.rows = {}
 
 	local Buffs = CreateFrame('Frame', '$parentBuffs', nameplate)
-	Buffs:SetFrameStrata(nameplate:GetFrameStrata())
-	Buffs:SetFrameLevel(5)
 	Buffs:Size(1)
 	Buffs.size = 27
 	Buffs.num = 4
@@ -46,8 +42,6 @@ function NP:Construct_Auras(nameplate)
 	Buffs.rows = {}
 
 	local Debuffs = CreateFrame('Frame', '$parentDebuffs', nameplate)
-	Debuffs:SetFrameStrata(nameplate:GetFrameStrata())
-	Debuffs:SetFrameLevel(5)
 	Debuffs:Size(1)
 	Debuffs.size = 27
 	Debuffs.num = 4
@@ -159,6 +153,7 @@ function NP:Configure_Auras(nameplate, which)
 		index = index + 1
 	end
 
+	auras:SetFrameLevel(5)
 	auras:ClearAllPoints()
 	auras:Point(auras.initialAnchor, auras.attachTo, auras.anchorPoint, auras.xOffset, auras.yOffset)
 	auras:Size(db.numAuras * db.size + ((db.numAuras - 1) * db.spacing), 1)

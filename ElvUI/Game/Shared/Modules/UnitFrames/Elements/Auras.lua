@@ -588,6 +588,7 @@ end
 
 function UF:UpdateAuraSmartPosition()
 	local element, other, visible = UF:GetSmartAuraElements(self)
+	if not element then return end
 
 	if visible == 0 then
 		if self.smartFluid then

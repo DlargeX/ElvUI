@@ -6,6 +6,7 @@ local _G = _G
 local next, ceil, pcall = next, ceil, pcall
 local strmatch, tonumber = strmatch, tonumber
 
+local GetAuraDispelTypeColor = C_UnitAuras.GetAuraDispelTypeColor
 local GetAuraApplicationDisplayCount = C_UnitAuras.GetAuraApplicationDisplayCount
 local GetAuraDataByIndex = C_UnitAuras.GetAuraDataByIndex
 local GetAuraDuration = C_UnitAuras.GetAuraDuration
@@ -298,7 +299,16 @@ function A:UpdateAura(button, index)
 		button.count:SetText(hideCount and '' or count)
 	end
 
-	local color = (E:NotSecretValue(debuffType) and (button.filter == 'HARMFUL' and A.db.colorDebuffs) and DebuffColors[debuffType or 'None']) or E.db.general.bordercolor
+	local colorDebuffs, color = button.filter == 'HARMFUL' and A.db.colorDebuffs
+	if not colorDebuffs then -- quick exit
+		color = E.db.general.bordercolor
+	elseif E.Retail then
+		local curve = GetAuraDispelTypeColor and E.Curves.Color.Auras.debuffs
+		color = (curve and GetAuraDispelTypeColor(unitToken, data.auraInstanceID, curve)) or E.db.general.bordercolor
+	else
+		color = (E:NotSecretValue(debuffType) and DebuffColors[debuffType or 'None']) or E.db.general.bordercolor
+	end
+
 	button:SetBackdropBorderColor(color.r, color.g, color.b)
 	button.statusBar.backdrop:SetBackdropBorderColor(color.r, color.g, color.b)
 

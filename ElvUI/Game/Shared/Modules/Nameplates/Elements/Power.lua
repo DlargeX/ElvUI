@@ -103,8 +103,6 @@ end
 
 function NP:Construct_Power(nameplate)
 	local Power = CreateFrame('StatusBar', nameplate.frameName..'Power', nameplate)
-	Power:SetFrameStrata(nameplate:GetFrameStrata())
-	Power:SetFrameLevel(5)
 	Power:CreateBackdrop('Transparent', nil, nil, nil, nil, true)
 
 	NP.StatusBars[Power] = 'power'
@@ -128,6 +126,7 @@ function NP:Update_Power(nameplate)
 			nameplate:EnableElement('Power')
 		end
 
+		nameplate.Power:SetFrameLevel(5)
 		nameplate.Power:ClearAllPoints()
 		nameplate.Power:Point(E.InversePoints[db.power.anchorPoint], nameplate, db.power.anchorPoint, db.power.xOffset, db.power.yOffset)
 		nameplate.Power:SetStatusBarTexture(LSM:Fetch('statusbar', NP.db.statusbar))
