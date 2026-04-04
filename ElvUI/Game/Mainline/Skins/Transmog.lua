@@ -32,6 +32,12 @@ local function PageControlsPositionUpdate(frame)
 	end
 end
 
+local function OutfitPopup_OnShow(frame)
+	if not frame.IsSkinned then -- set by HandleIconSelectionFrame
+		S:HandleIconSelectionFrame(frame, nil, nil, 'TransmogFrame')
+	end
+end
+
 function S:Blizzard_Transmog()
 	if not E.private.skins.blizzard.transmogrify then return end
 
@@ -109,10 +115,6 @@ function S:Blizzard_Transmog()
 		if ItemsFrame then
 			S:HandleEditBox(ItemsFrame.SearchBox)
 			S:HandleButton(ItemsFrame.FilterButton, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, true, 'right')
-			--[[
-				S:HandleButton(ItemsFrame.DisplayTypeUnassignedButton) -- Leave it or change it (unskinned it fits really good tbh)
-				S:HandleButton(ItemsFrame.DisplayTypeEquippedButton) -- Leave it or change it (unskinned it fits really good tbh)
-			]]
 			S:HandleDropDownBox(ItemsFrame.WeaponDropdown)
 
 			S:HandleNextPrevButton(ItemsFrame.PagedContent.PagingControls.PrevPageButton)
@@ -157,6 +159,10 @@ function S:Blizzard_Transmog()
 			hooksecurefunc(SituationsFrame, 'Init', SkinSituationsDropdowns)
 			hooksecurefunc(SituationsFrame, 'Refresh', SkinSituationsDropdowns)
 		end
+	end
+
+	if TransmogFrame.OutfitPopup then -- New icon selection
+		TransmogFrame.OutfitPopup:HookScript('OnShow', OutfitPopup_OnShow)
 	end
 end
 

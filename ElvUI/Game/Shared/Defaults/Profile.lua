@@ -907,8 +907,8 @@ P.nameplates = {
 		badScale = 1,
 		indicator = false,
 		useThreatColor = true,
-		useSoloColor = false,
-		skipGoodColor = false
+		useThreatClassification = true,
+		useSoloColor = false
 	},
 	widgets = {
 		below = true,

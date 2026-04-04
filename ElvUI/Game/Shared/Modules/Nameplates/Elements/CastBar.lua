@@ -8,11 +8,13 @@ local next = next
 local strmatch = strmatch
 local utf8sub = string.utf8sub
 
-local CombatLogGetCurrentEventInfo = CombatLogGetCurrentEventInfo
+local UnitName = UnitName
+local UnitClass = UnitClass
 local CreateFrame = CreateFrame
 local UnitCanAttack = UnitCanAttack
-local UnitName = UnitName
 local UnitNameFromGUID = UnitNameFromGUID
+local UnitClassFromGUID = UnitClassFromGUID
+local CombatLogGetCurrentEventInfo = CombatLogGetCurrentEventInfo
 
 local StatusBarInterpolation = Enum.StatusBarInterpolation
 local INTERRUPTED = INTERRUPTED
@@ -56,13 +58,18 @@ function NP:Castbar_SetText(castbar, db, changed, spellName, unit)
 	local targetChanged
 	if db.displayTarget then
 		local plate = castbar.__owner
-		local target, frameType = castbar.curTarget, plate.frameType
-		if not target and (frameType == 'ENEMY_NPC' or frameType == 'FRIENDLY_NPC') then
-			target = UnitName(unit..'target') -- player or NPCs; if used on other players:
-		end -- the cast target doesn't match their target, can be misleading if they mouseover cast
+		local target, frameType = castbar.targetCurrent, plate.frameType
+
+		local targetClass, _
+		if E.Retail then
+			targetClass = castbar.targetClass
+		elseif not target and (frameType == 'ENEMY_NPC' or frameType == 'FRIENDLY_NPC') then -- player or NPCs; if used on other players:
+			target = UnitName(unit..'target') -- the cast target doesn't match their target, can be misleading if they mouseover cast
+			_, targetClass = UnitClass(unit..'target')
+		end
 
 		if target then
-			local color = (db.displayTargetClass and UF:GetCasterColor(target)) or 'FFdddddd'
+			local color = (db.displayTargetClass and UF:GetCasterColor(targetClass)) or 'FFdddddd'
 			if db.targetStyle == 'SEPARATE' then
 				castbar.TargetText:SetFormattedText('|c%s%s|r', color, target)
 				targetChanged = true
@@ -125,7 +132,13 @@ function NP:Castbar_PostCastInterrupted(unit, spellID, interruptedBy)
 	local db = NP:PlateDB(plate)
 	if db.castbar and db.castbar.enable and db.castbar.sourceInterrupt and (db.castbar.timeToHold > 0) then
 		local unitName = UnitNameFromGUID(interruptedBy)
-		if unitName then
+		if not unitName then return end
+
+		if db.castbar.sourceInterruptClassColor then
+			local className = UnitClassFromGUID(interruptedBy)
+			local color = UF:GetCasterColor(className)
+			self.Text:SetFormattedText('%s [|c%s%s|r]', INTERRUPTED, color or 'FFdddddd', unitName)
+		else
 			self.Text:SetFormattedText('%s [%s]', INTERRUPTED, unitName)
 		end
 	end

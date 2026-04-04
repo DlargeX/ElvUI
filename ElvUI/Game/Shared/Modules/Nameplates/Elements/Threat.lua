@@ -22,40 +22,17 @@ function NP:ThreatIndicator_PreUpdate(unit, pass)
 end
 
 function NP:ThreatIndicator_PostUpdate(unit, status)
-	local nameplate, colors, db = self.__owner, NP.db.colors.threat, NP.db.threat
+	local nameplate, db = self.__owner, NP.db.threat
 
 	nameplate.threatStatus = status -- export for plugins
-	nameplate.threatHealth = nil
 
 	if not status then
 		nameplate.threatScale = 1
 		NP:ScalePlate(nameplate, 1)
-	elseif status and db.enable and db.useThreatColor and not UnitIsTapDenied(unit) then
-		local Color, Scale
-		if status == 3 then -- securely tanking
-			Color = (self.useSolo and colors.soloColor) or (self.isTank and colors.goodColor) or colors.badColor
-			Scale = (self.useSolo and db.goodScale) or (self.isTank and db.goodScale) or db.badScale
-		elseif status == 2 then -- insecurely tanking
-			Color = (self.offTank and colors.offTankColorBadTransition) or (self.isTank and colors.badTransition) or colors.goodTransition
-			Scale = 1
-		elseif status == 1 then -- not tanking but threat higher than tank
-			Color = (self.offTank and colors.offTankColorGoodTransition) or (self.isTank and colors.goodTransition) or colors.badTransition
-			Scale = 1
-		else -- not tanking at all
-			Color = (self.offTank and colors.offTankColor) or (self.isTank and colors.badColor) or colors.goodColor
-			Scale = (self.offTank and db.goodScale) or (self.isTank and db.badScale) or db.goodScale
-		end
-
-		if not db.skipGoodColor or (Color ~= colors.goodColor) then
-			NP:SetStatusBarColor(nameplate.Health, Color.r, Color.g, Color.b)
-			nameplate.threatHealth = true
-		end
-
-		if Scale then
-			nameplate.threatScale = Scale
-
-			NP:ScalePlate(nameplate, Scale)
-		end
+	elseif db.enable and db.useThreatColor and not UnitIsTapDenied(unit) then
+		local scale = NP:GetThreatSituationScale(self, db, status)
+		nameplate.threatScale = scale
+		NP:ScalePlate(nameplate, scale)
 	end
 end
 
@@ -80,11 +57,7 @@ function NP:Update_ThreatIndicator(nameplate)
 		end
 
 		nameplate.ThreatIndicator:SetAlpha(db.indicator and 1 or 0)
-	else
-		nameplate.threatHealth = nil
-
-		if nameplate:IsElementEnabled('ThreatIndicator') then
-			nameplate:DisableElement('ThreatIndicator')
-		end
+	elseif nameplate:IsElementEnabled('ThreatIndicator') then
+		nameplate:DisableElement('ThreatIndicator')
 	end
 end

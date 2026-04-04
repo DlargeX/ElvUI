@@ -8,7 +8,6 @@ local Private = oUF.Private
 
 local argcheck = Private.argcheck
 local print = Private.print -- luacheck: no unused
-local unitExists = Private.unitExists
 local nierror = Private.nierror
 
 local _G = _G
@@ -63,7 +62,7 @@ local function updateActiveUnit(self, event)
 		modUnit = 'vehicle'
 	end
 
-	if(not unitExists(modUnit)) then return end
+	if not oUF:UnitExists(modUnit) then return end
 
 	-- Change the active unit and run a full update.
 	if(Private.UpdateUnits(self, modUnit, realUnit)) then
@@ -221,7 +220,7 @@ for k, v in next, {
 	--]]
 	UpdateAllElements = function(self, event)
 		local unit = self.unit
-		if(not unitExists(unit)) then return end
+		if not oUF:UnitExists(unit) then return end
 
 		assert(type(event) == 'string', "Invalid argument 'event' in UpdateAllElements.")
 

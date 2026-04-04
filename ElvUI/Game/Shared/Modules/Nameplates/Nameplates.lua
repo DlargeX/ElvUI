@@ -30,7 +30,6 @@ local UnitReaction = UnitReaction
 local UnitWidgetSet = UnitWidgetSet
 
 local UnitNameplateShowsWidgetsOnly = UnitNameplateShowsWidgetsOnly
-local IsAuraFilteredOutByInstanceID = C_UnitAuras.IsAuraFilteredOutByInstanceID
 
 local C_NamePlate_GetNamePlateForUnit = C_NamePlate.GetNamePlateForUnit
 local C_NamePlate_SetNamePlateEnemySize = C_NamePlate.SetNamePlateEnemySize
@@ -219,9 +218,11 @@ function NP:PLAYER_REGEN_ENABLED()
 end
 
 function NP:Style(unit)
+	local plate = self:GetParent()
 	local frameName = self:GetName()
 	self.frameName = frameName
-	self.isNamePlate = true
+	self.blizzPlate = plate.UnitFrame
+	self.isNamePlate = true -- used in auraskip
 
 	if frameName == 'ElvNP_Player' then
 		NP.PlayerFrame = self
@@ -238,15 +239,33 @@ function NP:Style(unit)
 	return self
 end
 
+function NP:Construct_StackingBounds(nameplate)
+	local element = CreateFrame('Frame', '$parent_StackingBounds', nameplate)
+	element:SetAllPoints()
+
+	-- little magic (part one): SetStackingBoundsFrame needs it
+	local stacking = element:CreateTexture()
+	stacking:SetColorTexture(1, 0, 0, 0)
+	stacking:SetAllPoints(element)
+
+	-- little magic (part two): fixes fps drops with stacking
+	local plate = nameplate:GetParent()
+	if plate and plate.SetStackingBoundsFrame then
+		plate:SetStackingBoundsFrame(element)
+	end
+
+	return element
+end
+
 function NP:Construct_RaisedELement(nameplate)
-	local RaisedElement = CreateFrame('Frame', '$parent_RaisedElement', nameplate)
-	RaisedElement:SetFrameLevel(10)
-	RaisedElement:SetAllPoints()
-	RaisedElement:EnableMouse(false)
+	local element = CreateFrame('Frame', '$parent_RaisedElement', nameplate)
+	element:EnableMouse(false)
+	element:SetFrameLevel(10)
+	element:SetAllPoints()
 
-	RaisedElement.frameName = RaisedElement:GetName()
+	element.frameName = element:GetName()
 
-	return RaisedElement
+	return element
 end
 
 function NP:Construct_ClassPowerTwo(nameplate)
@@ -275,6 +294,7 @@ function NP:StyleTargetPlate(nameplate)
 	nameplate:Point('CENTER')
 	nameplate:Size(NP.db.clickSize.personalWidth, NP.db.clickSize.personalHeight)
 
+	nameplate.StackingBounds = NP:Construct_StackingBounds(nameplate)
 	nameplate.RaisedElement = NP:Construct_RaisedELement(nameplate)
 	nameplate.ClassPower = NP:Construct_ClassPower(nameplate)
 
@@ -318,6 +338,7 @@ function NP:StylePlate(nameplate)
 
 	nameplate.blizzAuras = { BuffList = {}, DebuffList = {}, CrowdControlList = {} }
 
+	nameplate.StackingBounds = NP:Construct_StackingBounds(nameplate)
 	nameplate.RaisedElement = NP:Construct_RaisedELement(nameplate)
 	nameplate.Health = NP:Construct_Health(nameplate)
 	nameplate.Health.Text = NP:Construct_TagText(nameplate)
@@ -363,7 +384,7 @@ do
 		for _, name in next, elements do
 			local element = nameplate[name]
 			if element then
-				element:SetParent(parent or nameplate)
+				element:SetParent(parent or (name == 'QuestIcons' and nameplate.RaisedElement) or nameplate)
 			end
 		end
 	end
@@ -435,7 +456,6 @@ function NP:UpdatePlate(nameplate, updateBase)
 		NP:Update_ThreatIndicator(nameplate)
 		NP:Update_Cutaway(nameplate)
 		NP:Update_PrivateAuras(nameplate)
-
 		NP:Update_ClassPowerTwo(nameplate)
 
 		if nameplate == NP.PlayerFrame then
@@ -733,8 +753,6 @@ end
 function NP:NAME_PLATE_UNIT_ADDED(_, unit)
 	if not unit then unit = self.unit end
 
-	local plate = self:GetParent()
-	self.blizzPlate = plate.UnitFrame
 	self.widgetsOnly = E.Retail and self.blizzPlate and UnitNameplateShowsWidgetsOnly(unit)
 	self.widgetSet = E.Retail and UnitWidgetSet(unit)
 	self.classification = UnitClassification(unit)
@@ -868,6 +886,33 @@ function NP:UNIT_FACTION(_, unit)
 	NP:UpdatePlateBase(self)
 end
 
+function NP:GetThreatSituationColor(indicator, status)
+	local colors, color = NP.db.colors.threat
+	if status == 3 then -- securely tanking
+		color = (indicator.useSolo and colors.soloColor) or (indicator.isTank and colors.goodColor) or colors.badColor
+	elseif status == 2 then -- insecurely tanking
+		color = (indicator.offTank and colors.offTankColorBadTransition) or (indicator.isTank and colors.badTransition) or colors.goodTransition
+	elseif status == 1 then -- not tanking but threat higher than tank
+		color = (indicator.offTank and colors.offTankColorGoodTransition) or (indicator.isTank and colors.goodTransition) or colors.badTransition
+	else -- not tanking at all
+		color = (indicator.offTank and colors.offTankColor) or (indicator.isTank and colors.badColor) or colors.goodColor
+	end
+
+	return color, color == colors.goodColor
+end
+
+function NP:GetThreatSituationScale(indicator, db, status)
+	if status == 3 then -- securely tanking
+		return (indicator.useSolo and db.goodScale) or (indicator.isTank and db.goodScale) or db.badScale
+	elseif status == 2 then -- insecurely tanking
+		return 1
+	elseif status == 1 then -- not tanking but threat higher than tank
+		return 1
+	else -- not tanking at all
+		return (indicator.offTank and db.goodScale) or (indicator.isTank and db.badScale) or db.goodScale
+	end
+end
+
 function NP:AuraFilter(...)
 	if NP.db.useBlizzardAuras then
 		return true -- already filtered by blizzard
@@ -880,25 +925,25 @@ function NP:BlizzardPlate_RefreshList(listFrame, auraList)
 	if not NP.db.useBlizzardAuras then return end
 
 	local blizzPlate = self:GetParent()
-	local plate = blizzPlate and blizzPlate:GetParent()
+	local plate = blizzPlate:GetParent()
 
 	local nameplate = plate and plate.unitFrame
 	local blizzAuras = nameplate and nameplate.blizzAuras
 	if not blizzAuras then return end
 
-	local list, filter
+	local list
 	if listFrame == self.BuffListFrame and auraList == self.buffList then
-		list, filter = blizzAuras.BuffList, 'HELPFUL|INCLUDE_NAME_PLATE_ONLY'
+		list = blizzAuras.BuffList
 	elseif listFrame == self.DebuffListFrame and auraList == self.debuffList then
-		list, filter = blizzAuras.DebuffList, 'HARMFUL|INCLUDE_NAME_PLATE_ONLY|PLAYER'
+		list = blizzAuras.DebuffList
 	elseif listFrame == self.CrowdControlListFrame and auraList == self.crowdControlList then
-		list, filter = blizzAuras.CrowdControlList, 'HARMFUL|INCLUDE_NAME_PLATE_ONLY'
+		list = blizzAuras.CrowdControlList
 	end
 
 	if list then
 		nameplate.allowAuraUpdate = true
 
-		NP:BlizzardAuras_UpdateAuras(list, listFrame, auraList, filter)
+		NP:BlizzardAuras_UpdateAuras(list, listFrame, auraList)
 	end
 end
 
@@ -1023,11 +1068,11 @@ function NP:SetStatusBarColor(bar, r, g, b)
 	end
 end
 
-function NP:BlizzardAuras_UpdateAuras(list, listFrame, auraList, filter)
+function NP:BlizzardAuras_UpdateAuras(list, listFrame, auraList)
 	wipe(list)
 
 	for _, child in next, { listFrame:GetChildren() } do
-		list[child.auraInstanceID] = not IsAuraFilteredOutByInstanceID(child.unitToken, child.auraInstanceID, filter) and auraList[child.auraInstanceID] or nil
+		list[child.auraInstanceID] = auraList[child.auraInstanceID] or nil
 	end
 end
 

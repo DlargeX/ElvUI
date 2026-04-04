@@ -1,8 +1,5 @@
 local _, ns = ...
 local oUF = ns.oUF
-local Private = oUF.Private
-
-local unitExists = Private.unitExists
 
 local tonumber, next, unpack = tonumber, next, unpack
 local tremove, tinsert = tremove, tinsert
@@ -218,9 +215,10 @@ local function createOnUpdate(timer)
 
 		frame:SetScript('OnUpdate', function(self, elapsed)
 			self.elapsed = (self.elapsed or 0) + elapsed
-			if(self.elapsed > timer) then
+
+			if self.elapsed > timer then
 				for _, object in next, objects do
-					if(object:IsVisible() and object.unit and unitExists(object.unit)) then
+					if object:IsVisible() and object.unit and oUF:UnitExists(object.unit) then
 						object:UpdateAllElements('OnUpdate')
 					end
 				end

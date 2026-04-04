@@ -46,7 +46,7 @@ local function Update(self, event, unit)
 	if(unit and unit ~= self.unit) then return end
 
 	local element = self.PvPIndicator
-	unit = unit or self.unit
+	if not unit then unit = self.unit end
 
 	--[[ Callback: PvPIndicator:PreUpdate(unit)
 	Called before the element has been updated.

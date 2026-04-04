@@ -69,7 +69,6 @@ local _, ns = ...
 local oUF = ns.oUF
 local Private = oUF.Private
 
-local unitExists = Private.unitExists
 local validateEvent = Private.validateEvent
 local validateUnit = Private.validateUnit
 
@@ -637,7 +636,7 @@ local function UpdateTimer(frame, elapsed)
 	local total = frame.total
 	if total >= frame.timer then
 		for fs, parent in next, frame.strings do -- isForced prevents spam in ElvUI
-			if not parent.isForced and parent:IsShown() and unitExists(parent.unit) then
+			if not parent.isForced and parent:IsShown() and oUF:UnitExists(parent.unit) then
 				fs:UpdateTag()
 			end
 		end
@@ -780,7 +779,7 @@ local function ShouldUpdateTag(frame, event, unit)
 
 	if unitlessEvents[event] then
 		return true
-	elseif validateUnit(unit) and unitExists(unit) then
+	elseif validateUnit(unit) and oUF:UnitExists(unit) then
 		if frame.unit == unit then
 			return true
 		else

@@ -1854,10 +1854,10 @@ do
 					if not E.Retail then
 						-- For the damn vehicle support:
 						frame:RegisterEvent('PLAYER_ENTERING_WORLD')
-						frame:RegisterEvent('UNIT_ENTERING_VEHICLE')
-						frame:RegisterEvent('UNIT_ENTERED_VEHICLE')
-						frame:RegisterEvent('UNIT_EXITING_VEHICLE')
-						frame:RegisterEvent('UNIT_EXITED_VEHICLE')
+						frame:RegisterUnitEvent('UNIT_ENTERING_VEHICLE', unit)
+						frame:RegisterUnitEvent('UNIT_ENTERED_VEHICLE', unit)
+						frame:RegisterUnitEvent('UNIT_EXITING_VEHICLE', unit)
+						frame:RegisterUnitEvent('UNIT_EXITED_VEHICLE', unit)
 
 						-- User placed frames don't animate
 						frame:SetMovable(true)

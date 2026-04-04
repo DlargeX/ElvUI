@@ -470,7 +470,7 @@ local function UpdateAuras(self, event, unit, updateInfo)
 end
 
 local function Update(self, event, unit)
-	if ((self.isForced or self.usingBlizzardAuras) and event ~= 'ElvUI_UpdateAllElements') or (self.unit ~= unit) then return end
+	if (self.isForced and event ~= 'ElvUI_UpdateAllElements') or (self.unit ~= unit) then return end
 
 	-- Assume no event means someone wants to re-anchor things. This is usually done by UpdateAllElements and :ForceUpdate.
 	if not event or event == 'ForceUpdate' or event == 'ElvUI_UpdateAllElements' then

@@ -16,49 +16,70 @@ local CreateFrame = CreateFrame
 local StatusBarInterpolation = Enum.StatusBarInterpolation
 
 function NP:Health_UpdateColor(_, unit)
-	if self.threatHealth or (not unit or self.unit ~= unit) then return end
+	if not unit or self.unit ~= unit then return end
 
-	local element = self.Health
-	local useSelection = E.Retail and element.colorSelection and E:UnitSelectionType(unit, element.considerSelectionInCombatHostile)
-	local useClassification = element.colorClassification and (not element.colorClassificationInInstance or NP.InInstance) and E:GetClassificationType(unit)
-	local useReaction = element.colorReaction and UnitReaction(unit, 'player')
-
-	local color
+	local element, color = self.Health
+	local controlled = UnitPlayerControlled(unit)
 	if element.colorDisconnected and not UnitIsConnected(unit) then
 		color = self.colors.disconnected
-	elseif element.colorTapping and not UnitPlayerControlled(unit) and UnitIsTapDenied(unit) then
+	elseif element.colorTapping and not controlled and UnitIsTapDenied(unit) then
 		color = NP.Colors.tapped
-	elseif useClassification then
-		color = NP.Colors.classification[useClassification]
-	elseif (element.colorClass and self.isPlayer) or (element.colorClassNPC and not self.isPlayer) or (element.colorClassPet and UnitPlayerControlled(unit) and not self.isPlayer) then
-		local _, class = UnitClass(unit)
-		color = self.colors.class[class]
-	elseif useSelection then
-		if useSelection == 3 then
-			useSelection = UnitPlayerControlled(unit) and 5 or 3
-		end
+	end
 
-		color = NP.Colors.selection[useSelection]
-	elseif useReaction then
-		color = NP.Colors.reactions[useReaction]
-	elseif element.colorSmooth then
-		if E.Retail then
-			local curve = self.colors.health:GetCurve()
-			if curve then
-				color = curve:Evaluate(1)
+	local useClassification
+	if not color then
+		useClassification = element.colorClassification and (not element.colorClassificationInInstance or NP.InInstance) and E:GetClassificationType(unit)
+
+		local useThreat = element.colorThreat and not controlled and E:GetThreatSituation(unit, 'player')
+		if useThreat then
+			NP.ThreatIndicator_PreUpdate(self.ThreatIndicator, unit)
+
+			local threatColor, goodColor = NP:GetThreatSituationColor(self.ThreatIndicator, useThreat)
+			if goodColor and useClassification and NP.db.threat.useThreatClassification then
+				color = NP.Colors.classification[useClassification] or threatColor
+			else
+				color = threatColor
 			end
-		else
-			local curValue, maxValue = element.cur or 1, element.max or 1
-			local r, g, b = E:ColorGradient(maxValue == 0 and 0 or (curValue / maxValue), unpack(element.smoothGradient or self.colors.smooth))
-			self.colors.smooth:SetRGB(r, g, b)
-
-			color = self.colors.smooth
 		end
 	end
 
-	if color then
+	if not color then
+		local useSelection = E.Retail and element.colorSelection and E:UnitSelectionType(unit, element.considerSelectionInCombatHostile)
+		local useReaction = element.colorReaction and UnitReaction(unit, 'player')
+		if useClassification then
+			color = NP.Colors.classification[useClassification]
+		elseif (element.colorClass and self.isPlayer) or (element.colorClassNPC and not self.isPlayer) or (element.colorClassPet and controlled and not self.isPlayer) then
+			local _, class = UnitClass(unit)
+			color = self.colors.class[class]
+		elseif useSelection then
+			if useSelection == 3 then
+				useSelection = controlled and 5 or 3
+			end
+
+			color = NP.Colors.selection[useSelection]
+		elseif useReaction then
+			color = NP.Colors.reactions[useReaction]
+		elseif element.colorSmooth then
+			if E.Retail then
+				local curve = self.colors.health:GetCurve()
+				if curve then
+					color = curve:Evaluate(1)
+				end
+			else
+				local curValue, maxValue = element.cur or 1, element.max or 1
+				local r, g, b = E:ColorGradient(maxValue == 0 and 0 or (curValue / maxValue), unpack(element.smoothGradient or self.colors.smooth))
+				self.colors.smooth:SetRGB(r, g, b)
+
+				color = self.colors.smooth
+			end
+		end
+	end
+
+	if color and color.RGB then
 		local r, g, b = color:GetRGB()
 		NP:SetStatusBarColor(element, r, g, b)
+	elseif color then
+		NP:SetStatusBarColor(element, color.r, color.g, color.b)
 	end
 
 	if element.PostUpdateColor then
@@ -92,6 +113,7 @@ function NP:Update_Health(nameplate)
 
 		nameplate.Health:SetColorTapping(true)
 		nameplate.Health:SetColorSelection(E.Retail)
+		nameplate.Health:SetColorThreat(NP.db.threat.enable)
 		nameplate.Health.colorClassification = db.health and db.health.useClassificationColor
 		nameplate.Health.colorClassificationInInstance = db.health and db.health.useClassificationColorInInstance
 		nameplate.Health.colorClass = db.health and db.health.useClassColor

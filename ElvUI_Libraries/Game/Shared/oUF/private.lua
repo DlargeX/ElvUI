@@ -11,8 +11,6 @@ local geterrorhandler = geterrorhandler
 local debugstack = debugstack
 
 local UnitHealth = UnitHealth
-local UnitExists = UnitExists
-local UnitIsVisible = UnitIsVisible
 local UnitSelectionType = UnitSelectionType
 local UnitThreatSituation = UnitThreatSituation
 
@@ -38,10 +36,6 @@ end
 
 function Private.xpcall(func, ...)
 	return xpcall(func, Private.nierror, ...)
-end
-
-function Private.unitExists(unit)
-	return unit and (UnitExists(unit) or UnitIsVisible(unit))
 end
 
 function Private.validateToken(unit)

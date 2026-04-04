@@ -38,9 +38,6 @@ Default textures will be applied if the layout does not provide custom ones. See
 
 local _, ns = ...
 local oUF = ns.oUF
-local Private = oUF.Private
-
-local unitExists = Private.unitExists
 
 local _G = _G
 local GetReadyCheckStatus = GetReadyCheckStatus
@@ -87,10 +84,10 @@ local function Update(self, event)
 	end
 
 	local status = GetReadyCheckStatus(unit)
-	if(unitExists(unit) and status) then
-		if(status == 'ready') then
+	if oUF:UnitExists(unit) and status then
+		if status == 'ready' then
 			SetIcon(element, element.readyTexture or READY_TEX)
-		elseif(status == 'notready') then
+		elseif status == 'notready' then
 			SetIcon(element, element.notReadyTexture or NOT_READY_TEX)
 		else
 			SetIcon(element, element.waitingTexture or WAITING_TEX)
@@ -98,7 +95,7 @@ local function Update(self, event)
 
 		element.status = status
 		element:Show()
-	elseif(event ~= 'READY_CHECK_FINISHED') then
+	elseif event ~= 'READY_CHECK_FINISHED' then
 		element.status = nil
 		element:Hide()
 	end

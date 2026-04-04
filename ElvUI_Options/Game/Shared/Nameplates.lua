@@ -392,6 +392,9 @@ local function GetUnitSettings(unit, name)
 	elseif unit == 'FRIENDLY_PLAYER' or unit == 'ENEMY_PLAYER' then
 		group.args.general.args.markHealers = ACH:Toggle(L["Healer Icon"], L["Display a healer icon over known healers inside battlegrounds or arenas."], 105)
 		group.args.general.args.markTanks = ACH:Toggle(L["Tank Icon"], L["Display a tank icon over known tanks inside battlegrounds or arenas."], 106)
+
+		group.args.castGroup.args.targetGroup = GetTargetText(unit)
+		group.args.castGroup.args.targetGroup.hidden = not E.Retail
 	elseif unit == 'ENEMY_NPC' or unit == 'FRIENDLY_NPC' then
 		group.args.eliteIcon = ACH:Group(L["Elite Icon"], nil, 75, nil, function(info) return E.db.nameplates.units[unit].eliteIcon[info[#info]] end, function(info, value) E.db.nameplates.units[unit].eliteIcon[info[#info]] = value NP:ConfigureAll() end)
 		group.args.eliteIcon.args.enable = ACH:Toggle(L["Enable"], nil, 1)
@@ -596,7 +599,7 @@ NamePlates.generalGroup.args.threatGroup.args.goodScale = ACH:Range(L["Good Scal
 NamePlates.generalGroup.args.threatGroup.args.badScale = ACH:Range(L["Bad Scale"], nil, 2, { min = .5, max = 1.5, step = .01, isPercent = true }, nil, nil, nil, function() return not E.db.nameplates.threat.enable end)
 NamePlates.generalGroup.args.threatGroup.args.useThreatColor = ACH:Toggle(L["Use Threat Color"], nil, 3)
 NamePlates.generalGroup.args.threatGroup.args.useSoloColor = ACH:Toggle(L["Use Solo Color"], L["Use solo threat color when not in a group."], 4, nil, nil, nil, nil, nil, function() return not E.db.nameplates.threat.useThreatColor end)
-NamePlates.generalGroup.args.threatGroup.args.skipGoodColor = ACH:Toggle(E.NewSign..L["Skip Good Color"], L["Threat wont set the good color to health.\n\n|cffff3333Note:|r Useful for Classification color."], 5)
+NamePlates.generalGroup.args.threatGroup.args.useThreatClassification = ACH:Toggle(E.NewSign..L["Good Classification"], L["Good Threat will prefer Classification colors."], 5)
 NamePlates.generalGroup.args.threatGroup.args.beingTankedByTank = ACH:Toggle(L["Off Tank"], L["Use Off Tank Color when another Tank has threat."], 6, nil, nil, nil, nil, nil, function() return not E.db.nameplates.threat.useThreatColor end)
 NamePlates.generalGroup.args.threatGroup.args.beingTankedByPet = ACH:Toggle(L["Off Tank (Pets)"], nil, 7, nil, nil, nil, nil, nil, function() return not E.db.nameplates.threat.useThreatColor end)
 NamePlates.generalGroup.args.threatGroup.args.indicator = ACH:Toggle(L["Show Icon"], nil, 8, nil, nil, nil, nil, nil, function() return not E.db.nameplates.threat.enable end)

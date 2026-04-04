@@ -35,10 +35,11 @@ local IsWargame = IsWargame
 local IsXPUserDisabled = IsXPUserDisabled
 local RequestBattlefieldScoreData = RequestBattlefieldScoreData
 local UIParent = UIParent
+local UnitExists = UnitExists
+local UnitIsVisible = UnitIsVisible
 local UIParentLoadAddOn = UIParentLoadAddOn
 local UnitClassBase = UnitClassBase
 local UnitClassification = UnitClassification
-local UnitExists = UnitExists
 local UnitFactionGroup = UnitFactionGroup
 local UnitGroupRolesAssigned = UnitGroupRolesAssigned
 local UnitHasVehicleUI = UnitHasVehicleUI
@@ -46,7 +47,6 @@ local UnitIsAFK = UnitIsAFK
 local UnitIsDND = UnitIsDND
 local UnitIsMercenary = UnitIsMercenary
 local UnitIsPlayer = UnitIsPlayer
-local UnitIsVisible = UnitIsVisible
 local UnitSex = UnitSex
 local UnitIsUnit = UnitIsUnit
 local UnitThreatSituation = UnitThreatSituation
@@ -1375,16 +1375,6 @@ function E:UnitTankedByGroup(unit)
 		if E:GetThreatSituation(unit, unitToken) == 3 then
 			return unitToken
 		end
-	end
-end
-
-function E:GetThreatSituation(unit, feedbackUnit)
-	if not unit or not E:UnitExists(unit) then return end
-
-	if feedbackUnit and feedbackUnit ~= unit and E:UnitExists(feedbackUnit) then
-		return UnitThreatSituation(feedbackUnit, unit)
-	else
-		return UnitThreatSituation(unit)
 	end
 end
 

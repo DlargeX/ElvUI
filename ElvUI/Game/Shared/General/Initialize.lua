@@ -57,6 +57,7 @@ E.NoSecretValues = oUF.NoSecretValues
 E.NotSecretTable = oUF.NotSecretTable
 E.NotSecretUnit = oUF.NotSecretUnit
 E.NotSecretValue = oUF.NotSecretValue
+E.GetThreatSituation = oUF.GetThreatSituation
 
 Engine[1] = E
 Engine[2] = {}

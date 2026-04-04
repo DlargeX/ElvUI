@@ -30,11 +30,6 @@ A default texture will be applied if the widget is a Texture and doesn't have a 
 
 local _, ns = ...
 local oUF = ns.oUF
-local Private = oUF.Private
-
-local unitExists = Private.unitExists
-
-local UnitThreatSituation = UnitThreatSituation
 
 local function Update(self, event, unit)
 	if(unit ~= self.unit) then return end
@@ -48,18 +43,9 @@ local function Update(self, event, unit)
 	--]]
 	if(element.PreUpdate) then element:PreUpdate(unit) end
 
-	local feedbackUnit = element.feedbackUnit
-	unit = unit or self.unit
+	if not unit then unit = self.unit end
 
-	local status
-	-- BUG: Non-existent '*target' or '*pet' units cause UnitThreatSituation() errors
-	if(unitExists(unit)) then
-		if(feedbackUnit and feedbackUnit ~= unit and unitExists(feedbackUnit)) then
-			status = UnitThreatSituation(feedbackUnit, unit)
-		else
-			status = UnitThreatSituation(unit)
-		end
-	end
+	local status = oUF:GetThreatSituation(unit, element.feedbackUnit)
 
 	local color
 	if(status and status > 0) then
