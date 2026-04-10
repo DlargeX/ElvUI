@@ -62,7 +62,7 @@ end
 function E:Grid_Show()
 	if not grid then
 		E:Grid_Create()
-	elseif grid.boxSize ~= E.db.gridSize then
+	elseif grid.boxSize ~= E.db.gridSize or grid.lineWidth ~= E.db.gridLineWidth then
 		grid:Hide()
 		E:Grid_Create()
 	else
@@ -145,7 +145,8 @@ function E:Grid_Create()
 	end
 
 	local width, height = E.UIParent:GetSize()
-	local size, half = E.mult * 0.5, height * 0.5
+	local lineWidth = (E.db.gridLineWidth or 1) * E.mult
+	local size, half = lineWidth * 0.5, height * 0.5
 
 	local gSize = E.db.gridSize
 	local gHalf = gSize * 0.5
@@ -156,6 +157,7 @@ function E:Grid_Create()
 	local hStep = hHeight / gSize
 
 	grid.boxSize = gSize
+	grid.lineWidth = E.db.gridLineWidth
 	grid:SetPoint('CENTER', E.UIParent)
 	grid:Size(width, height)
 	grid:Show()
@@ -279,7 +281,8 @@ end
 function E:CreateMoverPopup()
 	local r, g, b = unpack(E.media.rgbvaluecolor)
 
-	local f = CreateFrame('Frame', 'ElvUIMoverPopupWindow', UIParent)
+	local frameName = 'ElvUIMoverPopupWindow'
+	local f = CreateFrame('Frame', frameName, UIParent)
 	f:SetFrameStrata('DIALOG')
 	f:SetFrameLevel(1000)
 	f:SetToplevel(true)
@@ -322,7 +325,7 @@ function E:CreateMoverPopup()
 	desc:SetText(L["DESC_MOVERCONFIG"])
 	f.desc = desc
 
-	local snapName = f:GetName()..'CheckButton'
+	local snapName = frameName..'CheckButton'
 	local snapping = CreateFrame('CheckButton', snapName, f, 'UICheckButtonTemplate')
 	snapping:SetScript('OnShow', function(cb) cb:SetChecked(E.db.general.stickyFrames) end)
 	snapping:SetScript('OnClick', function(cb) E.db.general.stickyFrames = cb:GetChecked() end)
@@ -331,7 +334,7 @@ function E:CreateMoverPopup()
 	snapping.text:FontTemplate(nil, 12, 'SHADOW')
 	f.snapping = snapping
 
-	local lock = CreateFrame('Button', f:GetName()..'CloseButton', f, 'UIPanelButtonTemplate')
+	local lock = CreateFrame('Button', frameName..'CloseButton', f, 'UIPanelButtonTemplate')
 	lock.Text:SetText(L["Lock"])
 	lock:Width(80)
 	lock:SetScript('OnClick', function()
@@ -347,36 +350,37 @@ function E:CreateMoverPopup()
 	end)
 	f.lock = lock
 
-	local reset = CreateFrame('Button', f:GetName()..'CloseButton', f, 'UIPanelButtonTemplate')
+	local reset = CreateFrame('Button', frameName..'CloseButton', f, 'UIPanelButtonTemplate')
 	reset.Text:SetText(L["Reset"])
 	reset:SetScript('OnClick', function() E:ResetUI() end)
 	reset:Width(100)
 	f.reset = reset
 
-	local align = CreateFrame('EditBox', f:GetName()..'EditBox', f, 'InputBoxTemplate')
+	local align = CreateFrame('EditBox', frameName..'EditBox', f, 'InputBoxTemplate')
 	align:Size(30, 22)
 	align:SetAutoFocus(false)
 	align:SetScript('OnEscapePressed', function(eb)
 		eb:SetText(E.db.gridSize)
 		EditBox_ClearFocus(eb)
 	end)
+
 	align:SetScript('OnEnterPressed', function(eb)
 		local text = eb:GetText()
-		if tonumber(text) then
-			if tonumber(text) <= 256 and tonumber(text) >= 4 then
-				E.db.gridSize = tonumber(text)
-			else
-				eb:SetText(E.db.gridSize)
-			end
+		local size = tonumber(text)
+		if size and (size <= 256 and size >= 4) then
+			E.db.gridSize = size
 		else
 			eb:SetText(E.db.gridSize)
 		end
+
 		E:Grid_Show()
 		EditBox_ClearFocus(eb)
 	end)
+
 	align:SetScript('OnEditFocusLost', function(eb)
 		eb:SetText(E.db.gridSize)
 	end)
+
 	align:SetScript('OnEditFocusGained', EditBox_HighlightText)
 	align:SetScript('OnShow', function(eb)
 		EditBox_ClearFocus(eb)
@@ -389,16 +393,55 @@ function E:CreateMoverPopup()
 	align.text:FontTemplate(nil, 12, 'SHADOW')
 	f.align = align
 
+	local lineWidth = CreateFrame('EditBox', frameName..'LineWidthBox', f, 'InputBoxTemplate')
+	lineWidth:Size(30, 22)
+	lineWidth:SetAutoFocus(false)
+	lineWidth:SetScript('OnEscapePressed', function(eb)
+		eb:SetText(E.db.gridLineWidth)
+		EditBox_ClearFocus(eb)
+	end)
+
+	lineWidth:SetScript('OnEnterPressed', function(eb)
+		local text = eb:GetText()
+		local width = tonumber(text)
+		if width and (width <= 10 and width >= 1) then
+			E.db.gridLineWidth = width
+		else
+			eb:SetText(E.db.gridLineWidth)
+		end
+
+		E:Grid_Show()
+		EditBox_ClearFocus(eb)
+	end)
+
+	lineWidth:SetScript('OnEditFocusLost', function(eb)
+		eb:SetText(E.db.gridLineWidth)
+	end)
+
+	lineWidth:SetScript('OnEditFocusGained', EditBox_HighlightText)
+	lineWidth:SetScript('OnShow', function(eb)
+		EditBox_ClearFocus(eb)
+		eb:SetText(E.db.gridLineWidth)
+	end)
+
+	lineWidth.text = lineWidth:CreateFontString(nil, 'OVERLAY', 'GameFontNormal')
+	lineWidth.text:Point('RIGHT', lineWidth, 'LEFT', -4, 0)
+	lineWidth.text:SetText(L["Line Width:"])
+	lineWidth.text:FontTemplate(nil, 12, 'SHADOW')
+	f.lineWidth = lineWidth
+
 	--position buttons
 	reset:Point('BOTTOMLEFT', 5, 5)
 	snapping:Point('BOTTOMLEFT', reset, 'TOPLEFT', -4, 0)
 	lock:Point('BOTTOMRIGHT', -5, 5)
 	align:Point('TOPRIGHT', lock, 'TOPLEFT', -3, 0)
+	lineWidth:Point('RIGHT', align.text, 'LEFT', -4, 0)
 
 	S:HandleCheckBox(snapping)
 	S:HandleButton(lock)
 	S:HandleButton(reset)
 	S:HandleEditBox(align)
+	S:HandleEditBox(lineWidth)
 
 	f:RegisterEvent('PLAYER_REGEN_DISABLED')
 	f:SetScript('OnEvent', function(mover)
@@ -409,7 +452,7 @@ function E:CreateMoverPopup()
 		end
 	end)
 
-	local dropDown = CreateFrame(E.Classic and 'Frame' or 'DropdownButton', f:GetName()..'DropDown', f, E.Classic and 'UIDropDownMenuTemplate' or 'WowStyle1DropdownTemplate')
+	local dropDown = CreateFrame(E.Classic and 'Frame' or 'DropdownButton', frameName..'DropDown', f, E.Classic and 'UIDropDownMenuTemplate' or 'WowStyle1DropdownTemplate')
 	dropDown:Point('BOTTOMRIGHT', lock, 'TOPRIGHT', 2, 0)
 	S:HandleDropDownBox(dropDown, 160)
 
@@ -428,7 +471,8 @@ function E:CreateMoverPopup()
 		dropDown:SetupMenu(E.ConfigMode_Initialize)
 	end
 
-	local nudgeFrame = CreateFrame('Frame', 'ElvUIMoverNudgeWindow', E.UIParent)
+	local nudgeName = 'ElvUIMoverNudgeWindow'
+	local nudgeFrame = CreateFrame('Frame', nudgeName, E.UIParent)
 	nudgeFrame:SetFrameStrata('DIALOG')
 	nudgeFrame:Size(200, 110)
 	nudgeFrame:SetTemplate('Transparent')
@@ -475,7 +519,7 @@ function E:CreateMoverPopup()
 	title:SetText(L["Nudge"])
 	nudgeFrame.title = title
 
-	local xOffset = CreateFrame('EditBox', nudgeFrame:GetName()..'XEditBox', nudgeFrame, 'InputBoxTemplate')
+	local xOffset = CreateFrame('EditBox', nudgeName..'XEditBox', nudgeFrame, 'InputBoxTemplate')
 	xOffset:Size(50, 17)
 	xOffset:SetAutoFocus(false)
 	xOffset.currentValue = 0
@@ -483,9 +527,10 @@ function E:CreateMoverPopup()
 		eb:SetText(E:Round(xOffset.currentValue))
 		EditBox_ClearFocus(eb)
 	end)
+
 	xOffset:SetScript('OnEnterPressed', function(eb)
-		local num = eb:GetText()
-		if tonumber(num) then
+		local num = tonumber(eb:GetText())
+		if num then
 			local diff = num - xOffset.currentValue
 			xOffset.currentValue = num
 			E:NudgeMover(diff)
@@ -494,9 +539,11 @@ function E:CreateMoverPopup()
 		eb:SetText(E:Round(xOffset.currentValue))
 		EditBox_ClearFocus(eb)
 	end)
+
 	xOffset:SetScript('OnEditFocusLost', function(eb)
 		eb:SetText(E:Round(xOffset.currentValue))
 	end)
+
 	xOffset:SetScript('OnEditFocusGained', EditBox_HighlightText)
 	xOffset:SetScript('OnShow', function(eb)
 		EditBox_ClearFocus(eb)
@@ -510,7 +557,7 @@ function E:CreateMoverPopup()
 	S:HandleEditBox(xOffset)
 	nudgeFrame.xOffset = xOffset
 
-	local yOffset = CreateFrame('EditBox', nudgeFrame:GetName()..'YEditBox', nudgeFrame, 'InputBoxTemplate')
+	local yOffset = CreateFrame('EditBox', nudgeName..'YEditBox', nudgeFrame, 'InputBoxTemplate')
 	yOffset:Size(50, 17)
 	yOffset:SetAutoFocus(false)
 	yOffset.currentValue = 0
@@ -518,9 +565,10 @@ function E:CreateMoverPopup()
 		eb:SetText(E:Round(yOffset.currentValue))
 		EditBox_ClearFocus(eb)
 	end)
+
 	yOffset:SetScript('OnEnterPressed', function(eb)
-		local num = eb:GetText()
-		if tonumber(num) then
+		local num = tonumber(eb:GetText())
+		if num then
 			local diff = num - yOffset.currentValue
 			yOffset.currentValue = num
 			E:NudgeMover(nil, diff)
@@ -529,9 +577,11 @@ function E:CreateMoverPopup()
 		eb:SetText(E:Round(yOffset.currentValue))
 		EditBox_ClearFocus(eb)
 	end)
+
 	yOffset:SetScript('OnEditFocusLost', function(eb)
 		eb:SetText(E:Round(yOffset.currentValue))
 	end)
+
 	yOffset:SetScript('OnEditFocusGained', EditBox_HighlightText)
 	yOffset:SetScript('OnShow', function(eb)
 		EditBox_ClearFocus(eb)
@@ -545,7 +595,7 @@ function E:CreateMoverPopup()
 	S:HandleEditBox(yOffset)
 	nudgeFrame.yOffset = yOffset
 
-	local resetButton = CreateFrame('Button', nudgeFrame:GetName()..'ResetButton', nudgeFrame, 'UIPanelButtonTemplate')
+	local resetButton = CreateFrame('Button', nudgeName..'ResetButton', nudgeFrame, 'UIPanelButtonTemplate')
 	resetButton:SetText(L["Reset"])
 	resetButton:Point('TOP', nudgeFrame, 'CENTER', 0, 2)
 	resetButton:Size(100, 25)
@@ -554,10 +604,11 @@ function E:CreateMoverPopup()
 			E:ResetMovers(E.MoverNudgeFrame.child.textString)
 		end
 	end)
+
 	S:HandleButton(resetButton)
 	nudgeFrame.resetButton = resetButton
 
-	local upButton = CreateFrame('Button', nudgeFrame:GetName()..'UpButton', nudgeFrame)
+	local upButton = CreateFrame('Button', nudgeName..'UpButton', nudgeFrame)
 	upButton:Point('BOTTOMRIGHT', nudgeFrame, 'BOTTOM', -6, 4)
 	upButton:SetScript('OnClick', function() E:NudgeMover(nil, 1) end)
 	S:HandleNextPrevButton(upButton)
@@ -565,7 +616,7 @@ function E:CreateMoverPopup()
 	upButton:Size(22)
 	nudgeFrame.upButton = upButton
 
-	local downButton = CreateFrame('Button', nudgeFrame:GetName()..'DownButton', nudgeFrame)
+	local downButton = CreateFrame('Button', nudgeName..'DownButton', nudgeFrame)
 	downButton:Point('BOTTOMLEFT', nudgeFrame, 'BOTTOM', 6, 4)
 	downButton:SetScript('OnClick', function() E:NudgeMover(nil, -1) end)
 	S:HandleNextPrevButton(downButton)
@@ -573,7 +624,7 @@ function E:CreateMoverPopup()
 	downButton:Size(22)
 	nudgeFrame.downButton = downButton
 
-	local leftButton = CreateFrame('Button', nudgeFrame:GetName()..'LeftButton', nudgeFrame)
+	local leftButton = CreateFrame('Button', nudgeName..'LeftButton', nudgeFrame)
 	leftButton:Point('RIGHT', upButton, 'LEFT', -6, 0)
 	leftButton:SetScript('OnClick', function() E:NudgeMover(-1) end)
 	S:HandleNextPrevButton(leftButton)
@@ -581,7 +632,7 @@ function E:CreateMoverPopup()
 	leftButton:Size(22)
 	nudgeFrame.leftButton = leftButton
 
-	local rightButton = CreateFrame('Button', nudgeFrame:GetName()..'RightButton', nudgeFrame)
+	local rightButton = CreateFrame('Button', nudgeName..'RightButton', nudgeFrame)
 	rightButton:Point('LEFT', downButton, 'RIGHT', 6, 0)
 	rightButton:SetScript('OnClick', function() E:NudgeMover(1) end)
 	S:HandleNextPrevButton(rightButton)
@@ -647,20 +698,19 @@ function E:Config_UpdateSize(reset)
 end
 
 function E:Config_GetDefaultSize()
-	local width, height = E:Config_GetSize()
 	local maxWidth, maxHeight = E.UIParent:GetSize()
-	width, height = min(maxWidth-50, width), min(maxHeight-50, height)
-	return width, height
+	local configWidth, configHeight = E:Config_GetSize()
+	return min(maxWidth-50, configWidth), min(maxHeight-50, configHeight)
 end
 
 function E:Config_StopMoving()
 	local frame = self and self.GetParent and self:GetParent()
 	local status = E:Config_GetStatus(frame)
-	if status then
-		E.configSavedPositionTop, E.configSavedPositionLeft = E:Round(frame:GetTop(), 2), E:Round(frame:GetLeft(), 2)
-		E.global.general.AceGUI.width, E.global.general.AceGUI.height = E:Round(frame:GetWidth(), 2), E:Round(frame:GetHeight(), 2)
-		E:Config_UpdateLeftScroller(frame)
-	end
+	if not status then return end
+
+	E.configSavedPositionTop, E.configSavedPositionLeft = E:Round(frame:GetTop(), 2), E:Round(frame:GetLeft(), 2)
+	E.global.general.AceGUI.width, E.global.general.AceGUI.height = E:Round(frame:GetWidth(), 2), E:Round(frame:GetHeight(), 2)
+	E:Config_UpdateLeftScroller(frame)
 end
 
 function E:Config_ButtonOnEnter()
@@ -903,6 +953,7 @@ function E:Config_UpdateLeftScroller(frame)
 	local btns = left.buttons
 	local bottom = btns:GetBottom()
 	if not bottom then return end
+
 	btns:Point('TOPLEFT', 0, 0)
 
 	local max = 0
@@ -912,11 +963,9 @@ function E:Config_UpdateLeftScroller(frame)
 			btn.sliderValue = nil
 
 			local btm = btn:GetBottom()
-			if btm then
-				if bottom > btm then
-					max = max + 1
-					btn.sliderValue = max
-				end
+			if btm and (bottom > btm) then
+				max = max + 1
+				btn.sliderValue = max
 			end
 		end
 	end
@@ -933,17 +982,17 @@ function E:Config_UpdateLeftScroller(frame)
 end
 
 function E:Config_SaveOldFramelevel(frame)
-	if not frame.oldFramelevel then
-		frame.oldFramelevel = frame:GetFrameLevel()
-	end
+	if frame.oldFramelevel then return end
+
+	frame.oldFramelevel = frame:GetFrameLevel()
 end
 
 function E:Config_RestoreOldFramelevel(frame)
-	if frame.oldFramelevel then
-		frame:SetFrameLevel(frame.oldFramelevel)
+	if not frame.oldFramelevel then return end
 
-		frame.oldFramelevel = nil
-	end
+	frame:SetFrameLevel(frame.oldFramelevel)
+
+	frame.oldFramelevel = nil
 end
 
 function E:Config_SaveOldPosition(frame)
@@ -1012,11 +1061,14 @@ function E:Config_CreateLeftButtons(frame, unskinned, options)
 		if (not info.order or info.order < 6) and not tContains(E.OriginalOptions, key) then
 			info.order = 6
 		end
+
 		if key == 'profiles' then
 			info.desc = nil
 		end
+
 		tinsert(opts, {info.order, key, info})
 	end
+
 	sort(opts, Config_SortButtons)
 
 	local buttons, last, order = frame.leftHolder.buttons

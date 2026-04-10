@@ -541,12 +541,12 @@ end
 
 function UF:GetCasterColor(targetClass)
 	if E:IsSecretValue(targetClass) then
-		local color = C_ClassColor_GetClassColor(targetClass)
+		local color = targetClass and C_ClassColor_GetClassColor(targetClass)
 		if color then
 			return color:GenerateHexColor()
 		end
-	elseif targetClass then
-		local color = E:ClassColor(targetClass)
+	else
+		local color = targetClass and E:ClassColor(targetClass)
 		if color then
 			return color.colorStr
 		end
@@ -572,7 +572,7 @@ function UF:PostCastStart(unit)
 	self.unit = unit
 
 	if E:IsSecretValue(self.spellID) then
-		UF:SetCastText(self, db.castbar, true, self.spellName, self.targetCurrent, self.targetClass)
+		UF:SetCastText(self, db.castbar, true, self.spellName, db.castbar.displayTarget and self.targetCurrent, self.targetClass)
 
 		if self.channeling and db.castbar.ticks and parent.unitframeType == 'player' then
 			UF:HideTicks(self)
@@ -584,18 +584,14 @@ function UF:PostCastStart(unit)
 		local changed = name ~= spellName
 
 		if db.castbar.displayTarget then -- player or NPCs; if used on other players: the cast target doesn't match their target, can be misleading if they mouseover cast
-			if parent.unitframeType == 'player' then
+			if self.targetCurrent then
 				UF:SetCastText(self, db.castbar, changed, name, self.targetCurrent, self.targetClass)
-			elseif parent.unitframeType == 'pet' or parent.unitframeType == 'boss' then
-				if self.targetCurrent then
-					UF:SetCastText(self, db.castbar, changed, name, self.targetCurrent, self.targetClass)
-				elseif not E.Retail then
-					local unitName = UnitName(unit)
-					local targetName = UnitName(unit..'target')
-					local _, targetClass = UnitClass(unit..'target')
-					local allowText = E:NotSecretValue(targetName) and (targetName and targetName ~= '') and (E:NotSecretValue(unitName) and (targetName ~= unitName))
-					UF:SetCastText(self, db.castbar, changed, name, allowText and targetName, targetClass)
-				end
+			elseif not E.Retail and (parent.unitframeType == 'pet' or parent.unitframeType == 'boss') then
+				local unitName = UnitName(unit)
+				local targetName = UnitName(unit..'target')
+				local _, targetClass = UnitClass(unit..'target')
+				local allowText = E:NotSecretValue(targetName) and (targetName and targetName ~= '') and (E:NotSecretValue(unitName) and (targetName ~= unitName))
+				UF:SetCastText(self, db.castbar, changed, name, allowText and targetName, targetClass)
 			end
 		elseif changed then
 			self.Text:SetText(name)

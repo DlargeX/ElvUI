@@ -155,7 +155,7 @@ function AB:HandleButtonAutoCast(bar, button)
 	local autoCast = button.AutoCastOverlay or button.AutoCastable
 	if E.Retail then
 		autoCast:SetOutside(button, 3, 3)
-	elseif E.TBC then
+	elseif (E.TBC or E.Wrath) then
 		autoCast:SetOutside(button, 1, 1)
 	else
 		local autoCastWidth = (buttonWidth * 0.5) - (buttonWidth / 7.5)
@@ -1210,6 +1210,7 @@ function AB:IconIntroTracker_Skin()
 end
 
 do
+	local modernBars = E.Retail or E.TBC or E.Wrath
 	local untaint = {
 		MultiBar5 = true,
 		MultiBar6 = true,
@@ -1221,11 +1222,11 @@ do
 		MicroButtonAndBagsBar = true,
 		OverrideActionBar = true,
 		MainMenuBar = true,
-		BagsBar = E.TBC or nil,
-		MainActionBar = (E.TBC or E.Retail) or nil,
-		[(E.TBC or E.Retail) and 'StanceBar' or 'StanceBarFrame'] = true,
-		[(E.TBC or E.Retail) and 'PetActionBar' or 'PetActionBarFrame'] = true,
-		[(E.TBC or E.Retail) and 'PossessActionBar' or 'PossessBarFrame'] = true
+		BagsBar = (E.TBC or E.Wrath) or nil,
+		MainActionBar = modernBars or nil,
+		[modernBars and 'StanceBar' or 'StanceBarFrame'] = true,
+		[modernBars and 'PetActionBar' or 'PetActionBarFrame'] = true,
+		[modernBars and 'PossessActionBar' or 'PossessBarFrame'] = true
 	}
 
 	local untaintButtons = {
@@ -1298,7 +1299,7 @@ do
 				frame:SetParent(E.HiddenFrame)
 				frame:UnregisterAllEvents()
 
-				if not (E.Retail or E.TBC) then
+				if not (E.Retail or E.TBC or E.Wrath) then
 					AB:SetNoopsi(frame)
 				end
 			end
@@ -1322,7 +1323,7 @@ do
 		-- modified to fix a taint when closing the options while in combat
 		_G.SettingsPanel:SetScript('OnHide', AB.SettingsPanel_OnHide)
 
-		if E.Retail or E.TBC then
+		if E.Retail or E.TBC or E.Wrath then
 			_G.StatusTrackingBarManager:Kill()
 			_G.ActionBarController:RegisterEvent('UPDATE_EXTRA_ACTIONBAR') -- this is needed to let the ExtraActionBar show
 

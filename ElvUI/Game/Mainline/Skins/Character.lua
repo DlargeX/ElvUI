@@ -326,6 +326,12 @@ local function UpdateCurrencyTransferLogLines(frame)
 	frame:ForEachFrame(UpdateCurrencyTransferLogLine)
 end
 
+local function GearManagerPopupFrame_OnShow(frame)
+	if not frame.IsSkinned then -- set by HandleIconSelectionFrame
+		S:HandleIconSelectionFrame(frame, nil, nil, 'GearManagerPopupFrame')
+	end
+end
+
 function S:Blizzard_UIPanels_Game()
 	if not (E.private.skins.blizzard.enable and E.private.skins.blizzard.character) then return end
 
@@ -428,12 +434,9 @@ function S:Blizzard_UIPanels_Game()
 	S:HandleButton(_G.PaperDollFrameEquipSet)
 	S:HandleButton(_G.PaperDollFrameSaveSet)
 
-	-- Icon selection frame
-	_G.GearManagerPopupFrame:HookScript('OnShow', function(frame)
-		if frame.IsSkinned then return end -- set by HandleIconSelectionFrame
-
-		S:HandleIconSelectionFrame(frame)
-	end)
+	if _G.GearManagerPopupFrame then -- New icon selection
+		_G.GearManagerPopupFrame:HookScript('OnShow', GearManagerPopupFrame_OnShow)
+	end
 
 	do --Handle Tabs at bottom of character frame
 		local i = 1

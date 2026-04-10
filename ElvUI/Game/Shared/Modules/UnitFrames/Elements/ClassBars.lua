@@ -18,6 +18,7 @@ local SPEC_MONK_MISTWEAVER = SPEC_MONK_MISTWEAVER or 2
 local StatusBarInterpolation = Enum.StatusBarInterpolation
 local FALLBACK = Mixin({ r = 0, g = 0, b = 0, a = 0 }, ColorMixin)
 
+local ManaType = { powerName = 'MANA', powerType = 0 }
 local AltManaTypes = {
 	Rage = 1,
 	Energy = 3,
@@ -106,15 +107,27 @@ function UF:ClassPower_UpdateColor(powerType, rune)
 	end
 end
 
-function UF:ClassPower_ShouldShowAdditionalPower()
+function UF:ClassPower_ShouldShowAdditionalPower(element)
+	if not element.displayPairs then return end
+
 	local altPower = E.db.unitframe.altManaPowers[E.myclass]
 	if not altPower then return end
 
+	local hasAny = false
+	local displayTypes = element.displayPairs[E.myclass]
+
 	for name, value in pairs(altPower) do
-		if value and AltManaTypes[name] then
-			return true
+		local powerIndex = AltManaTypes[name]
+		if powerIndex then
+			displayTypes[powerIndex] = value and ManaType or nil
+
+			if value then
+				hasAny = true
+			end
 		end
 	end
+
+	return hasAny
 end
 
 function UF:Configure_ClassBar(frame)
@@ -351,14 +364,15 @@ function UF:Configure_ClassBar(frame)
 	local allowPriest = checkPriest and E.myspec == SPEC_PRIEST_SHADOW
 	local allowShaman = checkShaman and E.myspec == SPEC_SHAMAN_ELEMENTAL
 	for _, powerType in pairs(UF.ClassPowerTypes) do
-		if frame[powerType] then
+		local element = frame[powerType]
+		if element then
 			local enabled = frame:IsElementEnabled(powerType)
 			local additional = powerType == 'AdditionalPower'
 			local classpower = powerType == 'ClassPower'
 			if additional or classpower then
 				local special = classpower and (allowPriest or allowShaman)
 				local normal = classpower and (not (checkPriest or checkShaman) or not special)
-				local allowed = activeBar and (normal or ((special or additional) and UF:ClassPower_ShouldShowAdditionalPower()))
+				local allowed = activeBar and (normal or ((special or additional) and UF:ClassPower_ShouldShowAdditionalPower(element)))
 				if allowed and not enabled then
 					frame:EnableElement(powerType)
 				elseif enabled and not allowed then

@@ -48,7 +48,6 @@ local UnitIsDND = UnitIsDND
 local UnitIsMercenary = UnitIsMercenary
 local UnitIsPlayer = UnitIsPlayer
 local UnitSex = UnitSex
-local UnitIsUnit = UnitIsUnit
 local UnitThreatSituation = UnitThreatSituation
 local UnitSelectionType = UnitSelectionType
 
@@ -222,7 +221,7 @@ end
 -- the secure header is different on retail because of evokers
 -- if both are registered on non-retail, it will fire on down and up
 function E:RegisterClicks(frame)
-	if E.Retail or E.TBC then
+	if E.Retail or E.TBC or E.Wrath then
 		frame:RegisterForClicks('AnyDown', 'AnyUp')
 	else
 		frame:RegisterForClicks('AnyUp')
@@ -644,7 +643,7 @@ do
 			if not float.Desaturate then
 				local desaturate = E:CreateCurve(LuaCurveTypeStep)
 				desaturate:AddPoint(0, 0)
-				desaturate:AddPoint(1.501, 1) -- > 1.5
+				desaturate:AddPoint(0.001, 1)
 
 				float.Desaturate = desaturate
 			end
@@ -1152,12 +1151,12 @@ else
 end
 
 function E:PositionGameMenuButton()
-	if E.Retail or E.TBC then
+	if E.Retail or E.TBC or E.Wrath then
 		if E.private.skins.blizzard.enable and E.private.skins.blizzard.misc then
 			GameMenuFrame.Header.Text:SetTextColor(unpack(E.media.rgbvaluecolor))
 		end
 
-		local offset = E.TBC and 20 or 35
+		local offset = E.Retail and 35 or 20
 		for button in GameMenuFrame.buttonPool:EnumerateActive() do
 			local text = button:GetText()
 
@@ -1210,14 +1209,14 @@ end
 function E:SetupGameMenu()
 	if GameMenuFrame.ElvUI then return end
 
-	if E.Retail or E.TBC then
+	if E.Retail or E.TBC or E.Wrath then
 		local button = CreateFrame('Button', 'ElvUI_GameMenuButton', GameMenuFrame, 'MainMenuFrameButtonTemplate')
 		button:SetScript('OnClick', E.ClickGameMenu)
 
-		if E.TBC then
-			button:Size(144, 21)
-		else
+		if E.Retail then
 			button:Size(200, 35)
+		else
+			button:Size(144, 21)
 		end
 
 		GameMenuFrame.ElvUI = button
@@ -1395,7 +1394,7 @@ function E:GROUP_ROSTER_UPDATE()
 		local unit = group..i
 		local role = not E.allowRoles and (GetPartyAssignment('MAINTANK', unit) and 'TANK' or 'NONE') or UnitGroupRolesAssigned(unit)
 		if role then
-			if UnitIsUnit(unit, 'player') then
+			if E:UnitIsUnit(unit, 'player') then
 				unit = 'player'
 			end
 

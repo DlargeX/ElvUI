@@ -190,7 +190,7 @@ function BL:Initialize()
 
 	BL:SkinBlizzTimers()
 
-	if E.Mists or E.Wrath then
+	if E.Mists then
 		BL:PositionVehicleFrame()
 	end
 

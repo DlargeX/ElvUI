@@ -1,3 +1,34 @@
+### Version 15.11 [ April 6th 2026 ]
+*   **Nameplates**
+    *   Threat attempt to handle off tanks by using group roles without GUID.
+    *   Option to use Blizzard Auras instead of our filtering.
+    *   Reworked name-only to reduce overhead.
+    *   Removed some calls to handling the death of units to reduce overhead.
+    *   Faction changes handle a bit better.
+    *   Good Classification added under Threat to allow colors when in good threat.
+    *   Castbar source target working again (with class color).
+    *   Stacking was causing a FPS issue.
+    *   Castbar interrupt source class color again.
+*   **Chat**
+    *   Secret error with tab colors.
+    *   Secret error with voice chat display.
+    *   Attempt to fix invalid option in format.
+*   **Unitframe**
+    *   Private Auras were sometimes displayed wrong.
+    *   Private Aura click through option (uses size of one pixel for the anchor).
+    *   Additional power sometimes not working for Druids.
+    *   Classpower backdrops using more accurate color.
+    *   Stagger backdrop has a texture and color now.
+    *   Fake classpower added for Vengeance DH, Fire Mage, and Survival Hunters.
+    *   Resurrection icon should work again.
+*   **General**
+    *   Actionbar buttons not desaturating on cooldown.
+    *   Microbar safety check to prevent breaking in a rare case.
+    *   Encounter Journal skin error about OnClick.
+    *   Top Auras display the debuff type on border again.
+    *   Raid Utility has some buttons limited during combat.
+    *   Grid has a new Line Width option.
+
 ### Version 15.10 [ March 24th 2026 ]
 *   Secret error in API file on line 1407.
 *   Custom Text error with Arena frames.

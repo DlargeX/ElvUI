@@ -116,7 +116,7 @@ function NP:Castbar_PostCastStart(unit)
 end
 
 function NP:Castbar_PostCastFail()
-	NP:SetStatusBarColor(self, NP.db.colors.castInterruptedColor.r, NP.db.colors.castInterruptedColor.g, NP.db.colors.castInterruptedColor.b)
+	NP:SetStatusBarColor(self, NP.db.colors.castInterruptedColor.r, NP.db.colors.castInterruptedColor.g, NP.db.colors.castInterruptedColor.b, NP.db.colors.castInterruptedColor.a)
 end
 
 function NP:Castbar_PostCastInterruptible(unit)
@@ -124,7 +124,7 @@ function NP:Castbar_PostCastInterruptible(unit)
 end
 
 function NP:Castbar_PostCastInterrupted(unit, spellID, interruptedBy)
-	NP:SetStatusBarColor(self, NP.db.colors.castInterruptedColor.r, NP.db.colors.castInterruptedColor.g, NP.db.colors.castInterruptedColor.b)
+	NP:SetStatusBarColor(self, NP.db.colors.castInterruptedColor.r, NP.db.colors.castInterruptedColor.g, NP.db.colors.castInterruptedColor.b, NP.db.colors.castInterruptedColor.a)
 
 	if not interruptedBy then return end
 

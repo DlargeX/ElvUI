@@ -470,13 +470,14 @@ local function GetOptionsTable_Castbar(updateFunc, groupName, numUnits)
 
 	config.args.reverse = ACH:Toggle(L["Reverse"], nil, 14)
 	config.args.spark = ACH:Toggle(L["Spark"], L["Display a spark texture at the end of the castbar statusbar to help show the differance between castbar and backdrop."], 15)
-	config.args.smoothbars = ACH:Toggle(L["Smooth Bars"], L["Bars will transition smoothly."], 17)
+	config.args.smoothbars = ACH:Toggle(L["Smooth Bars"], L["Bars will transition smoothly."], 16)
+	config.args.displayTarget = ACH:Toggle(L["Display Target"], L["Display the target of current cast."], 17)
+	config.args.displayTargetClass = ACH:Toggle(L["Target Class Color"], nil, 18)
 
 	config.args.generalGroup = ACH:Group(L["General"], nil, 10)
 	config.args.generalGroup.args.width = ACH:Range(L["Width"], nil, 8, { min = 50, max = ceil(E.screenWidth), step = 1 })
 	config.args.generalGroup.args.height = ACH:Range(L["Height"], nil, 9, { min = 5, max = 85, step = 1 })
 	config.args.generalGroup.args.timeToHold = ACH:Range(L["Time To Hold"], L["How many seconds the castbar should stay visible after the cast failed or was interrupted."], 10, { min = 0, max = 10, step = 0.1 })
-
 	config.args.generalGroup.args.overlayOnFrame = ACH:Select(L["Attach To"], L["The object you want to attach to."], 11, { Health = L["Health"], Power = L["Power"], InfoPanel = L["Information Panel"], None = L["None"] })
 	config.args.generalGroup.args.format = ACH:Select(L["Format"], L["Cast Time Format"], 12, { CURRENTMAX = L["Current / Max"], CURRENT = L["Current"], REMAINING = L["Remaining"], REMAININGMAX = L["Remaining / Max"] })
 
@@ -533,8 +534,6 @@ local function GetOptionsTable_Castbar(updateFunc, groupName, numUnits)
 	config.args.customColor.args.colorInterrupted = ACH:Color(L["Interrupted"], nil, 12, true, nil, nil, nil, nil, function() return E.Classic or not E.db.unitframe.units[groupName].castbar.customColor.enable end)
 
 	if groupName == 'player' then
-		config.args.displayTarget = ACH:Toggle(L["Display Target"], L["Display the target of current cast."], 17)
-		config.args.displayTargetClass = ACH:Toggle(L["Target Class Color"], nil, 18)
 		config.args.latency = ACH:Toggle(L["Latency"], nil, 19)
 
 		config.args.generalGroup.args.ticks = ACH:Group(L["Ticks"], nil, 20)
@@ -542,9 +541,6 @@ local function GetOptionsTable_Castbar(updateFunc, groupName, numUnits)
 		config.args.generalGroup.args.ticks.args.tickColor = ACH:Color(L["COLOR"], nil, 2, true, nil, function() local c, d = E.db.unitframe.units[groupName].castbar.tickColor, P.unitframe.units[groupName].castbar.tickColor return c.r, c.g, c.b, c.a, d.r, d.g, d.b, d.a end, function(_, r, g, b, a) local c = E.db.unitframe.units[groupName].castbar.tickColor c.r, c.g, c.b, c.a = r, g, b, a updateFunc(UF, groupName, numUnits) end)
 		config.args.generalGroup.args.ticks.args.tickWidth = ACH:Range(L["Width"], nil, 3, { min = 1, max = 20, step = 1 })
 		config.args.generalGroup.args.ticks.inline = true
-	elseif groupName == 'pet' or groupName == 'boss' then
-		config.args.displayTarget = ACH:Toggle(L["Display Target"], L["Display the target of current cast."], 17)
-		config.args.displayTargetClass = ACH:Toggle(L["Target Class Color"], nil, 18)
 	end
 
 	if groupName == 'party' or groupName == 'arena' or groupName == 'boss' then

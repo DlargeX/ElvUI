@@ -10,9 +10,11 @@ local issecrettable = issecrettable
 local canaccessvalue = canaccessvalue
 
 local UnitExists = UnitExists
+local UnitIsUnit = UnitIsUnit
 local UnitIsVisible = UnitIsVisible
 local UnitThreatSituation = UnitThreatSituation
 local ShouldUnitIdentityBeSecret = C_Secrets and C_Secrets.ShouldUnitIdentityBeSecret
+local CanCompareUnitTokens = C_Secrets and C_Secrets.CanCompareUnitTokens
 
 local _, _, _, wowtoc = GetBuildInfo()
 oUF.wowtoc = wowtoc
@@ -97,6 +99,21 @@ do -- API for secrets by Simpy
 	function oUF:NoSecretValues(object)
 		return not oUF:HasSecretValues(object)
 	end
+end
+
+function oUF:UnitIsUnit(unit1, unit2)
+	if CanCompareUnitTokens and not CanCompareUnitTokens(unit1, unit2) then
+		return
+	end
+
+	local isUnit = UnitIsUnit(unit1, unit2)
+	if oUF:NotSecretValue(isUnit) then
+		return isUnit
+	end
+end
+
+function oUF:UnitNotUnit(unit1, unit2) -- nil means blocked
+	return oUF:UnitIsUnit(unit1, unit2) == false
 end
 
 function oUF:UnitExists(unit)

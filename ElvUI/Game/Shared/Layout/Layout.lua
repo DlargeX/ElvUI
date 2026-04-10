@@ -49,25 +49,31 @@ function LO:Initialize()
 end
 
 function LO:UpdateBottomPanel()
-	LO.BottomPanel:SetShown(E.db.general.bottomPanel)
+	local shown = E.db.general.bottomPanel
+	LO.BottomPanel:SetShown(shown)
 	LO.BottomPanel:Point('BOTTOM', 0, -E.Border)
 
-	local SPACING = E.Border * 2
-	local db = E.db.general.bottomPanelSettings
-	local width = (db.width == 0 and E.screenWidth) or db.width
-	LO.BottomPanel:Size(width + SPACING, db.height)
-	LO.BottomPanel:SetTemplate(db.transparent and 'Transparent')
+	if shown then
+		local SPACING = E.Border * 2
+		local db = E.db.general.bottomPanelSettings
+		local width = db and (db.width ~= 0 and db.width) or E.screenWidth
+		LO.BottomPanel:Size(width + SPACING, (db and db.height) or 22)
+		LO.BottomPanel:SetTemplate(db and db.transparent and 'Transparent')
+	end
 end
 
 function LO:UpdateTopPanel()
-	LO.TopPanel:SetShown(E.db.general.topPanel)
+	local shown = E.db.general.topPanel
+	LO.TopPanel:SetShown()
 	LO.TopPanel:Point('TOP', 0, E.Border)
 
-	local SPACING = E.Border * 2
-	local db = E.db.general.topPanelSettings
-	local width = (db.width == 0 and E.screenWidth) or db.width
-	LO.TopPanel:Size(width + SPACING, db.height)
-	LO.TopPanel:SetTemplate(db.transparent and 'Transparent')
+	if shown then
+		local SPACING = E.Border * 2
+		local db = E.db.general.topPanelSettings
+		local width = db and (db.width ~= 0 and db.width) or E.screenWidth
+		LO.TopPanel:Size(width + SPACING, (db and db.height) or 22)
+		LO.TopPanel:SetTemplate(db and db.transparent and 'Transparent')
+	end
 end
 
 local function FinishFade(self)

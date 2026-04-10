@@ -32,6 +32,7 @@ local Uploads = {}
 D.blacklistedKeys = {
 	profile = {
 		gridSize = true,
+		gridLineWidth = true,
 		general = {
 			cropIcon = true,
 			numberPrefixStyle = true

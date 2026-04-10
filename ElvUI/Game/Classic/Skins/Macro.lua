@@ -17,6 +17,12 @@ local function MacroSelectorScrollUpdate(frame)
 	end
 end
 
+local function MacroPopupFrame_OnShow(frame)
+	if not frame.IsSkinned then -- set by HandleIconSelectionFrame
+		S:HandleIconSelectionFrame(frame, nil, nil, 'MacroPopup')
+	end
+end
+
 function S:Blizzard_MacroUI()
 	if not (E.private.skins.blizzard.enable and E.private.skins.blizzard.macro) then return end
 
@@ -74,12 +80,9 @@ function S:Blizzard_MacroUI()
 	-- handle the macro buttons
 	hooksecurefunc(MacroFrame.MacroSelector.ScrollBox, 'Update', MacroSelectorScrollUpdate)
 
-	-- New icon selection
-	_G.MacroPopupFrame:HookScript('OnShow', function(frame)
-		if not frame.IsSkinned then -- set by HandleIconSelectionFrame
-			S:HandleIconSelectionFrame(frame, nil, nil, 'MacroPopup')
-		end
-	end)
+	if _G.MacroPopupFrame then -- New icon selection
+		_G.MacroPopupFrame:HookScript('OnShow', MacroPopupFrame_OnShow)
+	end
 end
 
 S:AddCallbackForAddon('Blizzard_MacroUI')

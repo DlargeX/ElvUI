@@ -24,7 +24,6 @@ local UnitIsFriend = UnitIsFriend
 local UnitIsGameObject = UnitIsGameObject
 local UnitIsPlayer = UnitIsPlayer
 local UnitIsPVPSanctuary = UnitIsPVPSanctuary
-local UnitIsUnit = UnitIsUnit
 local UnitName = UnitName
 local UnitReaction = UnitReaction
 local UnitWidgetSet = UnitWidgetSet
@@ -374,17 +373,19 @@ end
 
 do
 	local elements = {
-		'QuestIcons',
-		'Highlight',
-		'Portrait',
-		'PVPRole'
+		-- on the raised element
+		QuestIcons = true,
+		Portrait = true,
+		PVPRole = true,
+		-- on the nameplate itself
+		Highlight = false
 	}
 
 	function NP:ReparentNotNameonly(nameplate, parent)
-		for _, name in next, elements do
+		for name, raised in next, elements do
 			local element = nameplate[name]
 			if element then
-				element:SetParent(parent or (name == 'QuestIcons' and nameplate.RaisedElement) or nameplate)
+				element:SetParent(parent or (raised and nameplate.RaisedElement) or nameplate)
 			end
 		end
 	end
@@ -392,19 +393,21 @@ end
 
 do
 	local elements = {
-		'Health',
-		'HealthPrediction',
-		'Power',
-		'ClassificationIndicator',
-		'Castbar',
-		'ThreatIndicator',
-		'TargetIndicator',
-		'ClassPower',
-		'PvPIndicator',
-		'PvPClassificationIndicator',
-		'Auras_',
-		'Buffs_',
-		'Debuffs_'
+		-- on the raised element
+		ClassificationIndicator = true,
+		PvPIndicator = true,
+		PvPClassificationIndicator = true,
+		ThreatIndicator = true,
+		-- on the nameplate itself
+		Health = false,
+		HealthPrediction = false,
+		Power = false,
+		Castbar = false,
+		TargetIndicator = false,
+		ClassPower = false,
+		Auras_ = false,
+		Buffs_ = false,
+		Debuffs_ = false
 	}
 
 	if E.myclass == 'DEATHKNIGHT' then
@@ -414,10 +417,10 @@ do
 	end
 
 	function NP:ReparentElements(nameplate, parent)
-		for _, name in next, elements do
+		for name, raised in next, elements do
 			local element = nameplate[name]
 			if element then
-				element:SetParent(parent or nameplate)
+				element:SetParent(parent or (raised and nameplate.RaisedElement) or nameplate)
 			end
 		end
 	end
@@ -757,8 +760,8 @@ function NP:NAME_PLATE_UNIT_ADDED(_, unit)
 	self.widgetSet = E.Retail and UnitWidgetSet(unit)
 	self.classification = UnitClassification(unit)
 	self.creatureType = UnitCreatureType(unit)
-	self.isMe = UnitIsUnit(unit, 'player')
-	self.isPet = UnitIsUnit(unit, 'pet')
+	self.isMe = E:UnitIsUnit(unit, 'player')
+	self.isPet = E:UnitIsUnit(unit, 'pet')
 	self.isFriend = UnitIsFriend('player', unit)
 	self.isEnemy = UnitIsEnemy('player', unit)
 	self.isPlayer = UnitIsPlayer(unit)
@@ -871,7 +874,7 @@ end
 function NP:UNIT_FACTION(_, unit)
 	if not unit or self.unit ~= unit then return end
 
-	self.isMe = UnitIsUnit(unit, 'player')
+	self.isMe = E:UnitIsUnit(unit, 'player')
 	self.reaction = UnitReaction('player', unit) -- Player Reaction
 	self.repReaction = UnitReaction(unit, 'player') -- Reaction to Player
 	self.isFriend = UnitIsFriend('player', unit)
@@ -1060,8 +1063,8 @@ function NP:UpdateColors()
 	NP.Colors.selection[13] = E:SetColorTable(NP.Colors.selection[13], NP.db.colors.selection[13])
 end
 
-function NP:SetStatusBarColor(bar, r, g, b)
-	bar:GetStatusBarTexture():SetVertexColor(r, g, b)
+function NP:SetStatusBarColor(bar, r, g, b, a)
+	bar:GetStatusBarTexture():SetVertexColor(r, g, b, a)
 
 	if bar.bg then
 		bar.bg:SetVertexColor(r, g, b, NP.multiplier)

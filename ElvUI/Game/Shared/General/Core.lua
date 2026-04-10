@@ -73,7 +73,7 @@ E.physicalWidth, E.physicalHeight = GetPhysicalScreenSize()
 E.screenWidth, E.screenHeight = GetScreenWidth(), GetScreenHeight()
 E.resolution = format('%dx%d', E.physicalWidth, E.physicalHeight)
 E.perfect = 768 / E.physicalHeight
-E.allowRoles = E.Retail or E.TBC or E.Mists or E.Wrath or E.ClassicAnniv or E.ClassicAnnivHC or E.ClassicSOD
+E.allowRoles = E.Retail or E.TBC or E.Wrath or E.Mists or E.ClassicAnniv or E.ClassicAnnivHC or E.ClassicSOD
 E.NewSign = [[|TInterface\OptionsFrame\UI-OptionsFrame-NewFeatureIcon:14:14|t]]
 E.NewSignNoWhatsNew = [[|TInterface\OptionsFrame\UI-OptionsFrame-NewFeatureIcon:14:14:0:0|t]]
 E.TexturePath = [[Interface\AddOns\ElvUI\Media\Textures\]] -- for plugins?
@@ -160,7 +160,7 @@ E.Curves = { -- Midnight Color Curves (nil values created later)
 	Duration = nil, -- duration object for SetTimeFromStart
 	Float = {
 		Alpha = nil, -- float for hiding at Zero
-		Desaturation = nil, -- float curve for SetDesaturation
+		Desaturate = nil, -- float curve for SetDesaturation
 	},
 	Color = {
 		Default = nil, -- simple red, yellow, green curve for various places

@@ -673,11 +673,11 @@ function A:Initialize()
 			_G.DebuffFrame:Kill()
 		end
 
-		if E.Wrath or E.Mists or E.Classic then
+		if E.Mists or E.Classic then
 			_G.TemporaryEnchantFrame:Kill()
 		end
 
-		if E.Wrath or E.Mists then
+		if E.Mists then
 			_G.ConsolidatedBuffs:Kill()
 		end
 	end

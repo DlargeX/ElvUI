@@ -97,7 +97,7 @@ end
 function BL:HandleGroupLootContainer()
 	_G.GroupLootContainer:EnableMouse(false) -- Prevent this weird non-clickable area stuff since 8.1; Monitor this, as it may cause addon compatibility.
 
-	if E.Retail or E.TBC then
+	if E.Retail or E.TBC or E.Wrath then
 		_G.GroupLootContainer.ignoreInLayout = true
 	elseif _G.UIPARENT_MANAGED_FRAME_POSITIONS then
 		_G.UIPARENT_MANAGED_FRAME_POSITIONS.GroupLootContainer = nil

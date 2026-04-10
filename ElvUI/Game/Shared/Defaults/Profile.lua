@@ -4,6 +4,7 @@ local CopyTable = CopyTable -- Our function doesn't exist yet.
 local next = next
 
 P.gridSize = 64
+P.gridLineWidth = 1
 P.hideTutorial = true
 P.dbConverted = nil -- use this to let DBConversions run once per profile
 
@@ -949,12 +950,12 @@ P.nameplates = {
 			[8] = { r = 0.00, g = 0.74, b = 0.95, a = 1 }, -- Exhalted
 		},
 		healPrediction = {
-			personal = { r = 0, g = 1, b = 0.5, a = 0.25 },
-			others = { r = 0, g = 1, b = 0, a = 0.25 },
-			absorbs = { r = 1, g = 1, b = 0, a = 0.25 },
-			healAbsorbs = { r = 1, g = 0, b = 0, a = 0.25 },
-			--overabsorbs = { r = 1, g = 1, b = 0, a = 0.25 },
-			--overhealabsorbs = { r = 1, g = 0, b = 0, a = 0.25 },
+			personal = { r = 0, g = 1, b = 0.5, a = 0.5 },
+			others = { r = 0, g = 1, b = 0, a = 0.5 },
+			absorbs = { r = 1, g = 1, b = 0, a = 0.5 },
+			healAbsorbs = { r = 1, g = 0, b = 0, a = 0.5 },
+			--overabsorbs = { r = 1, g = 1, b = 0, a = 0.5 },
+			--overhealabsorbs = { r = 1, g = 0, b = 0, a = 0.5 },
 		},
 		threat = {
 			goodColor = { r = 0.20, g = 0.86, b = 0.20, a = 1 },
@@ -2156,12 +2157,12 @@ P.unitframe = {
 			[13] = { r = 0.10, g = 0.58, b = 0.28, a = 1 }, -- BATTLEGROUND_FRIENDLY_PVP
 		},
 		healPrediction = {
-			personal = { r = 0, g = 1, b = 0.5, a = 0.25 },
-			others = { r = 0, g = 1, b = 0, a = 0.25 },
-			absorbs = { r = 1, g = 1, b = 0, a = 0.25 },
-			healAbsorbs = { r = 1, g = 0, b = 0, a = 0.25 },
-			overabsorbs = { r = 1, g = 1, b = 0, a = 0.25 },
-			overhealabsorbs = { r = 1, g = 0, b = 0, a = 0.25 },
+			personal = { r = 0, g = 1, b = 0.5, a = 0.5 },
+			others = { r = 0, g = 1, b = 0, a = 0.5 },
+			absorbs = { r = 1, g = 1, b = 0, a = 0.5 },
+			healAbsorbs = { r = 1, g = 0, b = 0, a = 0.5 },
+			overabsorbs = { r = 1, g = 1, b = 0, a = 0.5 },
+			overhealabsorbs = { r = 1, g = 0, b = 0, a = 0.5 },
 			maxOverflow = 0,
 		},
 		powerPrediction = {

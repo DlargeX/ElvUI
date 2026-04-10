@@ -2,6 +2,7 @@
 local E = unpack(ElvUI)
 local L = E.Libs.ACL:NewLocale('ElvUI', 'koKR')
 
+L["Line Width:"] = true
 L[" |cff00ff00bound to |r"] = " |cff00ff00키로 다음의 행동을 실행합니다 |r"
 L["%s frame has a conflicting anchor point. Forcing the Buffs to be attached to the main unitframe."] = "%s 프레임에 버프를 본체 프레임에 강제로 연결하는 충돌 앵커가 있습니다."
 L["%s is attempting to share the Global Profile with you. Would you like to accept the request?"] = true

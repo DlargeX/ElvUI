@@ -286,6 +286,12 @@ local function EquipmentUpdateNavigation()
 	navi:SetTemplate('Transparent')
 end
 
+local function GearManagerPopupFrame_OnShow(frame)
+	if not frame.IsSkinned then -- set by HandleIconSelectionFrame
+		S:HandleIconSelectionFrame(frame, nil, nil, 'GearManagerPopupFrame')
+	end
+end
+
 function S:CharacterFrame()
 	if not (E.private.skins.blizzard.enable and E.private.skins.blizzard.character) then return end
 
@@ -396,12 +402,9 @@ function S:CharacterFrame()
 	CharacterMainHandSlot:ClearAllPoints()
 	CharacterMainHandSlot:Point('BOTTOMLEFT', _G.PaperDollItemsFrame, 'BOTTOMLEFT', 106, 10)
 
-	-- Icon selection frame
-	_G.GearManagerPopupFrame:HookScript('OnShow', function(frame)
-		if frame.IsSkinned then return end -- set by HandleIconSelectionFrame
-
-		S:HandleIconSelectionFrame(frame)
-	end)
+	if _G.GearManagerPopupFrame then -- New icon selection
+		_G.GearManagerPopupFrame:HookScript('OnShow', GearManagerPopupFrame_OnShow)
+	end
 
 	-- Stats
 	for i = 1, 7 do

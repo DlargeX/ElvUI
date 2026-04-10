@@ -44,7 +44,7 @@ function M:RaidMarkUpdateKeyDown(keydown)
 	local marker = M.RaidMarkFrame
 	if not marker or not marker.buttons then return end
 
-	local useAttribute = E.Retail or E.TBC
+	local useAttribute = E.Retail or E.TBC or E.Wrath
 	if useAttribute and InCombatLockdown() then
 		return -- we cant change the attribute during combat
 	end
@@ -115,7 +115,7 @@ do
 
 			tinsert(marker.buttons, button)
 
-			if E.Retail or E.TBC then
+			if E.Retail or E.TBC or E.Wrath then
 				button:SetAttribute('type1', 'macro')
 				button:SetAttribute('type2', 'macro')
 				button:SetAttribute('macrotext1', tm)

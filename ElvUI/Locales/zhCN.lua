@@ -2,6 +2,7 @@
 local E = unpack(ElvUI)
 local L = E.Libs.ACL:NewLocale('ElvUI', 'zhCN')
 
+L["Line Width:"] = true
 L[" |cff00ff00bound to |r"] = " |cff00ff00绑定到 |r"
 L["%s frame has a conflicting anchor point. Forcing the Buffs to be attached to the main unitframe."] = "%s 框体有一个冲突的锚点. 强制将增益附加到主单位框体上."
 L["%s is attempting to share the Global Profile with you. Would you like to accept the request?"] = "%s 试图向你分享全局配置文件, 你是否接受?"

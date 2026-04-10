@@ -147,24 +147,25 @@ function NP:Construct_HealthPrediction(nameplate)
 		NP.StatusBars[bar] = 'healPrediction'
 	end
 
+	local colors = NP.db.colors.healPrediction
 	local healthTexture = nameplate.Health:GetStatusBarTexture()
 	local healthFrameLevel = nameplate.Health:GetFrameLevel()
 	HealthPrediction.healingPlayer:Point('LEFT', healthTexture, 'RIGHT')
 	HealthPrediction.healingPlayer:SetFrameLevel(healthFrameLevel + 2)
-	NP:SetStatusBarColor(HealthPrediction.healingPlayer, NP.db.colors.healPrediction.personal.r, NP.db.colors.healPrediction.personal.g, NP.db.colors.healPrediction.personal.b)
+	NP:SetStatusBarColor(HealthPrediction.healingPlayer, colors.personal.r, colors.personal.g, colors.personal.b, colors.personal.a)
 	HealthPrediction.healingPlayer:SetMinMaxValues(0, 1)
 
 	HealthPrediction.healingOther:Point('LEFT', HealthPrediction.healingPlayer:GetStatusBarTexture(), 'RIGHT')
 	HealthPrediction.healingOther:SetFrameLevel(healthFrameLevel + 1)
-	NP:SetStatusBarColor(HealthPrediction.healingOther, NP.db.colors.healPrediction.others.r, NP.db.colors.healPrediction.others.g, NP.db.colors.healPrediction.others.b)
+	NP:SetStatusBarColor(HealthPrediction.healingOther, colors.others.r, colors.others.g, colors.others.b, colors.others.a)
 
 	HealthPrediction.damageAbsorb:Point('LEFT', HealthPrediction.healingOther:GetStatusBarTexture(), 'RIGHT')
 	HealthPrediction.damageAbsorb:SetFrameLevel(healthFrameLevel)
-	NP:SetStatusBarColor(HealthPrediction.damageAbsorb, NP.db.colors.healPrediction.absorbs.r, NP.db.colors.healPrediction.absorbs.g, NP.db.colors.healPrediction.absorbs.b)
+	NP:SetStatusBarColor(HealthPrediction.damageAbsorb, colors.absorbs.r, colors.absorbs.g, colors.absorbs.b, colors.absorbs.a)
 
 	HealthPrediction.healAbsorb:Point('RIGHT', healthTexture)
 	HealthPrediction.healAbsorb:SetFrameLevel(healthFrameLevel + 3)
-	NP:SetStatusBarColor(HealthPrediction.healAbsorb, NP.db.colors.healPrediction.healAbsorbs.r, NP.db.colors.healPrediction.healAbsorbs.g, NP.db.colors.healPrediction.healAbsorbs.b)
+	NP:SetStatusBarColor(HealthPrediction.healAbsorb, colors.healAbsorbs.r, colors.healAbsorbs.g, colors.healAbsorbs.b, colors.healAbsorbs.a)
 	HealthPrediction.healAbsorb:SetReverseFill(true)
 
 	HealthPrediction.maxOverflow = 1
@@ -180,10 +181,11 @@ function NP:Update_HealthPrediction(nameplate)
 			nameplate:EnableElement('HealthPrediction')
 		end
 
-		NP:SetStatusBarColor(nameplate.HealthPrediction.healingPlayer, NP.db.colors.healPrediction.personal.r, NP.db.colors.healPrediction.personal.g, NP.db.colors.healPrediction.personal.b)
-		NP:SetStatusBarColor(nameplate.HealthPrediction.healingOther, NP.db.colors.healPrediction.others.r, NP.db.colors.healPrediction.others.g, NP.db.colors.healPrediction.others.b)
-		NP:SetStatusBarColor(nameplate.HealthPrediction.damageAbsorb, NP.db.colors.healPrediction.absorbs.r, NP.db.colors.healPrediction.absorbs.g, NP.db.colors.healPrediction.absorbs.b)
-		NP:SetStatusBarColor(nameplate.HealthPrediction.healAbsorb, NP.db.colors.healPrediction.healAbsorbs.r, NP.db.colors.healPrediction.healAbsorbs.g, NP.db.colors.healPrediction.healAbsorbs.b)
+		local colors = NP.db.colors.healPrediction
+		NP:SetStatusBarColor(nameplate.HealthPrediction.healingPlayer, colors.personal.r, colors.personal.g, colors.personal.b, colors.personal.a)
+		NP:SetStatusBarColor(nameplate.HealthPrediction.healingOther, colors.others.r, colors.others.g, colors.others.b, colors.others.a)
+		NP:SetStatusBarColor(nameplate.HealthPrediction.damageAbsorb, colors.absorbs.r, colors.absorbs.g, colors.absorbs.b, colors.absorbs.a)
+		NP:SetStatusBarColor(nameplate.HealthPrediction.healAbsorb, colors.healAbsorbs.r, colors.healAbsorbs.g, colors.healAbsorbs.b, colors.healAbsorbs.a)
 	elseif nameplate:IsElementEnabled('HealthPrediction') then
 		nameplate:DisableElement('HealthPrediction')
 	end
