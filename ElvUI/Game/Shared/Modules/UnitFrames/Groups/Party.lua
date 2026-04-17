@@ -120,7 +120,7 @@ function UF:Update_PartyFrames(frame, db)
 	end
 
 	if frame.isChild then
-		frame.USE_PORTAIT = false
+		frame.USE_PORTRAIT = false
 		frame.USE_PORTRAIT_OVERLAY = false
 		frame.PORTRAIT_WIDTH = 0
 		frame.USE_POWERBAR = false

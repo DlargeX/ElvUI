@@ -266,7 +266,7 @@ end
 do
 	local classPowers = { [0] = 'MANA', 'RAGE', 'FOCUS', 'ENERGY' }
 
-	if E.Mists or E.Wrath then -- also handled in ConfigEnviroment
+	if E.Mists or E.Wrath then -- also handled in ConfigEnvironment
 		classPowers[4] = 'RUNIC_POWER'
 	elseif E.Retail then
 		classPowers[4] = 'RUNIC_POWER'

@@ -354,7 +354,7 @@ end
 
 function A:Button_OnEnter()
 	local db = A.db[self.auraType]
-	GameTooltip:SetOwner(self, db.tooltipAnchorType or 'ANCHOR_BOTTOMLEFT', db.tooltipAnchorX or -5, db.tooltipAnchorY or-5)
+	GameTooltip:SetOwner(self, db.tooltipAnchorType or 'ANCHOR_BOTTOMLEFT', db.tooltipAnchorX or -5, db.tooltipAnchorY or -5)
 
 	self.elapsed = 1 -- let the tooltip update next frame
 end

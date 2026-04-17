@@ -3,7 +3,7 @@ local DT = E:GetModule('DataTexts')
 local B = E:GetModule('Bags')
 -- GLOBALS: ElvDB
 
-local type, wipe, pairs, ipairs, sort = type, wipe, pairs, ipairs, sort
+local type, wipe, next, sort = type, wipe, next, sort
 local format, strjoin, tinsert = format, strjoin, tinsert
 
 local _G = _G
@@ -26,19 +26,29 @@ local resetInfoFormatter = strjoin('', '|cffaaaaaa', L["Reset Character Data: Ho
 local PRIEST_COLOR = RAID_CLASS_COLORS.PRIEST
 local CURRENCY = CURRENCY
 
-local menuList, myGold = {}, {}
+local menuList, allGold, myGold, db = {}, {}, {}
 local warbandGold, totalGold, totalHorde, totalAlliance = 0, 0, 0, 0
 local iconStringName = '|T%s:16:16:0:0:64:64:4:60:4:60|t %s'
-local db
 
 local function SortFunction(a, b)
 	return a.amount > b.amount
 end
 
-local function DeleteCharacter(_, realm, name)
-	ElvDB.gold[realm][name] = nil
-	ElvDB.class[realm][name] = nil
-	ElvDB.faction[realm][name] = nil
+local function DeleteCharacter(realm, name)
+	local goldRealm = ElvDB.gold[realm]
+	if goldRealm then
+		goldRealm[name] = nil
+	end
+
+	local classRealm = ElvDB.class[realm]
+	if classRealm then
+		classRealm[name] = nil
+	end
+
+	local factionRealm = ElvDB.faction[realm]
+	if factionRealm then
+		factionRealm[name] = nil
+	end
 
 	DT:ForceUpdate_DataText('Gold')
 end
@@ -72,12 +82,12 @@ local function DisplayCurrencyInfo()
 	end
 end
 
-local function UpdateGold(self, updateAll, goldChange)
+local function UpdateGold(updateAll, goldChange)
 	local textOnly = not db.goldCoins and true or false
 	local style = db.goldFormat or 'BLIZZARD'
 
 	if updateAll then
-		wipe(myGold)
+		wipe(allGold)
 		wipe(menuList)
 
 		totalGold, totalHorde, totalAlliance = 0, 0, 0
@@ -85,44 +95,54 @@ local function UpdateGold(self, updateAll, goldChange)
 		tinsert(menuList, { text = '', isTitle = true, notCheckable = true })
 		tinsert(menuList, { text = 'Delete Character', isTitle = true, notCheckable = true })
 
-		local realmN = 1
-		for realm in pairs(ElvDB.serverID[E.serverID]) do
-			tinsert(menuList, realmN, { text = 'Delete All - '..realm, notCheckable = true, func = function() wipe(ElvDB.gold[realm]) DT:ForceUpdate_DataText('Gold') end })
-			realmN = realmN + 1
-			for name in pairs(ElvDB.gold[realm]) do
-				local faction = ElvDB.faction[realm][name]
-				local gold = ElvDB.gold[realm][name]
+		local index = 1
+		for realm in next, ElvDB.serverID[E.serverID] do
+			tinsert(menuList, index, {
+				text = 'Delete All - '..realm,
+				notCheckable = true,
+				func = function()
+					wipe(ElvDB.gold[realm])
 
-				if gold then
-					local color = E:ClassColor(ElvDB.class[realm][name]) or PRIEST_COLOR
-
-					tinsert(myGold, {
-							name = name,
-							realm = realm,
-							amount = gold,
-							amountText = E:FormatMoney(gold, style, textOnly),
-							faction = faction or '',
-							r = color.r, g = color.g, b = color.b,
-					})
-
-					tinsert(menuList, {
-						text = format('%s - %s', name, realm),
-						notCheckable = true,
-						func = function() DeleteCharacter(self, realm, name) end
-					})
-
-					UpdateTotal(faction, gold)
+					DT:ForceUpdate_DataText('Gold')
 				end
+			})
+
+			index = index + 1
+
+			for name, amount in next, ElvDB.gold[realm] do
+				local factionRealm, classRealm = ElvDB.faction[realm], ElvDB.class[realm]
+				local faction = factionRealm and factionRealm[name]
+				local color = classRealm and E:ClassColor(classRealm[name]) or PRIEST_COLOR
+
+				local goldData = {
+					name = name,
+					realm = realm,
+					amount = amount,
+					amountText = E:FormatMoney(amount, style, textOnly),
+					faction = faction or '',
+					r = color.r, g = color.g, b = color.b,
+				}
+
+				if name == E.myname and realm == E.myrealm then
+					myGold = goldData
+				end
+
+				tinsert(allGold, goldData)
+				tinsert(menuList, {
+					notCheckable = true,
+					text = format('%s - %s', name, realm),
+					func = function()
+						DeleteCharacter(realm, name)
+					end
+				})
+
+				UpdateTotal(faction, amount)
 			end
 		end
 	else
-		for _, info in ipairs(myGold) do
-			if info.name == E.myname and info.realm == E.myrealm then
-				info.amount = ElvDB.gold[E.myrealm][E.myname]
-				info.amountText = E:FormatMoney(ElvDB.gold[E.myrealm][E.myname], style, textOnly)
-
-				break
-			end
+		if next(myGold) then
+			myGold.amount = ElvDB.gold[E.myrealm][E.myname]
+			myGold.amountText = E:FormatMoney(myGold.amount, style, textOnly)
 		end
 
 		if goldChange then
@@ -156,24 +176,25 @@ local function OnEvent(self, event)
 	end
 
 	--prevent an error possibly from really old profiles
-	local oldMoney = ElvDB.gold[E.myrealm][E.myname]
+	local goldRealm = ElvDB.gold[E.myrealm]
+	local oldMoney = goldRealm[E.myname]
 	if oldMoney and type(oldMoney) ~= 'number' then
-		ElvDB.gold[E.myrealm][E.myname] = nil
+		goldRealm[E.myname] = nil
 		oldMoney = nil
 	end
 
 	local NewMoney = GetMoney()
-	ElvDB.gold[E.myrealm][E.myname] = NewMoney
+	goldRealm[E.myname] = NewMoney
 
 	local OldMoney = oldMoney or NewMoney
-	local Change = NewMoney-OldMoney -- Positive if we gain money
-	if OldMoney>NewMoney then		-- Lost Money
+	local Change = NewMoney - OldMoney -- Positive if we gain money
+	if OldMoney > NewMoney then		-- Lost Money
 		Spent = Spent - Change
 	else							-- Gained Moeny
 		Profit = Profit + Change
 	end
 
-	UpdateGold(self, event == 'ELVUI_FORCE_UPDATE', Change)
+	UpdateGold(event == 'ELVUI_FORCE_UPDATE', Change)
 
 	self.text:SetText(E:FormatMoney(NewMoney, db.goldFormat or 'BLIZZARD', not db.goldCoins))
 end
@@ -204,17 +225,17 @@ local function OnEnter()
 
 	if Spent ~= 0 then
 		local gained = Profit > Spent
-		DT.tooltip:AddDoubleLine(gained and L["Profit:"] or L["Deficit:"], E:FormatMoney(Profit-Spent, style, textOnly), gained and 0 or 1, gained and 1 or 0, 0, 1, 1, 1)
+		DT.tooltip:AddDoubleLine(gained and L["Profit:"] or L["Deficit:"], E:FormatMoney(Profit - Spent, style, textOnly), gained and 0 or 1, gained and 1 or 0, 0, 1, 1, 1)
 	end
 
 	DT.tooltip:AddLine(' ')
 	DT.tooltip:AddLine(L["Character: "])
 
-	sort(myGold, SortFunction)
+	sort(allGold, SortFunction)
 
-	local total, limit = #myGold, db.maxLimit
+	local total, limit = #allGold, db.maxLimit
 	local useLimit = limit and limit > 0
-	for i, g in ipairs(myGold) do
+	for i, g in next, allGold do
 		if useLimit and i > limit then
 			local count = total - limit
 			if count > 1 then

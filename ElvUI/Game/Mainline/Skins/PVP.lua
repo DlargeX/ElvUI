@@ -12,6 +12,13 @@ local ITEMQUALITY_ARTIFACT = Enum.ItemQuality.Artifact
 local CurrencyContainerUtil_GetCurrencyContainerInfo = CurrencyContainerUtil.GetCurrencyContainerInfo
 local C_CurrencyInfo_GetCurrencyInfo = C_CurrencyInfo.GetCurrencyInfo
 
+local categoryButtonIcons = {
+	236396, -- interface\icons\achievement_bg_winwsg
+	236368, -- interface\icons\achievement_bg_killxenemies_generalsroom
+	464820, -- interface\icons\achievement_general_stayclassy
+	236179, -- interface\icons\ability_hunter_focusedaim
+}
+
 local function HandleRoleButton(button)
 	local checkbox = button.checkButton
 	checkbox:OffsetFrameLevel(1)
@@ -113,13 +120,6 @@ function S:Blizzard_PVPUI()
 	if PlunderstormPanel then
 		S:HandleButton(PlunderstormPanel.PlunderstoreButton)
 	end
-
-	local categoryButtonIcons = {
-		236396, -- interface\icons\achievement_bg_winwsg
-		236368, -- interface\icons\achievement_bg_killxenemies_generalsroom
-		464820, -- interface\icons\achievement_general_stayclassy
-		236179, -- interface\icons\ability_hunter_focusedaim
-	}
 
 	HandleCategoryButtons('CategoryButton', categoryButtonIcons)
 
@@ -237,19 +237,6 @@ function S:Blizzard_PVPUI()
 		TT:SetStyle(_G.ConquestTooltip)
 	end
 
-	-- PvP StatusBars
-	for _, Frame in next, { HonorFrame, ConquestFrame } do
-		Frame.ConquestBar.Border:Hide()
-		Frame.ConquestBar.Background:Hide()
-		Frame.ConquestBar.Reward.Ring:Hide()
-		Frame.ConquestBar.Reward.CircleMask:Hide()
-		Frame.ConquestBar:SetTemplate('Transparent')
-
-		Frame.ConquestBar.Reward:ClearAllPoints()
-		Frame.ConquestBar.Reward:Point('LEFT', Frame.ConquestBar, 'RIGHT', 0, 0)
-		S:HandleIcon(Frame.ConquestBar.Reward.Icon, true)
-	end
-
 	-- New Season Frame
 	local NewSeasonPopup = _G.PVPQueueFrame.NewSeasonPopup
 	S:HandleButton(NewSeasonPopup.Leave)
@@ -333,6 +320,19 @@ function S:Blizzard_PVPUI()
 
 	-- Training Grounds Specific Buttons
 	hooksecurefunc(TrainingGroundsFrame.SpecificTrainingGroundList.ScrollBox, 'Update', SpecificScrollUpdate)
+
+	-- PvP StatusBars
+	for _, Frame in next, { HonorFrame, ConquestFrame, TrainingGroundsFrame } do
+		Frame.ConquestBar.Border:Hide()
+		Frame.ConquestBar.Background:Hide()
+		Frame.ConquestBar.Reward.Ring:Hide()
+		Frame.ConquestBar.Reward.CircleMask:Hide()
+		Frame.ConquestBar:SetTemplate('Transparent')
+
+		Frame.ConquestBar.Reward:ClearAllPoints()
+		Frame.ConquestBar.Reward:Point('LEFT', Frame.ConquestBar, 'RIGHT', 0, 0)
+		S:HandleIcon(Frame.ConquestBar.Reward.Icon, true)
+	end
 end
 
 function S:PVPReadyDialog()

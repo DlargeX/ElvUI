@@ -112,6 +112,10 @@ function S:PlayerChoice_SetupOptions()
 						frame.Text:SetTextColor(1, 1, 1)
 					end
 
+					if parchmentRemover and frame.Label then
+						frame.Label:SetTextColor(1, 1, 1)
+					end
+
 					if frame.Spell then
 						ReskinSpellWidget(frame.Spell)
 					end

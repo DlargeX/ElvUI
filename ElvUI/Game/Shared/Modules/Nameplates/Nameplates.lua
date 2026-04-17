@@ -256,7 +256,7 @@ function NP:Construct_StackingBounds(nameplate)
 	return element
 end
 
-function NP:Construct_RaisedELement(nameplate)
+function NP:Construct_RaisedElement(nameplate)
 	local element = CreateFrame('Frame', '$parent_RaisedElement', nameplate)
 	element:EnableMouse(false)
 	element:SetFrameLevel(10)
@@ -294,7 +294,7 @@ function NP:StyleTargetPlate(nameplate)
 	nameplate:Size(NP.db.clickSize.personalWidth, NP.db.clickSize.personalHeight)
 
 	nameplate.StackingBounds = NP:Construct_StackingBounds(nameplate)
-	nameplate.RaisedElement = NP:Construct_RaisedELement(nameplate)
+	nameplate.RaisedElement = NP:Construct_RaisedElement(nameplate)
 	nameplate.ClassPower = NP:Construct_ClassPower(nameplate)
 
 	NP:Construct_ClassPowerTwo(nameplate)
@@ -338,7 +338,7 @@ function NP:StylePlate(nameplate)
 	nameplate.blizzAuras = { BuffList = {}, DebuffList = {}, CrowdControlList = {} }
 
 	nameplate.StackingBounds = NP:Construct_StackingBounds(nameplate)
-	nameplate.RaisedElement = NP:Construct_RaisedELement(nameplate)
+	nameplate.RaisedElement = NP:Construct_RaisedElement(nameplate)
 	nameplate.Health = NP:Construct_Health(nameplate)
 	nameplate.Health.Text = NP:Construct_TagText(nameplate)
 	nameplate.Health.Text.frequentUpdates = .1
@@ -411,9 +411,9 @@ do
 	}
 
 	if E.myclass == 'DEATHKNIGHT' then
-		tinsert(elements, 'Runes')
+		elements.Runes = false
 	elseif E.myclass == 'MONK' then
-		tinsert(elements, 'Stagger')
+		elements.Stagger = false
 	end
 
 	function NP:ReparentElements(nameplate, parent)

@@ -1,6 +1,6 @@
 <Ui xmlns='http://www.blizzard.com/wow/ui/'>
 	<Script file='UnitFrames\UnitFrames.lua'/>
-	<Script file='UnitFrames\ConfigEnviroment.lua'/>
+	<Script file='UnitFrames\ConfigEnvironment.lua'/>
 
 	<Script file='UnitFrames\Elements\AltPower.lua'/>
 	<Script file='UnitFrames\Elements\AuraBars.lua'/>
