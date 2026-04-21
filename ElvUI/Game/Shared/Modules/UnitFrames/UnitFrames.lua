@@ -1866,7 +1866,7 @@ do
 					end
 				end
 
-				if E.Retail or E.TBC or E.Wrath then
+				if E.hasEditMode then
 					if disable.castbar then
 						HideFrame(_G.PlayerCastingBarFrame)
 						HideFrame(_G.PetCastingBarFrame)
@@ -2283,7 +2283,7 @@ function UF:Initialize()
 	UF:RegisterEvent('SPELLS_CHANGED', 'UpdateRangeSpells')
 	UF:RegisterEvent('CHARACTER_POINTS_CHANGED', 'UpdateRangeSpells')
 
-	if E.Retail or E.TBC or E.Wrath then
+	if E.hasEditMode then
 		UF:RegisterEvent('LEARNED_SPELL_IN_SKILL_LINE', 'UpdateRangeSpells')
 	else
 		UF:RegisterEvent('LEARNED_SPELL_IN_TAB', 'UpdateRangeSpells')

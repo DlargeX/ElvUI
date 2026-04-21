@@ -17,7 +17,8 @@ local LE_PARTY_CATEGORY_HOME = LE_PARTY_CATEGORY_HOME
 local groupButtonIcons = {
 	133076,	-- interface\icons\inv_helmet_08.blp
 	133074,	-- interface\icons\inv_helmet_06.blp
-	464820	-- interface\icons\achievement_general_stayclassy.blp
+	464820,	-- interface\icons\achievement_general_stayclassy.blp
+	618982	-- interface\icons\icon_scenarios.blp
 }
 
 local function LFDQueueFrameRoleButtonIconOnShow(frame)
@@ -262,8 +263,18 @@ function S:LookingForGroupFrames()
 		local index = 1
 		local button = _G.GroupFinderFrame['groupButton'..index]
 		while button do
-			button.ring:Hide()
-			button.bg:Kill()
+			if button.ring then
+				button.ring:Hide()
+			end
+
+			if button.CircleMask then
+				button.CircleMask:Hide()
+			end
+
+			if button.bg then
+				button.bg:Kill()
+			end
+
 			S:HandleButton(button)
 
 			local texture = groupButtonIcons[index]

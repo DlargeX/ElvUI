@@ -40,6 +40,10 @@ local function UpdateSpecFrame(frame)
 						button.Ring:Hide()
 					end
 
+					if button.CircleMask then
+						button.CircleMask:Hide()
+					end
+
 					if button.spellID then
 						local texture = GetSpellTexture(button.spellID)
 						if texture then

@@ -110,8 +110,17 @@ local function HandleAffixIcons(child)
 	if not list then return end
 
 	for _, frame in ipairs(list) do
-		frame.Border:SetTexture()
-		frame.Portrait:SetTexture()
+		if frame.Border then
+			frame.Border:SetTexture()
+		end
+
+		if frame.Portrait then
+			frame.Portrait:SetTexture()
+		end
+
+		if frame.CircleMask then
+			frame.CircleMask:Hide()
+		end
 
 		if frame.info then
 			frame.Portrait:SetTexture(_G.CHALLENGE_MODE_EXTRA_AFFIX_INFO[frame.info.key].texture)
@@ -305,8 +314,18 @@ function S:LookingForGroupFrames()
 		local index = 1
 		local button = _G.GroupFinderFrame['groupButton'..index]
 		while button do
-			button.ring:Hide()
-			button.bg:Kill()
+			if button.ring then
+				button.ring:Hide()
+			end
+
+			if button.CircleMask then
+				button.CircleMask:Hide()
+			end
+
+			if button.bg then
+				button.bg:Kill()
+			end
+
 			S:HandleButton(button)
 
 			local texture = groupButtonIcons[index]

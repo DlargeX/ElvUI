@@ -38,6 +38,7 @@ function S:WorldMapFrame()
 
 	S:HandleButton(_G.WorldMapZoomOutButton)
 	S:HandleSliderFrame(_G.OpacityFrameSlider)
+	S:HandleCheckBox(_G.WorldMapQuestShowObjectives)
 
 	if E.OtherAddons.Questie and _G.Questie_Toggle then
 		S:HandleButton(_G.Questie_Toggle)

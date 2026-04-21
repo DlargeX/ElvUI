@@ -73,6 +73,7 @@ E.physicalWidth, E.physicalHeight = GetPhysicalScreenSize()
 E.screenWidth, E.screenHeight = GetScreenWidth(), GetScreenHeight()
 E.resolution = format('%dx%d', E.physicalWidth, E.physicalHeight)
 E.perfect = 768 / E.physicalHeight
+E.hasEditMode = E.Retail or E.TBC or E.Wrath
 E.allowRoles = E.Retail or E.TBC or E.Wrath or E.Mists or E.ClassicAnniv or E.ClassicAnnivHC or E.ClassicSOD
 E.NewSign = [[|TInterface\OptionsFrame\UI-OptionsFrame-NewFeatureIcon:14:14|t]]
 E.NewSignNoWhatsNew = [[|TInterface\OptionsFrame\UI-OptionsFrame-NewFeatureIcon:14:14:0:0|t]]
@@ -1030,7 +1031,7 @@ function E:UpdateStart(skipCallback, skipUpdateDB)
 	E:UpdateUnitFrames()
 
 	if not skipCallback then
-		E.callbacks:Fire('StaggeredUpdate')
+		E:StaggeredUpdate()
 	end
 end
 
@@ -1556,7 +1557,7 @@ function E:UpdateMediaItems(skipCallback)
 	E:UpdateStatusBars()
 
 	if not skipCallback then
-		E.callbacks:Fire('StaggeredUpdate')
+		E:StaggeredUpdate()
 	end
 end
 
@@ -1567,7 +1568,7 @@ function E:UpdateLayout(skipCallback)
 	Layout:SetDataPanelStyle()
 
 	if not skipCallback then
-		E.callbacks:Fire('StaggeredUpdate')
+		E:StaggeredUpdate()
 	end
 end
 
@@ -1581,7 +1582,7 @@ function E:UpdateActionBars(skipCallback)
 	end
 
 	if not skipCallback then
-		E.callbacks:Fire('StaggeredUpdate')
+		E:StaggeredUpdate()
 	end
 end
 
@@ -1589,7 +1590,7 @@ function E:UpdateNamePlates(skipCallback)
 	NamePlates:ConfigureAll()
 
 	if not skipCallback then
-		E.callbacks:Fire('StaggeredUpdate')
+		E:StaggeredUpdate()
 	end
 end
 
@@ -1603,7 +1604,7 @@ function E:UpdateBags(skipCallback)
 	Bags:UpdateLayouts()
 
 	if not skipCallback then
-		E.callbacks:Fire('StaggeredUpdate')
+		E:StaggeredUpdate()
 	end
 end
 
@@ -1612,7 +1613,7 @@ function E:UpdateChat(skipCallback)
 	Chat:UpdateEditboxAnchors()
 
 	if not skipCallback then
-		E.callbacks:Fire('StaggeredUpdate')
+		E:StaggeredUpdate()
 	end
 end
 
@@ -1621,7 +1622,7 @@ function E:UpdateDataBars(skipCallback)
 	DataBars:UpdateAll()
 
 	if not skipCallback then
-		E.callbacks:Fire('StaggeredUpdate')
+		E:StaggeredUpdate()
 	end
 end
 
@@ -1629,7 +1630,7 @@ function E:UpdateDataTexts(skipCallback)
 	DataTexts:LoadDataTexts()
 
 	if not skipCallback then
-		E.callbacks:Fire('StaggeredUpdate')
+		E:StaggeredUpdate()
 	end
 end
 
@@ -1637,7 +1638,7 @@ function E:UpdateMinimap(skipCallback)
 	Minimap:UpdateSettings()
 
 	if not skipCallback then
-		E.callbacks:Fire('StaggeredUpdate')
+		E:StaggeredUpdate()
 	end
 end
 
@@ -1646,7 +1647,7 @@ function E:UpdateAuras(skipCallback)
 	if Auras.DebuffFrame then Auras:UpdateHeader(Auras.DebuffFrame) end
 
 	if not skipCallback then
-		E.callbacks:Fire('StaggeredUpdate')
+		E:StaggeredUpdate()
 	end
 end
 
@@ -1660,7 +1661,7 @@ function E:UpdateMisc(skipCallback)
 	end
 
 	if not skipCallback then
-		E.callbacks:Fire('StaggeredUpdate')
+		E:StaggeredUpdate()
 	end
 end
 
@@ -1686,7 +1687,7 @@ end
 do
 	local staggerDelay = 0.02
 	local staggerTable = {}
-	local function CallStaggeredUpdate()
+	function E:StaggeredUpdate()
 		local nextUpdate, nextDelay = staggerTable[1]
 		if nextUpdate then
 			tremove(staggerTable, 1)
@@ -1695,10 +1696,9 @@ do
 				nextDelay = 0.05
 			end
 
-			E:Delay(nextDelay or staggerDelay, E[nextUpdate])
+			E:Delay(nextDelay or staggerDelay, E[nextUpdate], E)
 		end
 	end
-	E:RegisterCallback('StaggeredUpdate', CallStaggeredUpdate)
 
 	function E:StaggeredUpdateAll(event)
 		if not E.initialized then
@@ -1708,29 +1708,38 @@ do
 
 		if (not event or event == 'OnProfileChanged' or event == 'OnProfileCopied') and not E.staggerUpdateRunning then
 			tinsert(staggerTable, 'UpdateLayout')
+
 			if ActionBars.Initialized then
 				tinsert(staggerTable, 'UpdateActionBars')
 			end
+
 			if NamePlates.Initialized then
 				tinsert(staggerTable, 'UpdateNamePlates')
 			end
+
 			if Bags.Initialized then
 				tinsert(staggerTable, 'UpdateBags')
 			end
+
 			if Chat.Initialized then
 				tinsert(staggerTable, 'UpdateChat')
 			end
+
 			if Tooltip.Initialized then
 				tinsert(staggerTable, 'UpdateTooltip')
 			end
+
 			tinsert(staggerTable, 'UpdateDataBars')
 			tinsert(staggerTable, 'UpdateDataTexts')
+
 			if Minimap.Initialized then
 				tinsert(staggerTable, 'UpdateMinimap')
 			end
+
 			if Auras.BuffFrame or Auras.DebuffFrame then
 				tinsert(staggerTable, 'UpdateAuras')
 			end
+
 			tinsert(staggerTable, 'UpdateMisc')
 			tinsert(staggerTable, 'UpdateEnd')
 

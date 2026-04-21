@@ -56,8 +56,17 @@ local function HandleCategoryButtons(name, icons)
 	local index = 1
 	local button = _G.PVPQueueFrame[name..index]
 	while button do
-		button.Ring:Hide()
-		button.Background:Kill()
+		if button.Ring then
+			button.Ring:Hide()
+		end
+
+		if button.CircleMask then
+			button.CircleMask:Hide()
+		end
+
+		if button.Background then
+			button.Background:Kill()
+		end
 
 		S:HandleButton(button)
 

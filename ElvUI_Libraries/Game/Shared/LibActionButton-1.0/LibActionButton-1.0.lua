@@ -1500,7 +1500,7 @@ function InitializeEventHandler()
 	lib.eventFrame:RegisterEvent("SPELL_UPDATE_CHARGES")
 	lib.eventFrame:RegisterEvent("SPELL_UPDATE_ICON")
 
-	if WoWRetail or WoWBCC or WoWWrath then
+	if WoWRetail or WoWBCC or WoWWrath then -- hasEditMode
 		lib.eventFrame:RegisterEvent("LEARNED_SPELL_IN_SKILL_LINE")
 	else
 		lib.eventFrame:RegisterEvent("LEARNED_SPELL_IN_TAB")
@@ -3062,7 +3062,7 @@ end
 
 -- fallback for pre-12.0
 
-local GetActionCount = GetActionCount
+local GetActionCount = C_ActionBar.GetActionUseCount or GetActionCount
 
 -- the remaining uses of GetActionCount can't deal with secrets, so disable on Midnight
 if WoWRetail then
@@ -3118,6 +3118,20 @@ end
 local GetActionCooldownInfo = C_ActionBar and C_ActionBar.GetActionCooldown or GetActionCooldownInfoFallback
 local GetActionChargeInfo = C_ActionBar and C_ActionBar.GetActionCharges or GetActionChargeInfoFallback
 local GetActionLoCCooldownInfo = C_ActionBar and C_ActionBar.GetActionLossOfControlCooldownInfo or GetActionLoCCooldownInfoFallback
+
+-- fallbacks
+local HasAction = C_ActionBar.HasAction or HasAction
+local GetActionText = C_ActionBar.GetActionText or GetActionText
+local GetActionTexture = C_ActionBar.GetActionTexture or GetActionTexture
+local IsAttackAction = C_ActionBar.IsAttackAction or IsAttackAction
+local IsEquippedAction = C_ActionBar.IsEquippedAction or IsEquippedAction
+local IsCurrentAction = C_ActionBar.IsCurrentAction or IsCurrentAction
+local IsAutoRepeatAction = C_ActionBar.IsAutoRepeatAction or IsAutoRepeatAction
+local IsUsableAction = C_ActionBar.IsUsableAction or IsUsableAction
+local IsConsumableAction = C_ActionBar.IsConsumableAction or IsConsumableAction
+local IsStackableAction = C_ActionBar.IsStackableAction or IsStackableAction
+local IsItemAction = C_ActionBar.IsItemAction or IsItemAction
+local IsActionInRange = C_ActionBar.IsActionInRange or IsActionInRange
 
 Action.HasAction                = function(self) return HasAction(self._state_action) end
 Action.GetActionText            = function(self) return GetActionText(self._state_action) end

@@ -8,17 +8,17 @@ local format, next, strjoin = format, next, strjoin
 local GetLootSpecialization = GetLootSpecialization
 local GetNumSpecializations = GetNumSpecializations
 local GetPvpTalentInfoByID = GetPvpTalentInfoByID
-local GetSpecialization = GetSpecialization
-local GetSpecializationInfo = GetSpecializationInfo
 local IsControlKeyDown = IsControlKeyDown
 local IsShiftKeyDown = IsShiftKeyDown
 local SetLootSpecialization = SetLootSpecialization
-local SetSpecialization = C_SpecializationInfo.SetSpecialization or SetSpecialization
 local TogglePlayerSpellsFrame = TogglePlayerSpellsFrame
 
 local LoadAddOn = C_AddOns.LoadAddOn
-local C_SpecializationInfo_GetAllSelectedPvpTalentIDs = C_SpecializationInfo.GetAllSelectedPvpTalentIDs
-local C_Traits_GetConfigInfo = C_Traits.GetConfigInfo
+local GetSpecialization = C_SpecializationInfo.GetSpecialization
+local GetSpecializationInfo = C_SpecializationInfo.GetSpecializationInfo
+local SetSpecialization = C_SpecializationInfo.SetSpecialization
+local GetAllSelectedPvpTalentIDs = C_SpecializationInfo.GetAllSelectedPvpTalentIDs
+local GetTraitsConfigInfo = C_Traits.GetConfigInfo
 
 local GetHasStarterBuild = C_ClassTalents.GetHasStarterBuild
 local GetStarterBuildActive = C_ClassTalents.GetStarterBuildActive
@@ -130,7 +130,7 @@ local function OnEvent(self, event, loadoutID)
 			if configID == STARTER_ID then
 				loadoutList[index + 1] = { text = STARTER_TEXT, checked = StarterChecked, func = LoadoutFunc, arg1 = STARTER_ID }
 			else
-				local configInfo = C_Traits_GetConfigInfo(configID)
+				local configInfo = GetTraitsConfigInfo(configID)
 				loadoutList[index + 1] = { text = configInfo and configInfo.name or UNKNOWN, checked = LoadoutChecked, func = LoadoutFunc, arg1 = configID }
 			end
 		end
@@ -203,7 +203,7 @@ local function OnEnter()
 		end
 	end
 
-	local pvpTalents = C_SpecializationInfo_GetAllSelectedPvpTalentIDs()
+	local pvpTalents = GetAllSelectedPvpTalentIDs()
 	if next(pvpTalents) then
 		DT.tooltip:AddLine(' ')
 		DT.tooltip:AddLine(PVP_TALENTS, 0.69, 0.31, 0.31)

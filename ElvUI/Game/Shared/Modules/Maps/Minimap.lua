@@ -828,7 +828,7 @@ function M:Initialize()
 		E.Retail and _G.MiniMapTracking or _G.MinimapToggleButton
 	}
 
-	if E.Retail or E.TBC or E.Wrath then
+	if E.hasEditMode then
 		tinsert(killFrames, Minimap.ZoomIn)
 		tinsert(killFrames, Minimap.ZoomOut)
 

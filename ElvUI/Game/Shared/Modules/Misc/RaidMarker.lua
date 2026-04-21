@@ -44,13 +44,12 @@ function M:RaidMarkUpdateKeyDown(keydown)
 	local marker = M.RaidMarkFrame
 	if not marker or not marker.buttons then return end
 
-	local useAttribute = E.Retail or E.TBC or E.Wrath
-	if useAttribute and InCombatLockdown() then
+	if E.hasEditMode and InCombatLockdown() then
 		return -- we cant change the attribute during combat
 	end
 
 	for _, button in next, marker.buttons do
-		if useAttribute then
+		if E.hasEditMode then
 			button:SetAttribute('useOnKeyDown', keydown)
 		else
 			button:RegisterForClicks(keydown and 'AnyDown' or 'AnyUp')
@@ -115,7 +114,7 @@ do
 
 			tinsert(marker.buttons, button)
 
-			if E.Retail or E.TBC or E.Wrath then
+			if E.hasEditMode then
 				button:SetAttribute('type1', 'macro')
 				button:SetAttribute('type2', 'macro')
 				button:SetAttribute('macrotext1', tm)

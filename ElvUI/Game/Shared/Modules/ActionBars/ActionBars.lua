@@ -9,16 +9,10 @@ local ClearOnBarHighlightMarks = ClearOnBarHighlightMarks
 local ClearOverrideBindings = ClearOverrideBindings
 local CreateFrame = CreateFrame
 local GetBindingKey = GetBindingKey
-local GetOverrideBarIndex = GetOverrideBarIndex
-local GetTempShapeshiftBarIndex = GetTempShapeshiftBarIndex
-local GetVehicleBarIndex = GetVehicleBarIndex
-local HasOverrideActionBar = HasOverrideActionBar
 local HideUIPanel = HideUIPanel
 local hooksecurefunc = hooksecurefunc
 local InClickBindingMode = InClickBindingMode
 local InCombatLockdown = InCombatLockdown
-local IsItemAction = IsItemAction
-local IsPossessBarVisible = IsPossessBarVisible
 local PetDismiss = PetDismiss
 local RegisterStateDriver = RegisterStateDriver
 local SecureHandlerSetFrameRef = SecureHandlerSetFrameRef
@@ -57,6 +51,13 @@ local IsInBattle = C_PetBattles and C_PetBattles.IsInBattle
 local C_PlayerInfo_GetGlidingInfo = C_PlayerInfo.GetGlidingInfo
 local FindSpellBookSlotForSpell = C_SpellBook.FindSpellBookSlotForSpell or SpellBook_GetSpellBookSlot
 local ActionBarController_UpdateAllSpellHighlights = ActionBarController_UpdateAllSpellHighlights
+
+local IsItemAction = C_ActionBar.IsItemAction or IsItemAction
+local HasOverrideActionBar = C_ActionBar.HasOverrideActionBar or HasOverrideActionBar
+local IsPossessBarVisible = C_ActionBar.IsPossessBarVisible or IsPossessBarVisible
+local GetTempShapeshiftBarIndex = C_ActionBar.GetTempShapeshiftBarIndex or GetTempShapeshiftBarIndex
+local GetOverrideBarIndex = C_ActionBar.GetOverrideBarIndex or GetOverrideBarIndex
+local GetVehicleBarIndex = C_ActionBar.GetVehicleBarIndex or GetVehicleBarIndex
 
 local GetCVarBool = C_CVar.GetCVarBool
 local COOLDOWN_GLOBAL = 61304
@@ -1210,7 +1211,6 @@ function AB:IconIntroTracker_Skin()
 end
 
 do
-	local modernBars = E.Retail or E.TBC or E.Wrath
 	local untaint = {
 		MultiBar5 = true,
 		MultiBar6 = true,
@@ -1223,10 +1223,10 @@ do
 		OverrideActionBar = true,
 		MainMenuBar = true,
 		BagsBar = (E.TBC or E.Wrath) or nil,
-		MainActionBar = modernBars or nil,
-		[modernBars and 'StanceBar' or 'StanceBarFrame'] = true,
-		[modernBars and 'PetActionBar' or 'PetActionBarFrame'] = true,
-		[modernBars and 'PossessActionBar' or 'PossessBarFrame'] = true
+		MainActionBar = E.hasEditMode or nil,
+		[E.hasEditMode and 'StanceBar' or 'StanceBarFrame'] = true,
+		[E.hasEditMode and 'PetActionBar' or 'PetActionBarFrame'] = true,
+		[E.hasEditMode and 'PossessActionBar' or 'PossessBarFrame'] = true
 	}
 
 	local untaintButtons = {
@@ -1299,7 +1299,7 @@ do
 				frame:SetParent(E.HiddenFrame)
 				frame:UnregisterAllEvents()
 
-				if not (E.Retail or E.TBC or E.Wrath) then
+				if not E.hasEditMode then
 					AB:SetNoopsi(frame)
 				end
 			end
@@ -1323,7 +1323,7 @@ do
 		-- modified to fix a taint when closing the options while in combat
 		_G.SettingsPanel:SetScript('OnHide', AB.SettingsPanel_OnHide)
 
-		if E.Retail or E.TBC or E.Wrath then
+		if E.hasEditMode then
 			_G.StatusTrackingBarManager:Kill()
 			_G.ActionBarController:RegisterEvent('UPDATE_EXTRA_ACTIONBAR') -- this is needed to let the ExtraActionBar show
 

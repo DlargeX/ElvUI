@@ -89,7 +89,7 @@ function AB:UpdatePet(event, unit)
 			autoCast:Hide()
 		end
 
-		if E.Retail or E.TBC or E.Wrath then
+		if E.hasEditMode then
 			autoCast:ShowAutoCastEnabled(autoCastEnabled)
 		elseif autoCastEnabled then
 			AutoCastShine_AutoCastStart(button.AutoCastShine)
@@ -280,7 +280,7 @@ function AB:CreateBarPet()
 	bar:SetScript('OnHide', AB.PetBar_OnHide)
 	bar:SetScript('OnShow', AB.PetBar_OnShow)
 
-	if E.Retail or E.TBC or E.Wrath then
+	if E.hasEditMode then
 		AB:RegisterEvent('PET_UI_UPDATE', 'UpdatePet')
 	else
 		PetActionBar_ShowGrid()

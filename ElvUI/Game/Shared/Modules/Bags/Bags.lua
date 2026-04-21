@@ -291,7 +291,7 @@ local presistentEvents = {
 	BAG_CLOSED = true
 }
 
-if E.Retail or E.TBC or E.Wrath then
+if E.hasEditMode then
 	tinsert(bagEvents, 'BAG_CONTAINER_UPDATE')
 	tinsert(bankEvents, 'BAG_CONTAINER_UPDATE')
 

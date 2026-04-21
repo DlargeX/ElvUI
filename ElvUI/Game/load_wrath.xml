@@ -1,5 +1,5 @@
 <Ui xmlns='http://www.blizzard.com/wow/ui/'>
-	<Button name='ElvUIAuraTemplate' inherits='ElvUIAuraIconTemplate' virtual='true' framelevel='4' registerForClicks='RightButtonUp'></Button> <!-- framelevel 4 for Masque support -->
+	<Button name='ElvUIAuraTemplate' inherits='ElvUIAuraIconTemplate' virtual='true' framelevel='4' registerForClicks='RightButtonUp, RightButtonDown'></Button> <!-- framelevel 4 for Masque support -->
 
 	<Script file='Shared\General\Initialize.lua'/>
 
@@ -102,6 +102,7 @@
 	<Script file='Wrath\Skins\Communities.lua'/>
 	<Script file='Wrath\Skins\Debug.lua'/>
 	<Script file='Wrath\Skins\DressingRoom.lua'/>
+	<Script file='Wrath\Skins\EditorManager.lua'/>
 	<Script file='Wrath\Skins\EventTrace.lua'/>
 	<Script file='Wrath\Skins\Friends.lua'/>
 	<Script file='Wrath\Skins\Gossip.lua'/>

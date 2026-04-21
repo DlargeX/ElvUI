@@ -13,19 +13,26 @@ local InCombatLockdown = InCombatLockdown
 local hooksecurefunc = hooksecurefunc
 
 AB.MICRO_CLASSIC = {}
-AB.MICRO_BUTTONS = _G.MICRO_BUTTONS or {
+AB.MICRO_BUTTONS = {
 	'CharacterMicroButton',
 	'SpellbookMicroButton',
+	'ProfessionMicroButton',
 	'TalentMicroButton',
+	'PlayerSpellsMicroButton',
 	'AchievementMicroButton',
 	'QuestLogMicroButton',
 	'GuildMicroButton',
+	'SocialsMicroButton',
 	'LFDMicroButton',
+	'LFGMicroButton',
 	'EJMicroButton',
 	'CollectionsMicroButton',
 	'MainMenuMicroButton',
 	'HelpMicroButton',
 	'StoreMicroButton',
+	'HousingMicroButton',
+	'WorldMapMicroButton',
+	'PVPMicroButton' -- no offset required
 }
 
 do
@@ -285,12 +292,12 @@ do
 	local unsorted = {}
 	local sorted = {}
 	local sorting = {
-		-- order this as a safe way to fix glyph taint on mists, warning: adjusting this can lead to
-		-- action failed because cannot anchor to a region dependent on it (Mists/MainMenuBarMicroButtons.lua:133)
-		MainMenuMicroButton = E.Retail and 11 or 12,	-- important for note above
-		StoreMicroButton = E.Retail and 10 or 11,		-- important for note above
+		MainMenuMicroButton = E.Retail and 12 or 13,
+		StoreMicroButton = E.Retail and 11 or 12,
+		HousingMicroButton = E.Retail and 10 or 11,
 		EJMicroButton = E.Retail and 9 or 10,
-		CollectionsMicroButton = E.Retail and 8 or 9
+		CollectionsMicroButton = E.Retail and 8 or 9,
+		PVPMicroButton = 7
 	}
 
 	function AB:ShownMicroButtons()
@@ -463,7 +470,7 @@ function AB:SetupMicroBar()
 	end
 
 	-- With this method we might don't taint anything. Instead of using :Kill()
-	local PerformanceBar = _G.MainMenuBarPerformanceBar or _G.MainMenuMicroButton.MainMenuBarPerformanceBar
+	local PerformanceBar = _G.MainMenuMicroButton.PerformanceIndicator or _G.MainMenuMicroButton.MainMenuBarPerformanceBar or _G.MainMenuBarPerformanceBar
 	if PerformanceBar then
 		PerformanceBar:SetAlpha(0)
 		PerformanceBar:SetScale(0.00001)

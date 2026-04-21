@@ -110,12 +110,13 @@ end
 function UF:ClassPower_ShouldShowAdditionalPower(element)
 	if not element.displayPairs then return end
 
+	local displayTypes = element.displayPairs[E.myclass]
+	if not displayTypes then return end
+
 	local altPower = E.db.unitframe.altManaPowers[E.myclass]
 	if not altPower then return end
 
 	local hasAny = false
-	local displayTypes = element.displayPairs[E.myclass]
-
 	for name, value in pairs(altPower) do
 		local powerIndex = AltManaTypes[name]
 		if powerIndex then
