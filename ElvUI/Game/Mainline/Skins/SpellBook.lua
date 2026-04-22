@@ -134,6 +134,10 @@ function S:Blizzard_ProfessionsBook()
 			button.icon:SetAlpha(1)
 		end
 
+		if button.CircleMask then
+			button.CircleMask:Hide()
+		end
+
 		HandleSkillButton(button.SpellButton1)
 		HandleSkillButton(button.SpellButton2)
 	end

@@ -41,8 +41,18 @@ function S:Blizzard_PVPUI()
 	for i = 1, 4 do
 		local bu = _G['PVPQueueFrameCategoryButton'..i]
 		if bu then
-			bu.Ring:Kill()
-			bu.Background:Kill()
+			if bu.Ring then
+				bu.Ring:Kill()
+			end
+
+			if bu.Background then
+				bu.Background:Kill()
+			end
+
+			if bu.CircleMask then
+				bu.CircleMask:Hide()
+			end
+
 			S:HandleButton(bu)
 
 			bu.Icon:Size(45)

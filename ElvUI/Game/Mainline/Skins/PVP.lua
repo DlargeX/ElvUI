@@ -6,11 +6,10 @@ local _G = _G
 local next = next
 local hooksecurefunc = hooksecurefunc
 
-local GetItemInfo = C_Item.GetItemInfo
-
 local ITEMQUALITY_ARTIFACT = Enum.ItemQuality.Artifact
 local CurrencyContainerUtil_GetCurrencyContainerInfo = CurrencyContainerUtil.GetCurrencyContainerInfo
 local C_CurrencyInfo_GetCurrencyInfo = C_CurrencyInfo.GetCurrencyInfo
+local GetItemInfo = C_Item.GetItemInfo
 
 local categoryButtonIcons = {
 	236396, -- interface\icons\achievement_bg_winwsg
@@ -101,8 +100,14 @@ function S:Blizzard_PVPUI()
 	for i = 1, 4 do
 		local bu = _G['PVPQueueFrameCategoryButton'..i]
 		if bu then
-			bu.Ring:Kill()
-			bu.Background:Kill()
+			if bu.Ring then
+				bu.Ring:Kill()
+			end
+
+			if bu.Background then
+				bu.Background:Kill()
+			end
+
 			S:HandleButton(bu)
 
 			bu.Icon:Size(45)

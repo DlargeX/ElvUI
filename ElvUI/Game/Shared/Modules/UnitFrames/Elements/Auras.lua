@@ -559,8 +559,8 @@ function UF:PostUpdateAura(unit, button)
 		local aura = bdb and bdb.sourceText and bdb.sourceText.enable and button.aura
 		if aura then
 			local text = aura.unitName or UNKNOWN
-			local length = bdb.sourceText.length
-			local shortText = length and length > 0 and utf8sub(text, 1, length)
+			local shortLen = E:NotSecretValue(text) and bdb.sourceText.length
+			local shortText = (shortLen and shortLen > 0) and utf8sub(text, 1, shortLen)
 			local classColor = E:ClassColor(aura.unitClassFilename) or PRIEST_COLOR
 			button.Text:SetTextColor(classColor.r, classColor.g, classColor.b)
 			button.Text:SetText(shortText or text)

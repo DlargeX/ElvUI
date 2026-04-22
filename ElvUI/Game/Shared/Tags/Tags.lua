@@ -1018,16 +1018,6 @@ do
 	end)
 end
 
-E:AddTag('speed:yardspersec-raw', 0.1, function(unit)
-	local currentSpeedInYards = GetUnitSpeed(unit)
-	return format('%.1f', currentSpeedInYards)
-end)
-
-E:AddTag('speed:yardspersec-moving-raw', 0.1, function(unit)
-	local currentSpeedInYards = GetUnitSpeed(unit)
-	return currentSpeedInYards > 0 and format('%.1f', currentSpeedInYards) or nil
-end)
-
 ------------------------------------------------------------------------
 --	Scoped
 ------------------------------------------------------------------------
@@ -1081,51 +1071,48 @@ end
 do
 	local speedText = _G.SPEED
 	local baseSpeed = _G.BASE_MOVEMENT_SPEED
-	E:AddTag('speed:percent', 0.1, function(unit)
-		local currentSpeedInYards = GetUnitSpeed(unit)
-		local currentSpeedInPercent = (currentSpeedInYards / baseSpeed) * 100
-
-		return format('%s: %d%%', speedText, currentSpeedInPercent)
-	end)
-
-	E:AddTag('speed:percent-moving', 0.1, function(unit)
-		local currentSpeedInYards = GetUnitSpeed(unit)
-		local currentSpeedInPercent = currentSpeedInYards > 0 and ((currentSpeedInYards / baseSpeed) * 100)
-
-		if currentSpeedInPercent then
-			currentSpeedInPercent = format('%s: %d%%', speedText, currentSpeedInPercent)
-		end
-
-		return currentSpeedInPercent
-	end)
-
-	E:AddTag('speed:percent-raw', 0.1, function(unit)
-		local currentSpeedInYards = GetUnitSpeed(unit)
-		local currentSpeedInPercent = (currentSpeedInYards / baseSpeed) * 100
-
-		return format('%d%%', currentSpeedInPercent)
-	end)
-
-	E:AddTag('speed:percent-moving-raw', 0.1, function(unit)
-		local currentSpeedInYards = GetUnitSpeed(unit)
-		local currentSpeedInPercent = currentSpeedInYards > 0 and ((currentSpeedInYards / baseSpeed) * 100)
-
-		if currentSpeedInPercent then
-			currentSpeedInPercent = format('%d%%', currentSpeedInPercent)
-		end
-
-		return currentSpeedInPercent
-	end)
 
 	E:AddTag('speed:yardspersec', 0.1, function(unit)
-		local currentSpeedInYards = GetUnitSpeed(unit)
-		return format('%s: %.1f', speedText, currentSpeedInYards)
+		local speed = GetUnitSpeed(unit)
+		return format('%s: %.1f', speedText, speed)
 	end)
 
-	E:AddTag('speed:yardspersec-moving', 0.1, function(unit)
-		local currentSpeedInYards = GetUnitSpeed(unit)
-		return currentSpeedInYards > 0 and format('%s: %.1f', speedText, currentSpeedInYards) or nil
+	E:AddTag('speed:yardspersec-raw', 0.1, function(unit)
+		local speed = GetUnitSpeed(unit)
+		return format('%.1f', speed)
 	end)
+
+	if not E.Retail then -- GetUnitSpeed returns a secret since 12.0.5
+		E:AddTag('speed:yardspersec-moving-raw', 0.1, function(unit)
+			local speed = GetUnitSpeed(unit)
+			return speed > 0 and format('%.1f', speed) or nil
+		end)
+
+		E:AddTag('speed:percent', 0.1, function(unit)
+			local speed = GetUnitSpeed(unit)
+			return format('%s: %d%%', speedText, (speed / baseSpeed) * 100)
+		end)
+
+		E:AddTag('speed:percent-raw', 0.1, function(unit)
+			local speed = GetUnitSpeed(unit)
+			return format('%d%%', (speed / baseSpeed) * 100)
+		end)
+
+		E:AddTag('speed:percent-moving', 0.1, function(unit)
+			local speed = GetUnitSpeed(unit)
+			return speed > 0 and format('%s: %d%%', (speed / baseSpeed) * 100) or nil
+		end)
+
+		E:AddTag('speed:percent-moving-raw', 0.1, function(unit)
+			local speed = GetUnitSpeed(unit)
+			return speed > 0 and format('%d%%', (speed / baseSpeed) * 100) or nil
+		end)
+
+		E:AddTag('speed:yardspersec-moving', 0.1, function(unit)
+			local speed = GetUnitSpeed(unit)
+			return speed > 0 and format('%s: %.1f', speedText, speed) or nil
+		end)
+	end
 end
 
 do
@@ -1490,14 +1477,14 @@ if info then
 	info['realm:dash:translit'] = { category = "Realm", description = "Displays the server name with transliteration for cyrillic letters and a dash in front" }
 	info['realm:translit'] = { category = "Realm", description = "Displays the server name with transliteration for cyrillic letters" }
 
-	info['speed:percent'] = { category = "Speed" }
-	info['speed:percent-moving'] = { category = "Speed" }
-	info['speed:percent-moving-raw'] = { category = "Speed" }
-	info['speed:percent-raw'] = { category = "Speed" }
 	info['speed:yardspersec'] = { category = "Speed" }
-	info['speed:yardspersec-moving'] = { category = "Speed" }
-	info['speed:yardspersec-moving-raw'] = { category = "Speed" }
 	info['speed:yardspersec-raw'] = { category = "Speed" }
+	info['speed:yardspersec-moving'] = { hidden = E.Retail, category = "Speed" }
+	info['speed:yardspersec-moving-raw'] = { hidden = E.Retail, category = "Speed" }
+	info['speed:percent'] = { hidden = E.Retail, category = "Speed" }
+	info['speed:percent-raw'] = { hidden = E.Retail, category = "Speed" }
+	info['speed:percent-moving'] = { hidden = E.Retail, category = "Speed" }
+	info['speed:percent-moving-raw'] = { hidden = E.Retail, category = "Speed" }
 
 	info['afk'] = { category = "Status", description = "Displays <AFK> if the unit is afk" }
 	info['ElvUI-Users'] = { category = "Status", description = "Displays current ElvUI users" }

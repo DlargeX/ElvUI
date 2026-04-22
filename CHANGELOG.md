@@ -1,3 +1,17 @@
+### Version 15.12 [ April 21st 2026 ]
+*   **Titan Reforged**
+    *   Editmode was added.
+*   **Nameplates**
+    *   Icons and Indicators set on the wrong level.
+    *   Castbar alpha values not handled.
+    *   Heal Prediction alpha values not handled.
+    *   Off tank color not working properly.
+*   **General**
+    *   Castbar Display Target option missing on some frames.
+    *   Unitframe Classsbar Additional Power toggle not working.
+    *   Font slug rendering toggle in general font settings. (Thanks Dack)
+    *   Chat would error when a player sends a message containing % under restrictions.
+
 ### Version 15.11 [ April 6th 2026 ]
 *   **Nameplates**
     *   Threat attempt to handle off tanks by using group roles without GUID.

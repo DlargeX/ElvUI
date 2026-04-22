@@ -90,7 +90,13 @@ function S:Blizzard_Transmog()
 			end
 		end
 
-		S:HandleCheckBox(CharacterPreview.HideIgnoredToggle.Checkbox)
+		local ToggleOptions = CharacterPreview.ToggleOptions
+		if ToggleOptions then
+			S:HandleCheckBox(ToggleOptions.HideIgnoredToggle.Checkbox)
+			S:HandleCheckBox(ToggleOptions.PreviewedWeaponToggle.Checkbox)
+			S:HandleCheckBox(ToggleOptions.SheatheWeaponToggle.Checkbox)
+		end
+
 		S:HandleButton(CharacterPreview.ClearAllPendingButton)
 		S:HandleModelSceneControlButtons(CharacterPreview.ModelScene.ControlFrame)
 	end

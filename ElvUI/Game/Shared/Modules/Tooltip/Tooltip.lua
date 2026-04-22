@@ -949,14 +949,10 @@ function TT:ShowAuraInfo(tt, source, spellID, aura)
 		if aura and aura.unitClassFilename then
 			local color = E:ClassColor(aura.unitClassFilename) or PRIEST_COLOR
 			tt:AddDoubleLine(format(IDNumber, _G.ID, spellID), color:WrapTextInColorCode(aura.unitName or UNKNOWN))
-		elseif source then
-			if E:NotSecretValue(source) then
-				local _, className = UnitClass(source)
-				local color = E:ClassColor(className) or PRIEST_COLOR
-				tt:AddDoubleLine(format(IDNumber, _G.ID, spellID), color:WrapTextInColorCode(UnitName(source) or UNKNOWN))
-			else
-				tt:AddDoubleLine(format(IDNumber, _G.ID, spellID), UnitName(source) or UNKNOWN)
-			end
+		elseif source and E:NotSecretValue(source) then
+			local _, className = UnitClass(source)
+			local color = E:ClassColor(className) or PRIEST_COLOR
+			tt:AddDoubleLine(format(IDNumber, _G.ID, spellID), color:WrapTextInColorCode(UnitName(source) or UNKNOWN))
 		else
 			tt:AddLine(format(IDNumber, _G.ID, spellID))
 		end

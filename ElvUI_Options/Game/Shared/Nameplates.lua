@@ -595,7 +595,7 @@ NamePlates.generalGroup.args.threatGroup.args.goodScale = ACH:Range(L["Good Scal
 NamePlates.generalGroup.args.threatGroup.args.badScale = ACH:Range(L["Bad Scale"], nil, 2, { min = .5, max = 1.5, step = .01, isPercent = true }, nil, nil, nil, function() return not E.db.nameplates.threat.enable end)
 NamePlates.generalGroup.args.threatGroup.args.useThreatColor = ACH:Toggle(L["Use Threat Color"], nil, 3)
 NamePlates.generalGroup.args.threatGroup.args.useSoloColor = ACH:Toggle(L["Use Solo Color"], L["Use solo threat color when not in a group."], 4, nil, nil, nil, nil, nil, function() return not E.db.nameplates.threat.useThreatColor end)
-NamePlates.generalGroup.args.threatGroup.args.useThreatClassification = ACH:Toggle(E.NewSign..L["Good Classification"], L["Good Threat will prefer Classification colors."], 5)
+NamePlates.generalGroup.args.threatGroup.args.useThreatClassification = ACH:Toggle(L["Good Classification"], L["Good Threat will prefer Classification colors."], 5)
 NamePlates.generalGroup.args.threatGroup.args.beingTankedByTank = ACH:Toggle(L["Off Tank"], L["Use Off Tank Color when another Tank has threat."], 6, nil, nil, nil, nil, nil, function() return not E.db.nameplates.threat.useThreatColor end)
 NamePlates.generalGroup.args.threatGroup.args.beingTankedByPet = ACH:Toggle(L["Off Tank (Pets)"], nil, 7, nil, nil, nil, nil, nil, function() return not E.db.nameplates.threat.useThreatColor end)
 NamePlates.generalGroup.args.threatGroup.args.indicator = ACH:Toggle(L["Show Icon"], nil, 8, nil, nil, nil, nil, nil, function() return not E.db.nameplates.threat.enable end)
