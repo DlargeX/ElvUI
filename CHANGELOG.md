@@ -1,3 +1,15 @@
+### Version 15.13 [ April 22nd 2026 ]
+*   Tooltip: UnitName not allowed when secret.
+*   MapInfo: GetUnitSpeed not allowed when secret.
+*   Unitframes: Auras source text can't be shortened when secret.
+*   Minimap: Rare error when profile is switching and ZoomReset happens.
+*   Datatext: Stat calculations are no longer allowed when secret.  Versatility, Critical, Mana Regen, Movement Speed, Attack Power, and Mastery all updated.
+*   Tags: Movement speed updated to use a secret-safe method. However "speed:yardspersec-moving", "speed:percent-moving", and "speed:percent-moving-raw" were removed on Retail.
+*   Unitframes: Shadow Priest additional mana bar not showing.
+*   Layout: Rare error when profile is switching involving ExtraActionBarHolder.
+*   Actionbars: Font outline issue causing some bars to not be shown.
+*   Skins: Damage meter skin updated to account for some changes by Blizzard.
+
 ### Version 15.12 [ April 21st 2026 ]
 *   **Titan Reforged**
     *   Editmode was added.

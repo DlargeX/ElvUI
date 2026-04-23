@@ -6,7 +6,7 @@ local next = next
 local hooksecurefunc = hooksecurefunc
 
 local GetProfessionInfo = GetProfessionInfo
-local C_SpellBook_GetSpellBookItemInfo = C_SpellBook.GetSpellBookItemInfo
+local GetSpellBookItemInfo = C_SpellBook.GetSpellBookItemInfo
 local SpellBookSpellBank = Enum.SpellBookSpellBank
 
 local barColor = { 0, .86, 0 }
@@ -29,7 +29,7 @@ local function ProfessionButtonUpdate(button)
 	if not parent or not parent.spellOffset then return end
 
 	local spellIndex = button:GetID() + parent.spellOffset
-	local spellBookItemInfo = C_SpellBook_GetSpellBookItemInfo(spellIndex, SpellBookSpellBank.Player)
+	local spellBookItemInfo = GetSpellBookItemInfo(spellIndex, SpellBookSpellBank.Player)
 
 	if spellBookItemInfo and spellBookItemInfo.isPassive then
 		button.highlightTexture:SetColorTexture(1, 1, 1, 0)

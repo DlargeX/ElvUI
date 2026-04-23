@@ -797,7 +797,7 @@ function RU:Initialize()
 	RaidUtilityPanel:SetFrameLevel(3)
 	RaidUtilityPanel.toggled = false
 	RaidUtilityPanel:SetFrameStrata('HIGH')
-	E.FrameLocks.RaidUtilityPanel = true
+	E.FrameLocks[RaidUtilityPanel] = true
 
 	RU:CreateUtilButton(ShowButton, nil, nil, 136, BUTTON_HEIGHT, 'TOP', E.UIParent, 'TOP', -400, E.Border, _G.RAID_CONTROL, nil, nil, nil, RU.OnClick_ShowButton)
 	SecureHandlerSetFrameRef(ShowButton, 'RaidUtilityPanel', RaidUtilityPanel)
@@ -834,7 +834,7 @@ function RU:Initialize()
 	]=], E.allowRoles and E:Scale(1) or 0, E:Scale(30), E.allowRoles and 0 or 1))
 	ShowButton:SetScript('OnDragStart', RU.DragStart_ShowButton)
 	ShowButton:SetScript('OnDragStop', RU.DragStop_ShowButton)
-	E.FrameLocks.RaidUtility_ShowButton = true
+	E.FrameLocks[ShowButton] = true
 
 	RU:CreateTargetIcons()
 

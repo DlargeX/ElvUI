@@ -6,13 +6,23 @@ local IsFalling = IsFalling
 local IsFlying = IsFlying
 local IsSwimming = IsSwimming
 local GetUnitSpeed = GetUnitSpeed
-local C_PlayerInfo_GetGlidingInfo = C_PlayerInfo.GetGlidingInfo
+local AbbreviateNumbers = AbbreviateNumbers
+local GetGlidingInfo = C_PlayerInfo.GetGlidingInfo
 
 local STAT_CATEGORY_ENHANCEMENTS = STAT_CATEGORY_ENHANCEMENTS
 local BASE_MOVEMENT_SPEED = BASE_MOVEMENT_SPEED
 
-local displayString, db = ''
+local data = {
+	breakpoint = 0,
+	abbreviation = '',
+	fractionDivisor = 1,
+	significandDivisor = BASE_MOVEMENT_SPEED * 0.01, -- scaled = speed * 100 / BASE_MOVEMENT_SPEED
+	abbreviationIsGlobal = false,
+}
+
+local breakpoint = { breakpointData = { data } }
 local beforeFalling, wasFlying
+local displayString, db = ''
 
 local delayed
 local function DelayUpdate(panel)
@@ -20,7 +30,7 @@ local function DelayUpdate(panel)
 	local speed, isGliding, forwardSpeed
 
 	if E.Retail then
-		isGliding, _, forwardSpeed = C_PlayerInfo_GetGlidingInfo()
+		isGliding, _, forwardSpeed = GetGlidingInfo()
 	end
 
 	if IsSwimming() then
@@ -43,7 +53,7 @@ local function DelayUpdate(panel)
 		beforeFalling = speed
 	end
 
-	local percent = speed / BASE_MOVEMENT_SPEED * 100
+	local percent = E.Retail and AbbreviateNumbers(speed, breakpoint) or (speed / BASE_MOVEMENT_SPEED * 100)
 	if db.NoLabel then
 		panel.text:SetFormattedText(displayString, percent)
 	else
@@ -64,7 +74,14 @@ local function ApplySettings(panel, hex)
 		db = E.global.datatexts.settings[panel.name]
 	end
 
-	displayString = strjoin('', db.NoLabel and '' or '%s: ', hex, '%.'..db.decimalLength..'f%%|r')
+	if E.Retail then
+		data.fractionDivisor = 10 ^ (db.decimalLength or 0)
+		data.significandDivisor = (BASE_MOVEMENT_SPEED * 0.01) / data.fractionDivisor
+
+		displayString = strjoin('', db.NoLabel and '' or '%s: ', hex, '%s%%|r')
+	else
+		displayString = strjoin('', db.NoLabel and '' or '%s: ', hex, '%.'..db.decimalLength..'f%%|r')
+	end
 end
 
 DT:RegisterDatatext('MovementSpeed', STAT_CATEGORY_ENHANCEMENTS, { 'UNIT_STATS', 'UNIT_AURA', 'UNIT_SPELL_HASTE' }, OnEvent, nil, nil, nil, nil, _G.STAT_MOVEMENT_SPEED, nil, ApplySettings)

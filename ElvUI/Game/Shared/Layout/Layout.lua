@@ -38,14 +38,14 @@ function LO:Initialize()
 	LO.Panel_OnShow(LO.BottomPanel)
 	LO:UpdateBottomPanel()
 
-	E.FrameLocks.ElvUI_BottomPanel = true
+	E.FrameLocks[LO.BottomPanel] = true
 
 	LO.TopPanel = CreateFrame('Frame', 'ElvUI_TopPanel', E.UIParent)
 	LO.TopPanel:SetScript('OnShow', LO.Panel_OnShow)
 	LO.Panel_OnShow(LO.TopPanel)
 	LO:UpdateTopPanel()
 
-	E.FrameLocks.ElvUI_TopPanel = true
+	E.FrameLocks[LO.TopPanel] = true
 end
 
 function LO:UpdateBottomPanel()

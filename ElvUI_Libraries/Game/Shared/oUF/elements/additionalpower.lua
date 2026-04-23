@@ -45,7 +45,6 @@ local oUF = ns.oUF
 local pcall = pcall
 local unpack = unpack
 
-local CopyTable = CopyTable
 local UnitPower = UnitPower
 local UnitPowerMax = UnitPowerMax
 local UnitHasVehicleUI = UnitHasVehicleUI
@@ -55,14 +54,8 @@ local UnitPowerPercent = UnitPowerPercent
 local StatusBarInterpolation = Enum.StatusBarInterpolation
 
 -- sourced from Blizzard_UnitFrame/AlternatePowerBar.lua
-local MANA = { powerName = 'MANA', powerType = 0 }
 local POWER_NAME = _G.ADDITIONAL_POWER_BAR_NAME or 'MANA'
 local POWER_INDEX = _G.ADDITIONAL_POWER_BAR_INDEX or 0
-local ALT_POWER_INFO = _G.ALT_POWER_BAR_PAIR_DISPLAY_INFO and CopyTable(_G.ALT_POWER_BAR_PAIR_DISPLAY_INFO) or {
-	DRUID = { [8] = CopyTable(MANA) },		-- LunarPower
-	SHAMAN = { [11] = CopyTable(MANA) },	-- Maelstrom
-	PRIEST = { [13] = CopyTable(MANA) }		-- Insanity
-}
 
 local function UpdateColor(self, event, unit, powerType)
 	if(not (unit and oUF:UnitIsUnit(unit, 'player') and powerType == POWER_NAME)) then return end
@@ -195,7 +188,7 @@ local function Visibility(self, event, unit)
 	local element = self.AdditionalPower
 	local shouldEnable
 
-	if (oUF.isClassic or oUF.isTBC) or not UnitHasVehicleUI('player') then
+	if element.displayPairs and ((oUF.isClassic or oUF.isTBC) or not UnitHasVehicleUI('player')) then
 		local okPower, maxPower = pcall(UnitPowerMax, unit, POWER_INDEX)
 		local allowed = element.displayPairs[oUF.myclass]
 		if allowed and (okPower and maxPower ~= 0) then
@@ -253,10 +246,6 @@ local function Enable(self, unit)
 		end
 
 		self:RegisterEvent('UNIT_DISPLAYPOWER', VisibilityPath)
-
-		if(not element.displayPairs) then
-			element.displayPairs = ALT_POWER_INFO
-		end
 
 		if(element:IsObjectType('StatusBar') and not element:GetStatusBarTexture()) then
 			element:SetStatusBarTexture([[Interface\TargetingFrame\UI-StatusBar]])

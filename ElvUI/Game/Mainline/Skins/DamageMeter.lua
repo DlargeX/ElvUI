@@ -52,24 +52,19 @@ function S:DamageMeter_HandleResizeButton(button)
 end
 
 function S:DamageMeter_BackdropSetAlpha(alpha)
-	local parent = self:GetParent()
-	if parent and parent.backdrop then
-		parent.backdrop:SetAlpha(alpha)
+	if self.backdrop then
+		self.backdrop:SetAlpha(alpha)
 	end
 end
 
 function S:DamageMeter_HandleBackground(window, background, x1, y1, x2, y2)
-	if not window or not background or window.backdrop then return end
+	if not window or not background or background.backdrop then return end
 
-	background:Hide()
-
-	window:CreateBackdrop('Transparent')
-	window.backdrop:NudgePoint(x1, y1, nil, 'TOPLEFT')
-	window.backdrop:NudgePoint(x2, y2, nil, 'BOTTOMRIGHT')
-
-	-- Set initial alpha; 100% will not set backgroundAlpha so default to 1
-	-- this copies the functionality of GetBackgroundAlpha
-	window.backdrop:SetAlpha(window.backgroundAlpha or 1)
+	background:SetTexture()
+	background:CreateBackdrop('Transparent')
+	background.backdrop:NudgePoint(x1, y1, nil, 'TOPLEFT')
+	background.backdrop:NudgePoint(x2, y2, nil, 'BOTTOMRIGHT')
+	background.backdrop:SetAlpha(background:GetAlpha())
 
 	-- Inherit background alpha changes from Blizzard Edit Mode
 	hooksecurefunc(background, 'SetAlpha', S.DamageMeter_BackdropSetAlpha)
@@ -147,7 +142,7 @@ function S:DamageMeter_HandleSettingsDropdown(window, dropdown)
 	S:HandleButton(dropdown, nil, nil, nil, true, 'Default')
 
 	dropdown:Size(20)
-	dropdown:NudgePoint(15, -2)
+	dropdown:NudgePoint(2, 0)
 
 	if dropdown.Icon then
 		dropdown.Icon:SetAlpha(0)
@@ -202,11 +197,17 @@ end
 do
 	local updating = false
 	function S:DamageMeter_ScrollBoxSetPoint(point)
-		if not updating and point == 'TOPLEFT' then
-			updating = true
-			self:NudgePoint(-15)
-			updating = false
+		if updating then return end
+
+		updating = true
+
+		if point == 'TOPLEFT' then
+			self:NudgePoint(-16, 0, nil, point)
+		elseif point == 'BOTTOMRIGHT' then
+			self:NudgePoint(-5, 0, nil, point)
 		end
+
+		updating = false
 	end
 end
 
@@ -255,13 +256,14 @@ function S:DamageMeter_HandleScrollBoxes(window)
 
 		S.DamageMeter_ScrollBoxUpdate(ScrollBox)
 		S.DamageMeter_ScrollBoxSetPoint(ScrollBox, 'TOPLEFT')
+		S.DamageMeter_ScrollBoxSetPoint(ScrollBox, 'BOTTOMRIGHT')
 
 		ScrollBox.IsSkinned = true
 	end
 end
 
-function S:DamageMeter_RepositionResizeButton()
-	local ResizeButton = self.backdrop and self.GetResizeButton and self:GetResizeButton()
+function S:DamageMeter_RepositionResizeButton(container)
+	local ResizeButton = container.ResizeButton
 	if not ResizeButton then return end
 
 	S:DamageMeter_HandleResizeButton(ResizeButton)
@@ -269,27 +271,27 @@ function S:DamageMeter_RepositionResizeButton()
 	ResizeButton:Size(14)
 	ResizeButton:ClearAllPoints()
 
-	local isRightSide = not self.IsRightSide or self:IsRightSide()
-	local rotation = pi * (isRightSide and 1.25 or 0.75)
-	local point = isRightSide and 'BOTTOMRIGHT' or 'BOTTOMLEFT'
-	local xOffset = isRightSide and -4 or 4
-
+	local rotation = pi * 1.25
 	ResizeButton:GetNormalTexture():SetRotation(rotation)
 	ResizeButton:GetPushedTexture():SetRotation(rotation)
-	ResizeButton:Point(point, self.backdrop, point, xOffset, 4)
+	ResizeButton:Point('BOTTOMRIGHT', container.Background, -12, 2)
 end
 
 function S:DamageMeter_HandleSourceWindow(window, sourceWindow)
 	if not sourceWindow or sourceWindow.IsSkinned then return end
 
-	S:DamageMeter_HandleBackground(sourceWindow, sourceWindow.Background, -4, nil, -18)
 	S:DamageMeter_HandleScrollBoxes(sourceWindow)
 
-	if sourceWindow.AnchorToSessionWindow then
-		hooksecurefunc(sourceWindow, 'AnchorToSessionWindow', S.DamageMeter_RepositionResizeButton)
-	end
-
 	sourceWindow.IsSkinned = true
+end
+
+function S:DamageMeter_HandleMinimizeContainer(window, container)
+	if not container or container.IsSkinned then return end
+
+	S:DamageMeter_HandleBackground(window, container.Background, 4, nil, -10)
+	S:DamageMeter_RepositionResizeButton(container)
+
+	container.IsSkinned = true
 end
 
 function S:DamageMeter_HandleLocalPlayerEntry()
@@ -304,18 +306,47 @@ function S:DamageMeter_HandleLocalPlayerEntry()
 	end
 end
 
+function S:DamageMeter_HandleMinimizeButton(window, button)
+	if not button or button.IsSkinned then return end
+
+	button:Size(16)
+	button:NudgePoint(13)
+	button:SetHighlightAtlas('UI-QuestTrackerButton-Yellow-Highlight', 'ADD')
+
+	S.DamageMeter_SetMinimized(window, window.isMinimized)
+	hooksecurefunc(window, 'SetMinimized', S.DamageMeter_SetMinimized)
+
+	button.IsSkinned = true
+end
+
+function S:DamageMeter_SetMinimized(collapsed)
+	local MinimizeButton = self.MinimizeButton
+	if not MinimizeButton then return end
+
+	local normalTexture = MinimizeButton:GetNormalTexture()
+	local pushedTexture = MinimizeButton:GetPushedTexture()
+
+	if collapsed then
+		normalTexture:SetAtlas('UI-QuestTrackerButton-Secondary-Expand', true)
+		pushedTexture:SetAtlas('UI-QuestTrackerButton-Secondary-Expand-Pressed', true)
+	else
+		normalTexture:SetAtlas('UI-QuestTrackerButton-Secondary-Collapse', true)
+		pushedTexture:SetAtlas('UI-QuestTrackerButton-Secondary-Collapse-Pressed', true)
+	end
+end
+
 function S:DamageMeter_HandleSessionWindow()
 	if self.IsSkinned then return end
 
-	S:DamageMeter_HandleBackground(self, self.Background, 13, nil, -18)
 	S:DamageMeter_HandleHeader(self, self.Header)
+	S:DamageMeter_HandleMinimizeButton(self, self.MinimizeButton)
+	S:DamageMeter_HandleMinimizeContainer(self, self.MinimizeContainer)
 	S:DamageMeter_HandleTypeDropdown(self, self.DamageMeterTypeDropdown)
 	S:DamageMeter_HandleSessionDropdown(self, self.SessionDropdown)
 	S:DamageMeter_HandleSettingsDropdown(self, self.SettingsDropdown)
 	S:DamageMeter_HandleSourceWindow(self, self.SourceWindow)
 	S:DamageMeter_HandleSessionTimer(self, self.SessionTimer)
 	S:DamageMeter_HandleScrollBoxes(self)
-	S.DamageMeter_RepositionResizeButton(self)
 
 	if self.ShowLocalPlayerEntry then
 		hooksecurefunc(self, 'ShowLocalPlayerEntry', S.DamageMeter_HandleLocalPlayerEntry)

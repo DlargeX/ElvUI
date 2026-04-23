@@ -10,6 +10,7 @@ local abs, ipairs, pairs, floor, ceil = abs, ipairs, pairs, floor, ceil
 local strfind, strmatch, strlower, strsplit = strfind, strmatch, strlower, strsplit
 local utf8sub, utf8len = string.utf8sub, string.utf8len
 
+local AbbreviateNumbers = AbbreviateNumbers
 local GetCreatureDifficultyColor = GetCreatureDifficultyColor
 local GetCurrentTitle = GetCurrentTitle
 local GetGuildInfo = GetGuildInfo
@@ -53,6 +54,7 @@ local UnitPVPRank = UnitPVPRank
 local UnitReaction = UnitReaction
 local UnitThreatPercentageOfLead = UnitThreatPercentageOfLead
 
+local TruncateWhenZero = C_StringUtil and C_StringUtil.TruncateWhenZero
 local C_PetJournal_GetPetTeamAverageLevel = C_PetJournal and C_PetJournal.GetPetTeamAverageLevel
 
 local POWERTYPE_ALTERNATE = Enum.PowerType.Alternate
@@ -1071,6 +1073,15 @@ end
 do
 	local speedText = _G.SPEED
 	local baseSpeed = _G.BASE_MOVEMENT_SPEED
+	local data = {
+		breakpoint = 0,
+		abbreviation = '',
+		fractionDivisor = 1,
+		significandDivisor = baseSpeed * 0.01, -- scaled = speed * (100 / BASE_MOVEMENT_SPEED)
+		abbreviationIsGlobal = false,
+	}
+
+	local breakpoint = { breakpointData = { data } }
 
 	E:AddTag('speed:yardspersec', 0.1, function(unit)
 		local speed = GetUnitSpeed(unit)
@@ -1082,12 +1093,24 @@ do
 		return format('%.1f', speed)
 	end)
 
-	if not E.Retail then -- GetUnitSpeed returns a secret since 12.0.5
-		E:AddTag('speed:yardspersec-moving-raw', 0.1, function(unit)
+	if E.Retail then
+		E:AddTag('speed:percent', 0.1, function(unit)
 			local speed = GetUnitSpeed(unit)
-			return speed > 0 and format('%.1f', speed) or nil
+			local perc = AbbreviateNumbers(speed, breakpoint)
+			return format('%s: %s%%', speedText, perc)
 		end)
 
+		E:AddTag('speed:percent-raw', 0.1, function(unit)
+			local speed = GetUnitSpeed(unit)
+			local perc = AbbreviateNumbers(speed, breakpoint)
+			return format('%s%%', perc)
+		end)
+
+		E:AddTag('speed:yardspersec-moving-raw', 0.1, function(unit)
+			local speed = TruncateWhenZero(GetUnitSpeed(unit))
+			return format('%s', speed)
+		end)
+	elseif not E.Retail then
 		E:AddTag('speed:percent', 0.1, function(unit)
 			local speed = GetUnitSpeed(unit)
 			return format('%s: %d%%', speedText, (speed / baseSpeed) * 100)
@@ -1098,6 +1121,16 @@ do
 			return format('%d%%', (speed / baseSpeed) * 100)
 		end)
 
+		E:AddTag('speed:yardspersec-moving-raw', 0.1, function(unit)
+			local speed = GetUnitSpeed(unit)
+			return speed > 0 and format('%.1f', speed) or nil
+		end)
+
+		E:AddTag('speed:yardspersec-moving', 0.1, function(unit)
+			local speed = GetUnitSpeed(unit)
+			return speed > 0 and format('%s: %.1f', speedText, speed) or nil
+		end)
+
 		E:AddTag('speed:percent-moving', 0.1, function(unit)
 			local speed = GetUnitSpeed(unit)
 			return speed > 0 and format('%s: %d%%', (speed / baseSpeed) * 100) or nil
@@ -1106,11 +1139,6 @@ do
 		E:AddTag('speed:percent-moving-raw', 0.1, function(unit)
 			local speed = GetUnitSpeed(unit)
 			return speed > 0 and format('%d%%', (speed / baseSpeed) * 100) or nil
-		end)
-
-		E:AddTag('speed:yardspersec-moving', 0.1, function(unit)
-			local speed = GetUnitSpeed(unit)
-			return speed > 0 and format('%s: %.1f', speedText, speed) or nil
 		end)
 	end
 end
@@ -1479,10 +1507,10 @@ if info then
 
 	info['speed:yardspersec'] = { category = "Speed" }
 	info['speed:yardspersec-raw'] = { category = "Speed" }
+	info['speed:percent'] = { category = "Speed" }
+	info['speed:percent-raw'] = { category = "Speed" }
 	info['speed:yardspersec-moving'] = { hidden = E.Retail, category = "Speed" }
-	info['speed:yardspersec-moving-raw'] = { hidden = E.Retail, category = "Speed" }
-	info['speed:percent'] = { hidden = E.Retail, category = "Speed" }
-	info['speed:percent-raw'] = { hidden = E.Retail, category = "Speed" }
+	info['speed:yardspersec-moving-raw'] = { category = "Speed" }
 	info['speed:percent-moving'] = { hidden = E.Retail, category = "Speed" }
 	info['speed:percent-moving-raw'] = { hidden = E.Retail, category = "Speed" }
 

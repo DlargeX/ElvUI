@@ -1380,6 +1380,8 @@ end
 
 function AB:GetFont(name, size, outline)
 	if not outline then outline = AB.db.fontOutline end
+
+	if outline == 'NONE' then outline = '' end -- none isnt a real style
 	if E:CanFlagSlug(outline) then outline = outline..'SLUG' end
 
 	local font = LSM:Fetch('font', name or AB.db.font)

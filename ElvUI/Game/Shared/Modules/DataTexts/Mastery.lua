@@ -5,27 +5,50 @@ local strjoin = strjoin
 local format = format
 local next = next
 
-local GetCombatRatingBonus = GetCombatRatingBonus
+local GetCombatRating = GetCombatRating
 local GetMasteryEffect = GetMasteryEffect
+local GetCombatRatingBonus = GetCombatRatingBonus
 local GetSpecialization = C_SpecializationInfo.GetSpecialization or GetSpecialization
 local GetSpecializationMasterySpells = C_SpecializationInfo.GetSpecializationMasterySpells or GetSpecializationMasterySpells
 local CreateBaseTooltipInfo = CreateBaseTooltipInfo
+local AbbreviateNumbers = AbbreviateNumbers
 
 local STAT_MASTERY = STAT_MASTERY
 local STAT_CATEGORY_ENHANCEMENTS = STAT_CATEGORY_ENHANCEMENTS
 local CR_MASTERY = CR_MASTERY
 
+local data = {
+	breakpoint = 0,
+	abbreviation = '',
+	fractionDivisor = 1,
+	significandDivisor = 1, -- 1 / coeffect, so scaled = value * coeffect
+	abbreviationIsGlobal = false,
+}
+
+local breakpoint = { breakpointData = { data } }
 local displayString, db = ''
 
 local function OnEnter()
 	DT.tooltip:ClearLines()
 
-	local masteryRating, bonusCoeff = GetMasteryEffect()
-	local masteryBonus = (GetCombatRatingBonus(CR_MASTERY) or 0) * (bonusCoeff or 0)
+	local _, coeffect = GetMasteryEffect()
+	local bonus = GetCombatRatingBonus(CR_MASTERY)
+	local text
 
-	local title = format('|cffFFFFFF%s: %.2f%%|r', STAT_MASTERY, masteryRating)
-	if masteryBonus > 0 then
-		title = format('%s |cffFFFFFF(%.2f%%|r |cff33ff33+%.2f%%|r|cffFFFFFF)|r', title, masteryRating - masteryBonus, masteryBonus)
+	if E.Retail then
+		if E:NotSecretValue(coeffect) then
+			data.significandDivisor = (1 / coeffect) / data.fractionDivisor
+		end
+
+		text = AbbreviateNumbers((bonus or 0), breakpoint)
+	else
+		text = (bonus or 0) * coeffect
+	end
+
+	local rating = GetCombatRating(CR_MASTERY)
+	local title = format('|cffFFFFFF%s: %d|r', STAT_MASTERY, rating)
+	if bonus then
+		title = format('%s |cffFFFFFF[|r|cff33ff33+%s%%|r|cffFFFFFF]|r', title, text)
 	end
 
 	DT.tooltip:AddLine(title)
@@ -56,17 +79,21 @@ local function OnEnter()
 end
 
 local function OnEvent(panel)
-	local masteryRating = GetMasteryEffect()
+	local rating = GetMasteryEffect()
 	if db.NoLabel then
-		panel.text:SetFormattedText(displayString, masteryRating)
+		panel.text:SetFormattedText(displayString, rating)
 	else
-		panel.text:SetFormattedText(displayString, db.Label ~= '' and db.Label or STAT_MASTERY..': ', masteryRating)
+		panel.text:SetFormattedText(displayString, db.Label ~= '' and db.Label or STAT_MASTERY..': ', rating)
 	end
 end
 
 local function ApplySettings(panel, hex)
 	if not db then
 		db = E.global.datatexts.settings[panel.name]
+	end
+
+	if E.Retail then
+		data.fractionDivisor = 10 ^ (db.decimalLength or 0)
 	end
 
 	displayString = strjoin('', db.NoLabel and '' or '%s', hex, '%.'..db.decimalLength..'f%%|r')
