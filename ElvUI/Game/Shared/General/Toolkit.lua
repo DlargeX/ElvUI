@@ -486,7 +486,7 @@ end
 
 local function FontTemplate(fs, font, size, style, skip)
 	if not skip then -- ignore updates from UpdateFontTemplates
-		fs.font, fs.fontSize, fs.fontStyle = font, size, style
+		E.texts[fs] = { font = font, fontSize = size, fontStyle = style }
 	end
 
 	-- grab values from profile before conversion
@@ -500,10 +500,7 @@ local function FontTemplate(fs, font, size, style, skip)
 
 	fs:SetShadowColor(0, 0, 0, (shadow and (style == '' and 1 or 0.6)) or 0)
 	fs:SetShadowOffset((shadow and 1) or 0, (shadow and -1) or 0)
-
 	fs:SetFont(font or E.media.normFont, size, style)
-
-	E.texts[fs] = true
 end
 
 local function StyleButton(button, noHover, noPushed, noChecked)
