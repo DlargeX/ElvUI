@@ -102,30 +102,43 @@ function S:BlizzardMiscFrames()
 	-- we can just hook onto this function so that we can get the correct `self`
 	-- this is called through `CinematicFrame_OnShow` so the result would still happen where we want
 	hooksecurefunc('CinematicFrame_UpdateLettboxForAspectRatio', function(frame)
-		if frame and frame.closeDialog and not frame.closeDialog.template then
-			frame.closeDialog:StripTextures()
-			frame.closeDialog:SetTemplate('Transparent')
+		local closeDialog = frame.closeDialog
+		if closeDialog and not closeDialog.template then
+			closeDialog:StripTextures()
+			closeDialog:SetTemplate('Transparent')
+
 			frame:SetScale(E.uiscale)
 
-			local dialogName = frame.closeDialog.GetName and frame.closeDialog:GetName()
-			local closeButton = frame.closeDialog.Buttons.ConfirmButton or (dialogName and _G[dialogName..'ConfirmButton']) -- untested
-			local resumeButton = frame.closeDialog.Buttons.ResumeButton or (dialogName and _G[dialogName..'ResumeButton']) -- untested
-			if closeButton then S:HandleButton(closeButton, nil, nil, nil, true, 'Default') end
-			if resumeButton then S:HandleButton(resumeButton, nil, nil, nil, true, 'Default') end
+			local dialogName = closeDialog.GetName and closeDialog:GetName()
+			local closeButton = dialogName and _G[dialogName..'ConfirmButton']
+			if closeButton then
+				S:HandleButton(closeButton, nil, nil, nil, true)
+			end
+
+			local resumeButton = dialogName and _G[dialogName..'ResumeButton']
+			if resumeButton then
+				S:HandleButton(resumeButton, nil, nil, nil, true)
+			end
 		end
 	end)
 
-	-- MovieFrame
-	local closeDialog = _G.MovieFrame.CloseDialog
-	hooksecurefunc(closeDialog, 'OnShow', function(frame)
-		fame:SetScale(E.uiscale)
+	local MovieFrame = _G.MovieFrame
+	hooksecurefunc(MovieFrame, 'ShowCloseDialog', function(frame)
+		if frame.CloseDialog then
+			frame.CloseDialog:SetScale(E.uiscale)
+		end
 	end)
 
+	local closeDialog = MovieFrame.CloseDialog
 	if closeDialog and not closeDialog.template then
 		closeDialog:StripTextures()
 		closeDialog:SetTemplate('Transparent')
-		S:HandleButton(closeDialog.Buttons.ConfirmButton, nil, nil, nil, true, 'Default')
-		S:HandleButton(closeDialog.Buttons.ResumeButton, nil, nil, nil, true, 'Default')
+
+		local buttons = closeDialog.Buttons
+		if buttons then
+			S:HandleButton(buttons.ConfirmButton, nil, nil, nil, true)
+			S:HandleButton(buttons.ResumeButton, nil, nil, nil, true)
+		end
 	end
 
 	do
