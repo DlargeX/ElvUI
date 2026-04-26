@@ -108,25 +108,25 @@ function S:BlizzardMiscFrames()
 			frame:SetScale(E.uiscale)
 
 			local dialogName = frame.closeDialog.GetName and frame.closeDialog:GetName()
-			local closeButton = frame.closeDialog.ConfirmButton or (dialogName and _G[dialogName..'ConfirmButton'])
-			local resumeButton = frame.closeDialog.ResumeButton or (dialogName and _G[dialogName..'ResumeButton'])
-			if closeButton then S:HandleButton(closeButton) end
-			if resumeButton then S:HandleButton(resumeButton) end
+			local closeButton = frame.closeDialog.Buttons.ConfirmButton or (dialogName and _G[dialogName..'ConfirmButton']) -- untested
+			local resumeButton = frame.closeDialog.Buttons.ResumeButton or (dialogName and _G[dialogName..'ResumeButton']) -- untested
+			if closeButton then S:HandleButton(closeButton, nil, nil, nil, true, 'Default') end
+			if resumeButton then S:HandleButton(resumeButton, nil, nil, nil, true, 'Default') end
 		end
 	end)
 
-	-- same as above except `MovieFrame_OnEvent` and `MovieFrame_OnShow`
-	-- cant be hooked directly so we can just use this
-	-- this is called through `MovieFrame_OnEvent` on the event `PLAY_MOVIE`
-	hooksecurefunc('MovieFrame_PlayMovie', function(frame)
-		if frame and frame.CloseDialog and not frame.CloseDialog.template then
-			frame:SetScale(E.uiscale)
-			frame.CloseDialog:StripTextures()
-			frame.CloseDialog:SetTemplate('Transparent')
-			S:HandleButton(frame.CloseDialog.Buttons.ConfirmButton)
-			S:HandleButton(frame.CloseDialog.Buttons.ResumeButton)
-		end
+	-- MovieFrame
+	local closeDialog = _G.MovieFrame.CloseDialog
+	hooksecurefunc(closeDialog, 'OnShow', function(frame)
+		fame:SetScale(E.uiscale)
 	end)
+
+	if closeDialog and not closeDialog.template then
+		closeDialog:StripTextures()
+		closeDialog:SetTemplate('Transparent')
+		S:HandleButton(closeDialog.Buttons.ConfirmButton, nil, nil, nil, true, 'Default')
+		S:HandleButton(closeDialog.Buttons.ResumeButton, nil, nil, nil, true, 'Default')
+	end
 
 	do
 		local menuBackdrop = function(frame)
