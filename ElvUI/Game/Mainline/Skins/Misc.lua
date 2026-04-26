@@ -102,12 +102,12 @@ function S:BlizzardMiscFrames()
 	-- we can just hook onto this function so that we can get the correct `self`
 	-- this is called through `CinematicFrame_OnShow` so the result would still happen where we want
 	hooksecurefunc('CinematicFrame_UpdateLettboxForAspectRatio', function(frame)
+		frame:SetScale(E.uiscale)
+
 		local closeDialog = frame.closeDialog
 		if closeDialog and not closeDialog.template then
 			closeDialog:StripTextures()
 			closeDialog:SetTemplate('Transparent')
-
-			frame:SetScale(E.uiscale)
 
 			local dialogName = closeDialog.GetName and closeDialog:GetName()
 			local closeButton = dialogName and _G[dialogName..'ConfirmButton']
@@ -124,22 +124,20 @@ function S:BlizzardMiscFrames()
 
 	local MovieFrame = _G.MovieFrame
 	hooksecurefunc(MovieFrame, 'ShowCloseDialog', function(frame)
-		if frame.CloseDialog then
-			frame.CloseDialog:SetScale(E.uiscale)
+		frame:SetScale(E.uiscale)
+
+		local closeDialog = frame.CloseDialog
+		if closeDialog and not closeDialog.template then
+			closeDialog:StripTextures()
+			closeDialog:SetTemplate('Transparent')
+
+			local buttons = closeDialog.Buttons
+			if buttons then
+				S:HandleButton(buttons.ConfirmButton, nil, nil, nil, true)
+				S:HandleButton(buttons.ResumeButton, nil, nil, nil, true)
+			end
 		end
 	end)
-
-	local closeDialog = MovieFrame.CloseDialog
-	if closeDialog and not closeDialog.template then
-		closeDialog:StripTextures()
-		closeDialog:SetTemplate('Transparent')
-
-		local buttons = closeDialog.Buttons
-		if buttons then
-			S:HandleButton(buttons.ConfirmButton, nil, nil, nil, true)
-			S:HandleButton(buttons.ResumeButton, nil, nil, nil, true)
-		end
-	end
 
 	do
 		local menuBackdrop = function(frame)
