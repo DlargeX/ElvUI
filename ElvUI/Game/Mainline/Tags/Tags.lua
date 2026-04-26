@@ -32,12 +32,12 @@ end)
 
 for tagFormat, which in next, { shortvalue = 'short', longvalue = 'long' } do
 	E:AddTag(format('absorbs:%s', tagFormat), 'UNIT_ABSORB_AMOUNT_CHANGED', function(unit)
-		local absorb = TruncateWhenZero(UnitGetTotalAbsorbs(unit))
+		local absorb = UnitGetTotalAbsorbs(unit)
 		return E:AbbreviateNumbers(absorb, E.Abbreviate[which])
 	end)
 
 	E:AddTag(format('healabsorbs:%s', tagFormat), 'UNIT_HEAL_ABSORB_AMOUNT_CHANGED', function(unit)
-		local healAbsorb = TruncateWhenZero(UnitGetTotalHealAbsorbs(unit))
+		local healAbsorb = UnitGetTotalHealAbsorbs(unit)
 		return E:AbbreviateNumbers(healAbsorb, E.Abbreviate[which])
 	end)
 
