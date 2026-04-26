@@ -123,8 +123,8 @@ function S:BlizzardMiscFrames()
 			frame:SetScale(E.uiscale)
 			frame.CloseDialog:StripTextures()
 			frame.CloseDialog:SetTemplate('Transparent')
-			S:HandleButton(frame.CloseDialog.ConfirmButton)
-			S:HandleButton(frame.CloseDialog.ResumeButton)
+			S:HandleButton(frame.CloseDialog.Buttons.ConfirmButton)
+			S:HandleButton(frame.CloseDialog.Buttons.ResumeButton)
 		end
 	end)
 
