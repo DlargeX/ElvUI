@@ -972,7 +972,7 @@ end
 
 function DT:MenuGetIndex(dt)
 	local panelDB = (dt and dt.battlePanel and DT.db.battlePanel) or DT.db.panels
-	local options = panelDB and panelDB[dt.parentName]
+	local options = panelDB and panelDB[dt and dt.parentName or nil]
 	if not options then return end
 
 	return dt.pointIndex, options

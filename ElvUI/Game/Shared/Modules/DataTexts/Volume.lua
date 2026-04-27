@@ -8,7 +8,6 @@ local ipairs = ipairs
 local tinsert = tinsert
 
 local IsShiftKeyDown = IsShiftKeyDown
-local ShowOptionsPanel = ShowOptionsPanel
 local SOUND = SOUND
 
 local GetCVar = C_CVar.GetCVar
@@ -145,16 +144,11 @@ end
 local function OnClick(self, button)
 	if button == 'LeftButton' then
 		if IsShiftKeyDown() then
-			if E.Retail then
-				_G.Settings.OpenToCategory(_G.Settings.AUDIO_CATEGORY_ID)
-			else
-				ShowOptionsPanel(_G.VideoOptionsFrame, _G.GameMenuFrame, SOUND)
-			end
-			return
+			_G.Settings.OpenToCategory(_G.Settings.AUDIO_CATEGORY_ID)
+		else
+			E:SetEasyMenuAnchor(E.EasyMenu, self)
+			E:ComplicatedMenu(menu, E.EasyMenu, nil, nil, nil, 'MENU')
 		end
-
-		E:SetEasyMenuAnchor(E.EasyMenu, self)
-		E:ComplicatedMenu(menu, E.EasyMenu, nil, nil, nil, 'MENU')
 	elseif button == 'MiddleButton' then
 		E:SetCVar(AudioStreams[1].Enabled, GetCVarBool(AudioStreams[1].Enabled) and 0 or 1, 'ELVUI_VOLUME')
 	elseif button == 'RightButton' then

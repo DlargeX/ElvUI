@@ -828,16 +828,32 @@ G.unitframe.aurawatch = {
 		[32223]	= Aura(32223, nil, true, 'BOTTOMLEFT', {0.83, 1.00, 0.07}), -- Crusader Aura
 	},
 	SHAMAN = {
-		[29203]	= Aura(29203, nil, true, 'TOPRIGHT', {0.7, 0.3, 0.7}), -- Healing Way
+		[29203]	= Aura(29203, nil, true, 'LEFT', {0.7, 0.3, 0.7}), -- Healing Way
 		[16237]	= Aura(16237, nil, true, 'RIGHT', {0.2, 0.2, 1}), -- Ancestral Fortitude
-		[8185]	= Aura(8185, {10534, 10535, 25563}, true, 'TOPLEFT', {0.05, 1.00, 0.50}), -- Fire Resistance Totem
-		[8182]	= Aura(8182, {10476, 10477, 25560}, true, 'TOPLEFT', {0.54, 0.53, 0.79}), -- Frost Resistance Totem
-		[10596]	= Aura(10596, {10598, 10599, 25574}, true, 'TOPLEFT', {0.33, 1.00, 0.20}), -- Nature Resistance Totem
-		[5672]	= Aura(5672, {6371, 6372, 10460, 10461, 25567}, true, 'BOTTOM', {0.67, 1.00, 0.50}), -- Healing Stream Totem
-		[16191]	= Aura(16191, {17355, 17360}, true, 'BOTTOMLEFT', {0.67, 1.00, 0.80}), -- Mana Tide Totem
-		[5677]	= Aura(5677, {10491, 10493, 10494, 25570}, true, 'LEFT', {0.67, 1.00, 0.80}), -- Mana Spring Totem
-		[8072]	= Aura(8072, {8156, 8157, 10403, 10404, 10405, 25508, 25509}, true, 'BOTTOMRIGHT', {0.00, 0.00, 0.26}), -- Stoneskin Totem
 		[974]	= Aura(974, {32593, 32594}, true, 'TOP', {0.08, 0.21, 0.43}, true), -- Earth Shield
+
+		-- Fire
+		[8182]	= Aura(8182, {10476, 10477, 25559}, true, 'TOPLEFT', {0.58, 0.23, 0.10}), -- Frost Resistance
+		[30708] = Aura(30708, nil, true, 'TOPLEFT', {0.58, 0.23, 0.10}), -- Totem of Wrath (Crit/Hit increase)
+
+		-- Earth
+		[8072]	= Aura(8072, {8156, 8157, 10403, 10404, 10405, 25506, 25507}, true, 'TOPRIGHT', {0.23, 0.45, 0.13}), -- Stoneskin
+		[8076] = Aura(8076, {8162, 8163, 10441, 25362, 25527}, true, 'TOPRIGHT', {0.23, 0.45, 0.13}), -- Strength of Earth (Strength increase)
+
+		-- Air
+		[2895] = Aura(2895, nil, true, 'BOTTOMLEFT', {0.42, 0.18, 0.74}), -- Wrath of Air (Spellpower increase)
+		[15108] = Aura(15108, {15109, 15110, 25576}, true, 'BOTTOMLEFT', {0.42, 0.18, 0.74}), -- Windwall (damage reduction)
+		[10596]	= Aura(10596, {10598, 10599, 25573}, true, 'BOTTOMLEFT', {0.42, 0.18, 0.74}), -- Nature Resistance
+		[8178] = Aura(8178, nil, true, 'BOTTOMLEFT', {0.42, 0.18, 0.74}), -- Grounding Totem (spell redirection)
+		[25909] = Aura(25909, nil, true, 'BOTTOMLEFT', {0.42, 0.18, 0.74}), -- Tranquil Air (Threat reduction)
+		[8836] = Aura(8836, {10626, 25360}, true, 'BOTTOMLEFT', {0.42, 0.18, 0.74}), -- Grace of Air (agility)
+		[6495] = Aura(6495, nil, true, 'BOTTOMLEFT', {0.42, 0.18, 0.74}), -- Sentry (vision totem)
+
+		-- Water
+		[16191]	= Aura(16191, {17355, 17360}, true, 'BOTTOMRIGHT', {0.19, 0.48, 0.60}), -- Mana Tide
+		[8185]	= Aura(8185, {10534, 10535, 25562}, true, 'BOTTOMRIGHT', {0.19, 0.48, 0.60}), -- Fire Resistance
+		[5677]	= Aura(5677, {10491, 10493, 10494, 25569}, true, 'BOTTOMRIGHT', {0.19, 0.48, 0.60}), -- Mana Spring
+		[5672]	= Aura(5672, {6371, 6372, 10460, 10461, 25566}, true, 'BOTTOMRIGHT', {0.19, 0.48, 0.60}), -- Healing Stream
 	},
 	MAGE = {
 		[1459]	= Aura(1459, {1460, 1461, 10156, 10157, 27126}, true, 'TOPLEFT', {0.89, 0.09, 0.05}, true), -- Arcane Intellect
