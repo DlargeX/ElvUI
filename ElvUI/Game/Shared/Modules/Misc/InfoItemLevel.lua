@@ -266,7 +266,7 @@ function M:UpdateAverageString(frame, which, iLevelDB)
 
 	if charPage then
 		avgTotal, avgItemLevel = E:GetPlayerItemLevel() -- rounded average, rounded equipped
-	elseif frame.unit then
+	elseif E:NotSecretValue(frame.unit) and frame.unit then
 		avgItemLevel = E:CalculateAverageItemLevel(iLevelDB, frame.unit)
 	end
 
@@ -299,7 +299,7 @@ end
 
 function M:TryGearAgain(frame, which, i, deepScan, iLevelDB, inspectItem)
 	E:Delay(0.05, function()
-		if which == 'Inspect' and (not frame or not frame.unit) then return end
+		if which == 'Inspect' and (not frame or (E:IsSecretValue(frame.unit) or not frame.unit)) then return end
 
 		local unit = (which == 'Character' and 'player') or frame.unit
 		local slotInfo = E:GetGearSlotInfo(unit, i, deepScan)
