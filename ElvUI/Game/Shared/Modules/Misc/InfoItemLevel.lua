@@ -317,8 +317,8 @@ do
 		if which == 'Inspect' then
 			M.InspectTimer = nil -- clear inspect timer
 
-			if not frame.unit or not frame:IsShown() then return end -- we need these
-			if (E:IsSecretValue(guid) or not guid) or (UnitGUID(frame.unit) ~= guid) then return end
+			if (E:IsSecretValue(guid) or not guid) or (E:IsSecretValue(frame.unit) or not frame.unit) then return end
+			if not frame:IsShown() or (guid ~= UnitGUID(frame.unit)) then return end
 		end
 
 		wipe(iLevelDB)
