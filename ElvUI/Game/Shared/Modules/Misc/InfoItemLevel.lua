@@ -266,7 +266,7 @@ function M:UpdateAverageString(frame, which, iLevelDB)
 
 	if charPage then
 		avgTotal, avgItemLevel = E:GetPlayerItemLevel() -- rounded average, rounded equipped
-	elseif E:NotSecretValue(frame.unit) and frame.unit then
+	elseif frame.unit then
 		avgItemLevel = E:CalculateAverageItemLevel(iLevelDB, frame.unit)
 	end
 
@@ -299,7 +299,7 @@ end
 
 function M:TryGearAgain(frame, which, i, deepScan, iLevelDB, inspectItem)
 	E:Delay(0.05, function()
-		if which == 'Inspect' and (not frame or (E:IsSecretValue(frame.unit) or not frame.unit)) then return end
+		if which == 'Inspect' and (not frame or not frame.unit) then return end
 
 		local unit = (which == 'Character' and 'player') or frame.unit
 		local slotInfo = E:GetGearSlotInfo(unit, i, deepScan)
@@ -311,14 +311,16 @@ end
 
 do
 	local iLevelDB = {}
-	function M:UpdatePageInfo(frame, which, guid, event)
+	function M:UpdatePageInfo(frame, which, arg1, event)
 		if not (which and frame and frame.ItemLevelText) then return end
 
 		if which == 'Inspect' then
 			M.InspectTimer = nil -- clear inspect timer
 
-			if (E:IsSecretValue(guid) or not guid) or (E:IsSecretValue(frame.unit) or not frame.unit) then return end
-			if not frame:IsShown() or (guid ~= UnitGUID(frame.unit)) then return end
+			if (E:IsSecretValue(arg1) or not arg1) or not frame.unit or not frame:IsShown() then return end
+
+			local guid = UnitGUID(frame.unit)
+			if (E:IsSecretValue(guid) or not guid or (arg1 ~= guid)) then return end
 		end
 
 		wipe(iLevelDB)
