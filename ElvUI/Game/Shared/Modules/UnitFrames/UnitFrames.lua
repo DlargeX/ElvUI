@@ -747,7 +747,7 @@ do -- IDs maintained in Difficulty Datatext
 			fader:SetOption('InstanceDifficulty', HandleDifficulties(fader, db))
 
 			fader:ClearTimers()
-			fader.configTimer = E:ScheduleTimer(fader.ForceUpdate, 0.25, fader, true)
+			fader.configTimer = E:ScheduleTimer(fader.ForceUpdate, 0.25, fader)
 		elseif frame:IsElementEnabled('Fader') then
 			frame:DisableElement('Fader')
 

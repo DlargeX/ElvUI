@@ -631,7 +631,7 @@ function CH:ChatFrame_OnMouseScroll(delta)
 
 		if CH.db.scrollDownInterval ~= 0 then
 			if self.ScrollTimer then
-				CH:CancelTimer(self.ScrollTimer, true)
+				CH:CancelTimer(self.ScrollTimer)
 			end
 
 			self.ScrollTimer = CH:ScheduleTimer('ScrollToBottom', CH.db.scrollDownInterval, self)
@@ -1643,7 +1643,10 @@ E.valueColorUpdateFuncs.Chat = CH.UpdateChatTabColors
 function CH:ScrollToBottom(frame)
 	frame:ScrollToBottom()
 
-	CH:CancelTimer(frame.ScrollTimer, true)
+	if frame.ScrollTimer then
+		CH:CancelTimer(frame.ScrollTimer)
+		frame.ScrollTimer = nil
+	end
 end
 
 function CH:PrintURL(url)
