@@ -879,7 +879,7 @@ E:AddTag('group:raid', 'GROUP_ROSTER_UPDATE', function(unit)
 	if not IsInRaid() then return end
 
 	local name, realm = UnitName(unit)
-	if E:IsSecretValue(realm) or not name then return end
+	if E:IsSecretValue(name) or E:IsSecretValue(realm) or not name then return end
 
 	local nameRealm = (realm and realm ~= '' and format('%s-%s', name, realm)) or name
 	for i = 1, GetNumGroupMembers() do
@@ -1285,19 +1285,19 @@ do
 	local iconRed = E:TextureString(E.Media.ChatLogos.ElvRed,':13:25')
 
 	E:AddTag('ElvUI-Users', 20, function(unit)
-		if E.UserList and next(E.UserList) then
-			local name, realm = UnitName(unit)
-			if name then
-				local nameRealm = (realm and realm ~= '' and format('%s-%s', name, realm)) or name
-				local userVersion = nameRealm and E.UserList[nameRealm]
-				if userVersion then
-					if highestVersion < userVersion then
-						highestVersion = userVersion
-					end
+		if not E.UserList or not next(E.UserList) then return end
 
-					return (userVersion < highestVersion) and iconRed or iconBlue
-				end
+		local name, realm = UnitName(unit)
+		if E:IsSecretValue(name) or E:IsSecretValue(realm) or not name then return end
+
+		local nameRealm = (realm and realm ~= '' and format('%s-%s', name, realm)) or name
+		local userVersion = nameRealm and E.UserList[nameRealm]
+		if userVersion then
+			if highestVersion < userVersion then
+				highestVersion = userVersion
 			end
+
+			return (userVersion < highestVersion) and iconRed or iconBlue
 		end
 	end)
 end
