@@ -35,6 +35,7 @@ local CompactRaidFrameManager_SetSetting = CompactRaidFrameManager_SetSetting
 
 local IsAddOnLoaded = C_AddOns.IsAddOnLoaded
 local IsReplacingUnit = IsReplacingUnit or C_PlayerInteractionManager.IsReplacingUnit
+local GetNamePlateForUnit = C_NamePlate.GetNamePlateForUnit
 
 local SELECT_AGGRO = SOUNDKIT.IG_CREATURE_AGGRO_SELECT
 local SELECT_NPC = SOUNDKIT.IG_CHARACTER_NPC_SELECT
@@ -1622,7 +1623,6 @@ do
 	local SetFrameUp = {}
 	local SetFrameUnit = {}
 	local SetFrameHidden = {}
-	local NameplateHooked = {}
 	local DisabledElements = {}
 	local AllowedFuncs = {
 		[_G.DefaultCompactUnitFrameSetup] = true
@@ -1663,27 +1663,13 @@ do
 		end
 	end
 
-	function UF:DisableBlizzard_DisableFrame(frame, isNamePlate)
+	function UF:DisableBlizzard_DisableFrame(frame, which)
 		frame:UnregisterAllEvents()
 
-		if isNamePlate then
-			local aurasFrame = E.Retail and frame.AurasFrame
-			if aurasFrame then
-				if NP.db.useBlizzardAuras then
-					frame:RegisterUnitEvent('UNIT_AURA', frame.unit)
-				end
-
-				if not NameplateHooked[frame] then
-					NameplateHooked[frame] = true
-
-					hooksecurefunc(aurasFrame, 'RefreshList', NP.BlizzardPlate_RefreshList)
-					hooksecurefunc(aurasFrame, 'RefreshAuras', NP.BlizzardPlate_RefreshAuras)
-				end
-			end
-
-			pcall(frame.SetAlpha, frame, 0)
+		if which == 2 then -- nameplate
+			frame:SetAlpha(0)
 		else
-			pcall(frame.Hide, frame)
+			frame:Hide()
 		end
 
 		tinsert(DisabledElements, (frame.HealthBarsContainer and frame.HealthBarsContainer.healthBar) or nil)
@@ -1718,37 +1704,6 @@ do
 
 			hooksecurefunc(frame, 'Show', frame.Hide)
 			hooksecurefunc(frame, 'SetShown', FrameShown)
-		end
-	end
-
-	do
-		local locked -- TODO: remove this hack once we can adjust hitrects ourselves, coming in a later build
-		local function LockedAlpha(blizzPlate)
-			if locked or blizzPlate:IsForbidden() then return end
-
-			locked = true
-			blizzPlate:SetAlpha(0)
-			locked = false
-		end
-
-		local hooked = {}
-		function ElvUF:DisableBlizzardNamePlate(frame)
-			if (not frame or frame:IsForbidden()) or (not E.private.nameplates.enable) then return end
-
-			local plate = frame.UnitFrame
-			if not plate then return end
-
-			if E.Retail then
-				if not hooked[plate] then
-					hooksecurefunc(plate, 'SetAlpha', LockedAlpha)
-
-					hooked[plate] = true
-				end
-
-				UF:DisableBlizzard_DisableFrame(plate, true)
-			else
-				UF:DisableBlizzard_HideFrame(plate, '^NamePlate%d+%.UnitFrame$')
-			end
 		end
 	end
 
@@ -1823,11 +1778,22 @@ do
 		end
 	end
 
-	local function HideFrame(frame, doNotReparent)
+	-- normally, we want to reparent but this can break Blizzard Auras on nameplates
+	local function LockAlpha(frame, alpha)
+		if not frame:IsForbidden() and alpha ~= 0 then
+			frame:SetAlpha(0)
+		end
+	end
+
+	-- which is used for sepcific handling
+	-- true: do not reparent, 1: lock parent, 2: is nameplate
+	local function HideFrame(frame, which)
 		if not frame then return end
 
-		local lockParent = doNotReparent == 1
-		if lockParent or not doNotReparent then
+		UF:DisableBlizzard_DisableFrame(frame, which) -- keep this over BlizzardPlate_HookAuras
+
+		local lockParent = which == 1
+		if lockParent or not which then
 			frame:SetParent(E.HiddenFrame)
 
 			if lockParent and not lockedFrames[frame] then
@@ -1836,15 +1802,26 @@ do
 			end
 		end
 
-		UF:DisableBlizzard_DisableFrame(frame)
+		local lockAlpha = which == 2
+		if lockAlpha and not lockedFrames[frame] then
+			NP:BlizzardPlate_HookAuras(frame) -- setup Blizzard Auras
+
+			hooksecurefunc(frame, 'SetAlpha', LockAlpha)
+
+			lockedFrames[frame] = true
+		end
 	end
 
 	function ElvUF:DisableBlizzard(unit)
-		if not unit then return end
+		if not unit or handledUnits[unit] then return end
+		handledUnits[unit] = true
 
-		if E.private.unitframe.enable and not handledUnits[unit] then
-			handledUnits[unit] = true
-
+		if strmatch(unit, 'nameplate%d?%d?%d?$') then
+			if E.private.nameplates.enable then
+				local frame = GetNamePlateForUnit(unit)
+				HideFrame(frame and frame.UnitFrame, 2)
+			end
+		elseif E.private.unitframe.enable then
 			local disable = E.private.unitframe.disabledBlizzardFrames
 			if unit == 'player' then
 				if disable.player then

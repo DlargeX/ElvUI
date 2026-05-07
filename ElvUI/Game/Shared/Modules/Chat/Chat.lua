@@ -1701,9 +1701,11 @@ function CH:SetChatEditBoxMessage(message)
 	if not editBoxShown then
 		_G.ChatEdit_ActivateChat(ChatFrameEditBox)
 	end
+
 	if editBoxText and editBoxText ~= '' then
 		ChatFrameEditBox:SetText('')
 	end
+
 	ChatFrameEditBox:Insert(message)
 	ChatFrameEditBox:HighlightText()
 end
@@ -2662,6 +2664,7 @@ function CH:SetupChat()
 
 			if not chat.scriptsSet then
 				if allowHooks then
+					chat:UnregisterEvent('SETTINGS_LOADED') -- taints: preventing linking achievements
 					chat:SetScript('OnEvent', FloatingChatFrameOnEvent)
 				end
 
