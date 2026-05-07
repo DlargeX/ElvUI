@@ -975,8 +975,11 @@ do
 				Private.UpdateUnits(nameplate.unitFrame, unit)
 			end
 
-			nameplate:ClearAllHitTestPoints() -- to prevent lingering hit test points on default
-			nameplate:SetAllHitTestPoints(nameplate.unitFrame)
+			if nameplate.SetAllHitTestPoints then
+				nameplate:ClearAllHitTestPoints() -- to prevent lingering hit test points on default
+				nameplate:SetAllHitTestPoints(nameplate.unitFrame)
+			end
+
 			nameplate.unitFrame:SetAttribute('unit', unit)
 
 			if(nameplate.UnitFrame) then
