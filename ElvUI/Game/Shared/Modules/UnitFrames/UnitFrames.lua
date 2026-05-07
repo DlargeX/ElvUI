@@ -1779,7 +1779,7 @@ do
 	end
 
 	-- normally, we want to reparent but this can break Blizzard Auras on nameplates
-	local function LockedAlpha(frame, alpha)
+	local function LockAlpha(frame, alpha)
 		if not frame:IsForbidden() and alpha ~= 0 then
 			frame:SetAlpha(0)
 		end
@@ -1806,7 +1806,7 @@ do
 		if lockAlpha and not lockedFrames[frame] then
 			NP:BlizzardPlate_HookAuras(frame) -- setup Blizzard Auras
 
-			hooksecurefunc(frame, 'SetAlpha', LockedAlpha)
+			hooksecurefunc(frame, 'SetAlpha', LockAlpha)
 
 			lockedFrames[frame] = true
 		end
