@@ -48,11 +48,11 @@ end
 function S:GarrisonTooltip()
 	if not E.private.skins.blizzard.enable or not E.private.skins.blizzard.tooltip then return end
 
-	StyleTooltip(_G.GarrisonFollowerTooltip)
 	StyleTooltip(_G.FloatingGarrisonFollowerTooltip)
 	StyleTooltip(_G.FloatingGarrisonMissionTooltip)
 	StyleTooltip(_G.FloatingGarrisonShipyardFollowerTooltip)
 	StyleTooltip(_G.GarrisonShipyardFollowerTooltip)
+	StyleTooltip(_G.GarrisonFollowerTooltip)
 
 	AbilityTooltip(_G.GarrisonFollowerAbilityTooltip)
 	AbilityTooltip(_G.FloatingGarrisonFollowerAbilityTooltip)
