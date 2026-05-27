@@ -182,25 +182,22 @@ function PA:CreateAura(parent, unit, index, db)
 	aura:OffsetFrameLevel(nil, parent) -- set it to something else, fixes the bug
 	aura:OffsetFrameLevel(1, parent) -- set it to the level we actually want
 
-	aura:ClearAllPoints()
+	local point, step = db.icon.point, db.icon.size + (db.icon.offset or 0)
+	local compensate = (db.clickThrough and db.icon.size * 0.5) or 0
+	local previous, x, y = index - 1, 0, 0
 
-	local offsetNoMouse = (db.clickThrough and db.icon.size) or 0
-	if index == 1 then
-		aura:Point('CENTER', parent, -(offsetNoMouse * 0.5), 0)
-	else
-		local offsetX, offsetY, offsetIcon = 0, 0, db.icon.offset + offsetNoMouse
-		if db.icon.point == 'RIGHT' then
-			offsetX = offsetIcon
-		elseif db.icon.point == 'LEFT' then
-			offsetX = -offsetIcon
-		elseif db.icon.point == 'TOP' then
-			offsetY = offsetIcon
-		else
-			offsetY = -offsetIcon
-		end
-
-		aura:Point(E.InversePoints[db.icon.point], parent.auraIcons[index-1], db.icon.point, offsetX, offsetY)
+	if point == 'RIGHT' then
+		x = previous * step + compensate
+	elseif point == 'LEFT' then
+		x = -previous * step - compensate
+	elseif point == 'TOP' then
+		y = previous * step + compensate
+	else -- bottom
+		y = -previous * step - compensate
 	end
+
+	aura:ClearAllPoints()
+	aura:Point('CENTER', parent, x, y)
 
 	return aura
 end
