@@ -84,9 +84,6 @@ function PA:CreateAnchor(aura, parent, unit, index, db)
 	local iconSize = db.icon.size
 	if not iconSize then iconSize = 32 end
 
-	local iconPoint = db.icon.point
-	if not iconPoint then iconPoint = 'CENTER' end
-
 	local durationPoint = db.duration.point
 	if not durationPoint then durationPoint = 'CENTER' end
 
@@ -121,8 +118,8 @@ function PA:CreateAnchor(aura, parent, unit, index, db)
 	end
 
 	anchor.relativeTo = aura
-	anchor.point = iconPoint
-	anchor.relativePoint = iconPoint
+	anchor.point = 'CENTER'
+	anchor.relativePoint = 'CENTER'
 	anchor.offsetX = 0
 	anchor.offsetY = 0
 
@@ -146,11 +143,32 @@ function PA:CreateAnchor(aura, parent, unit, index, db)
 end
 
 function PA:RemoveAura(aura)
+	local piggy = aura.pig
+	if piggy then
+		piggy:SetShown(false)
+	end
+
 	if not aura.anchorID then return end
 
 	RemovePrivateAuraAnchor(aura.anchorID)
 
 	aura.anchorID = nil
+end
+
+function PA:OffsetAura(index, db)
+	local size, z, x, y = db.icon.size, index - 1, 0, 0
+	local point, offset = db.icon.point, size + (db.icon.offset or 0)
+	if point == 'RIGHT' then
+		x = z * offset
+	elseif point == 'LEFT' then
+		x = -z * offset
+	elseif point == 'TOP' then
+		y = z * offset
+	else
+		y = -z * offset
+	end
+
+	return x, y
 end
 
 function PA:RemoveAuras(parent)
@@ -165,39 +183,35 @@ function PA:CreateAura(parent, unit, index, db)
 	local aura = parent.auraIcons[index]
 	if not aura then
 		aura = CreateFrame('Frame', '$parent'..index, parent)
+
+		if index < 3 then -- only show 2 for testing
+			local piggy = aura:CreateTexture(nil, 'ARTWORK')
+			piggy:SetTexture(index == 1 and 1721030 or 1721029)
+			aura.pig = piggy
+		end
 	end
 
 	if not aura.anchorID then
 		aura.anchorID = PA:CreateAnchor(aura, parent, unit, index, db)
 	end
 
-	-- EnableMouse doesnt work; set the size to 1x1
-	if db.clickThrough then
-		aura:SetSize(1, 1)
-	else
-		aura:Size(db.icon.size)
-	end
-
 	-- for some reason, its not obeying the frame level; Blizzard bug?
 	aura:OffsetFrameLevel(nil, parent) -- set it to something else, fixes the bug
 	aura:OffsetFrameLevel(1, parent) -- set it to the level we actually want
 
-	local point, step = db.icon.point, db.icon.size + (db.icon.offset or 0)
-	local compensate = (db.clickThrough and db.icon.size * 0.5) or 0
-	local previous, x, y = index - 1, 0, 0
-
-	if point == 'RIGHT' then
-		x = previous * step + compensate
-	elseif point == 'LEFT' then
-		x = -previous * step - compensate
-	elseif point == 'TOP' then
-		y = previous * step + compensate
-	else -- bottom
-		y = -previous * step - compensate
-	end
-
+	local iconSize = db.icon.size
+	local iconX, iconY = PA:OffsetAura(index, db)
 	aura:ClearAllPoints()
-	aura:Point('CENTER', parent, x, y)
+	aura:Point('CENTER', parent, iconX, iconY)
+	aura:Size(db.clickThrough and 1 or iconSize)
+
+	local piggy = aura.pig
+	if piggy then
+		piggy:ClearAllPoints()
+		piggy:Point('CENTER', parent, iconX, iconY)
+		piggy:SetShown(parent.owner and (parent.owner.isForced or parent.owner.forceShowAuras))
+		piggy:Size(iconSize)
+	end
 
 	return aura
 end
