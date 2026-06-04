@@ -415,8 +415,10 @@ local function SkinTransmogFrames()
 	S:HandleCloseButton(WardrobeCollectionFrame.FilterButton.ResetButton)
 	WardrobeCollectionFrame.FilterButton.ResetButton:ClearAllPoints()
 	WardrobeCollectionFrame.FilterButton.ResetButton:Point('CENTER', WardrobeCollectionFrame.FilterButton, 'TOPRIGHT', 0, 0)
+
 	S:HandleDropDownBox(_G.WardrobeCollectionFrame.ItemsCollectionFrame.WeaponDropdown)
 	WardrobeCollectionFrame.ItemsCollectionFrame:StripTextures()
+	WardrobeCollectionFrame.ItemsCollectionFrame:SetTemplate('Transparent')
 
 	for _, Frame in ipairs(WardrobeCollectionFrame.ContentFrames) do
 		if Frame.Models then
@@ -494,7 +496,6 @@ local function SkinTransmogFrames()
 	SetsCollectionFrame.RightInset:StripTextures()
 	SetsCollectionFrame.LeftInset:StripTextures()
 	S:HandleTrimScrollBar(SetsCollectionFrame.ListContainer.ScrollBar)
-
 	hooksecurefunc(SetsCollectionFrame.ListContainer.ScrollBox, 'Update', SetsFrame_ScrollBoxUpdate)
 
 	local DetailsFrame = SetsCollectionFrame.DetailsFrame
@@ -561,9 +562,6 @@ local function SkinTransmogFrames()
 
 	S:HandleButton(WardrobeTransmogFrame.ApplyButton)
 	S:HandleCheckBox(WardrobeTransmogFrame.ToggleSecondaryAppearanceCheckbox)
-
-	WardrobeCollectionFrame.ItemsCollectionFrame:StripTextures()
-	WardrobeCollectionFrame.ItemsCollectionFrame:SetTemplate('Transparent')
 
 	WardrobeCollectionFrame.SetsTransmogFrame:StripTextures()
 	WardrobeCollectionFrame.SetsTransmogFrame:SetTemplate('Transparent')

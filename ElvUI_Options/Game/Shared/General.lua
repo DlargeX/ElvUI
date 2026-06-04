@@ -122,7 +122,7 @@ Fonts.general = ACH:Group('', nil, 11, nil, function(info) local key = info[#inf
 Fonts.general.args.font = ACH:SharedMediaFont(L["Default Font"], L["The font that the core of the UI will use."], 1)
 Fonts.general.args.fontSize = ACH:Range(L["Font Size"], L["Set the font size for everything in UI. Note: This doesn't effect somethings that have their own separate options (UnitFrame Font, Datatext Font, ect..)"], 2, C.Values.FontSize)
 Fonts.general.args.fontStyle = ACH:FontFlags(L["Font Outline"], nil, 3)
-Fonts.general.args.fontSlug = ACH:Toggle(E.NewSign..L["Font Slug"], L["Appends the SLUG rendering flag for sharper edges.\n\n|cffff3333Note:|r Slug will not work on Shadow, Mono, or Thick outline."], 4, nil, nil, nil, nil, nil, nil, not E.Retail)
+Fonts.general.args.fontSlug = ACH:Toggle(E.NewSign..L["Font Slug"], L["Appends the SLUG rendering flag for sharper edges.\n\n|cffff3333Note:|r Slug will not work on Shadow, Mono, or Thick outline."], 4, nil, nil, nil, nil, nil, nil, not (E.Retail or E.Mists))
 Fonts.general.args.applyFontToAll = ACH:Execute(L["Apply Font To All"], L["Applies the font and font size settings throughout the entire user interface. Note: Some font size settings will be skipped due to them having a smaller font size by default."], 5, function() E:StaticPopup_Show('APPLY_FONT_WARNING') end)
 Fonts.general.inline = true
 
@@ -253,7 +253,6 @@ blizz.general.args.resurrectSound = ACH:Toggle(L["Resurrect Sound"], L["Enable t
 blizz.general.args.loot = ACH:Toggle(L["Loot Frame"], L["Enable/Disable the loot frame."], 7, nil, nil, nil, function(info) return E.private.general[info[#info]] end, function(info, value) E.private.general[info[#info]] = value E.ShowPopup = true end)
 blizz.general.args.hideZoneText = ACH:Toggle(L["Hide Zone Text"], L["Enable/Disable the on-screen zone text when you change zones."], 8, nil, nil, nil, function(info) return E.db.general[info[#info]] end, function(info, value) E.db.general[info[#info]] = value; M:ZoneTextToggle() end)
 blizz.general.args.spacer1 = ACH:Spacer(14, 'full')
-blizz.general.args.vehicleSeatIndicatorSize = ACH:Range(L["Vehicle Seat Indicator Size"], nil, 16, { min = 64, max = 128, step = 4 }, nil, nil, function(info, value) E.db.general[info[#info]] = value BL:UpdateVehicleFrame() end, nil, not E.Mists)
 blizz.general.args.durabilityScale = ACH:Range(L["Durability Scale"], nil, 17, { min = .5, max = 8, step = .5 }, nil, nil, function(info, value) E.db.general[info[#info]] = value BL:UpdateDurabilityScale() end, nil, not E.Mists)
 blizz.general.inline = true
 

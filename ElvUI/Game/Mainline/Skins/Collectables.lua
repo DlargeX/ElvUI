@@ -595,8 +595,10 @@ local function SkinWardrobeFrame()
 	S:HandleCloseButton(WardrobeCollectionFrame.FilterButton.ResetButton)
 	WardrobeCollectionFrame.FilterButton.ResetButton:ClearAllPoints()
 	WardrobeCollectionFrame.FilterButton.ResetButton:Point('CENTER', WardrobeCollectionFrame.FilterButton, 'TOPRIGHT', 0, 0)
+
 	S:HandleDropDownBox(_G.WardrobeCollectionFrame.ItemsCollectionFrame.WeaponDropdown)
 	WardrobeCollectionFrame.ItemsCollectionFrame:StripTextures()
+	WardrobeCollectionFrame.ItemsCollectionFrame:SetTemplate('Transparent')
 
 	for _, Frame in ipairs(WardrobeCollectionFrame.ContentFrames) do
 		if Frame.Models then
@@ -652,7 +654,6 @@ local function SkinWardrobeFrame()
 	SetsCollectionFrame.RightInset:StripTextures()
 	SetsCollectionFrame.LeftInset:StripTextures()
 	S:HandleTrimScrollBar(SetsCollectionFrame.ListContainer.ScrollBar)
-
 	hooksecurefunc(SetsCollectionFrame.ListContainer.ScrollBox, 'Update', SetsFrame_ScrollBoxUpdate)
 
 	local DetailsFrame = SetsCollectionFrame.DetailsFrame
@@ -662,9 +663,6 @@ local function SkinWardrobeFrame()
 	DetailsFrame.LongName:FontTemplate(nil, 16)
 	S:HandleDropDownBox(DetailsFrame.VariantSetsDropdown)
 	hooksecurefunc(SetsCollectionFrame, 'SetItemFrameQuality', SetsFrame_SetItemFrameQuality)
-
-	WardrobeCollectionFrame.ItemsCollectionFrame:StripTextures()
-	WardrobeCollectionFrame.ItemsCollectionFrame:SetTemplate('Transparent')
 end
 
 local function SkinCollectionsFrames()

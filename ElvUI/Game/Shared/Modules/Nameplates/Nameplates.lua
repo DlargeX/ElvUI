@@ -116,7 +116,7 @@ function NP:CVarReset()
 	E:SetCVar('nameplateSelectedScale', 1)
 	E:SetCVar('nameplatePlayerLargerScale', 1.8)
 
-	if not E.Retail then
+	if not (E.Retail or E.Mists) then
 		-- listed in options
 		E:SetCVar('nameplateNotSelectedAlpha', 1)
 
@@ -149,7 +149,7 @@ end
 function NP:SetCVars()
 	local db = NP.db
 
-	if not E.Retail then
+	if not (E.Retail or E.Mists) then
 		if db.clampToScreen then
 			E:SetCVar('nameplateOtherTopInset', 0.08)
 			E:SetCVar('nameplateOtherBottomInset', 0.1)
@@ -163,14 +163,19 @@ function NP:SetCVars()
 
 	if E.Retail then
 		NP:ToggleCVar('nameplateUseClassColorForFriendlyPlayerUnitNames', db.classColorNames)
-	elseif E.TBC or E.Wrath or E.Mists then
+	elseif E.Mists then
+		NP:ToggleCVar('nameplateUseClassColorForFriendlyPlayerUnitNames', db.classColorNames)
+		E:SetCVar('nameplateMaxDistance', db.loadDistance)
+	elseif E.TBC or E.Wrath then
 		E:SetCVar('nameplateMaxDistance', db.loadDistance)
 	end
 
 	-- The order of these is important !!
+
+	local newPlates = E.Retail or E.Mists
 	local visibility = db.visibility
 	NP:ToggleCVar('nameplateShowAll', visibility.showAll)
-	NP:ToggleCVar(E.Retail and 'nameplateShowOnlyNameForFriendlyPlayerUnits' or 'nameplateShowOnlyNames', visibility.showOnlyNames)
+	NP:ToggleCVar(newPlates and 'nameplateShowOnlyNameForFriendlyPlayerUnits' or 'nameplateShowOnlyNames', visibility.showOnlyNames)
 
 	local enemyVisibility = visibility.enemy
 	NP:ToggleCVar('nameplateShowEnemyMinions', enemyVisibility.minions)
@@ -181,10 +186,10 @@ function NP:SetCVars()
 
 	local friendlyVisibility = visibility.friendly
 	NP:ToggleCVar('nameplateShowFriendlyNPCs', friendlyVisibility.npcs)
-	NP:ToggleCVar(E.Retail and 'nameplateShowFriendlyPlayerMinions' or 'nameplateShowFriendlyMinions', friendlyVisibility.minions)
-	NP:ToggleCVar(E.Retail and 'nameplateShowFriendlyPlayerGuardians' or 'nameplateShowFriendlyGuardians', friendlyVisibility.guardians)
-	NP:ToggleCVar(E.Retail and 'nameplateShowFriendlyPlayerPets' or 'nameplateShowFriendlyPets', friendlyVisibility.pets)
-	NP:ToggleCVar(E.Retail and 'nameplateShowFriendlyPlayerTotems' or 'nameplateShowFriendlyTotems', friendlyVisibility.totems)
+	NP:ToggleCVar(newPlates and 'nameplateShowFriendlyPlayerMinions' or 'nameplateShowFriendlyMinions', friendlyVisibility.minions)
+	NP:ToggleCVar(newPlates and 'nameplateShowFriendlyPlayerGuardians' or 'nameplateShowFriendlyGuardians', friendlyVisibility.guardians)
+	NP:ToggleCVar(newPlates and 'nameplateShowFriendlyPlayerPets' or 'nameplateShowFriendlyPets', friendlyVisibility.pets)
+	NP:ToggleCVar(newPlates and 'nameplateShowFriendlyPlayerTotems' or 'nameplateShowFriendlyTotems', friendlyVisibility.totems)
 
 	local playerDB = db.units.PLAYER
 	local playerVisibility = playerDB.visibility
@@ -287,7 +292,7 @@ function NP:Update_ClassPowerTwo(nameplate)
 end
 
 function NP:StyleTargetPlate(nameplate)
-	nameplate:SetScale(E.Retail and 1 or E.uiscale)
+	nameplate:SetScale((E.Retail or E.Mists) and 1 or E.uiscale)
 	nameplate:ClearAllPoints()
 	nameplate:Point('CENTER')
 	nameplate:Size(NP.db.clickSize.personalWidth, NP.db.clickSize.personalHeight)
@@ -307,7 +312,7 @@ function NP:UpdateTargetPlate(nameplate)
 end
 
 function NP:ScalePlate(nameplate, scale, targetPlate)
-	local mult = (E.Retail or (nameplate == NP.PlayerFrame or nameplate == NP.TestFrame)) and 1 or E.uiscale
+	local mult = ((E.Retail or E.Mists) or (nameplate == NP.PlayerFrame or nameplate == NP.TestFrame)) and 1 or E.uiscale
 	if targetPlate and NP.targetPlate then
 		NP.targetPlate:SetScale(mult)
 		NP.targetPlate = nil
@@ -330,7 +335,7 @@ function NP:PostUpdateAllElements(event)
 end
 
 function NP:StylePlate(nameplate)
-	nameplate:SetScale(E.Retail and 1 or E.uiscale)
+	nameplate:SetScale((E.Retail or E.Mists) and 1 or E.uiscale)
 	nameplate:ClearAllPoints()
 	nameplate:Point('CENTER')
 
@@ -1022,7 +1027,7 @@ function NP:HideInterfaceOptions()
 end
 
 function NP:SetNamePlateSizes()
-	if E.Retail then
+	if E.Retail or E.Mists then
 		NP.PlateDriver:SetSize(NP.db.clickSize.width, NP.db.clickSize.height)
 	else
 		C_NamePlate_SetNamePlateSelfSize(NP.db.clickSize.personalWidth * E.uiscale, NP.db.clickSize.personalHeight * E.uiscale)
@@ -1213,7 +1218,7 @@ function NP:Initialize()
 	NP:RegisterEvent('ZONE_CHANGED_NEW_AREA', 'EnviromentConditionals')
 	NP:RegisterEvent('UNIT_FACTION', 'NamePlateCallBack')
 
-	if not E.Retail then
+	if not (E.Retail or E.Mists) then -- why is mist here blizzard?
 		NP:RegisterEvent('COMBAT_LOG_EVENT_UNFILTERED')
 	end
 
