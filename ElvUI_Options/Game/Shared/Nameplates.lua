@@ -453,7 +453,7 @@ NamePlates.resetFilters = ACH:Execute(L["Reset Aura Filters"], nil, 3, function(
 NamePlates.resetcvars = ACH:Execute(L["Reset CVars"], L["Reset Nameplate CVars to the ElvUI recommended defaults."], 4, function() NP:CVarReset() end, nil, true)
 
 NamePlates.generalGroup = ACH:Group(L["General"], nil, 5, nil, nil, function(info, value) E.db.nameplates[info[#info]] = value NP:SetCVars() NP:ConfigureAll() end, function() return not E.NamePlates.Initialized end)
-NamePlates.generalGroup.args.motionType = ACH:Select(L["UNIT_NAMEPLATES_TYPES"], L["Set to either stack nameplates vertically or allow them to overlap."], 1, { STACKED = L["UNIT_NAMEPLATES_TYPE_2"], OVERLAP = L["UNIT_NAMEPLATES_TYPE_1"] }, nil, nil, nil, nil, nil, E.Retail)
+NamePlates.generalGroup.args.motionType = ACH:Select(L["UNIT_NAMEPLATES_TYPES"], L["Set to either stack nameplates vertically or allow them to overlap."], 1, { STACKED = L["UNIT_NAMEPLATES_TYPE_2"], OVERLAP = L["UNIT_NAMEPLATES_TYPE_1"] }, nil, nil, nil, nil, nil, E.Retail or E.Mists)
 NamePlates.generalGroup.args.showEnemyCombat = ACH:Select(L["Enemy Combat Toggle"], L["Control enemy nameplates toggling on or off when in combat."], 2, { DISABLED = L["Disable"], TOGGLE_ON = L["Toggle On While In Combat"], TOGGLE_OFF = L["Toggle Off While In Combat"] }, nil, nil, nil, function(info, value) E.db.nameplates[info[#info]] = value NP:PLAYER_REGEN_ENABLED() end)
 NamePlates.generalGroup.args.showFriendlyCombat = ACH:Select(L["Friendly Combat Toggle"], L["Control friendly nameplates toggling on or off when in combat."], 3, { DISABLED = L["Disable"], TOGGLE_ON = L["Toggle On While In Combat"], TOGGLE_OFF = L["Toggle Off While In Combat"] }, nil, nil, nil, function(info, value) E.db.nameplates[info[#info]] = value NP:PLAYER_REGEN_ENABLED() end)
 NamePlates.generalGroup.args.spacer1 = ACH:Spacer(5)
@@ -486,7 +486,6 @@ NamePlates.generalGroup.args.blizzardCVars = ACH:Group(L["Blizzard CVars"], nil,
 
 do
 	local cvarRanges = {
-		nameplateLargerScale = { name = L["Larger Scale"], default = '1.2', max = 3, order = 20 },
 		nameplateMinScale = { name = L["Min Scale"], default = '0.8', max = 3, order = 21 },
 		nameplateMaxScale = { name = L["Max Scale"], default = '1.0', max = 3, order = 22 },
 		nameplateSelectedScale = { name = L["Selected Scale"], default = (E.Retail and '1.2' or '1.0'), max = 4, order = 23 },
@@ -510,6 +509,8 @@ do
 
 		if E.Mists then
 			cvarToggles.useClassColorNames = L["Class Color Names"]
+		else
+			cvarRanges.nameplateLargerScale = { name = L["Larger Scale"], default = '1.2', max = 3, order = 20 }
 		end
 	end
 
