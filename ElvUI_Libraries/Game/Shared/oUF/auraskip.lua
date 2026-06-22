@@ -3,7 +3,6 @@ local oUF = ns.oUF
 
 local next = next
 local wipe = wipe
-local pcall = pcall
 local select = select
 
 local UnitGUID = UnitGUID
@@ -59,7 +58,6 @@ local function ComputeAuraFlags(unit, aura)
 	aura.auraIsHarmful = not IsAuraFilteredOutByInstanceID(unit, aura.auraInstanceID, 'HARMFUL')
 	aura.auraIsHelpful = not IsAuraFilteredOutByInstanceID(unit, aura.auraInstanceID, 'HELPFUL')
 
-	aura.auraIsImportant = InstanceFiltered(unit, aura, 'HELPFUL|IMPORTANT', 'HARMFUL|IMPORTANT')
 	aura.auraIsCancelable = InstanceFiltered(unit, aura, 'HELPFUL|CANCELABLE', 'HARMFUL|CANCELABLE')
 	aura.auraIsCrowdControl = InstanceFiltered(unit, aura, 'HELPFUL|CROWD_CONTROL', 'HARMFUL|CROWD_CONTROL')
 	aura.auraIsBigDefensive = InstanceFiltered(unit, aura, 'HELPFUL|BIG_DEFENSIVE', 'HARMFUL|BIG_DEFENSIVE')
@@ -149,14 +147,14 @@ local function ProcessAura(frame, event, unit, token, ...)
 	return token
 end
 
-local function ProcessTokens(frame, event, unit, success, token, ...)
-	repeat token = success and ProcessAura(frame, event, unit, token, ...)
+local function ProcessTokens(frame, event, unit, token, ...)
+	repeat token = ProcessAura(frame, event, unit, token, ...)
 	until not token
 end
 
 local function ProcessExisting(frame, event, unit)
-	ProcessTokens(frame, event, unit, pcall(GetAuraSlots, unit, 'HELPFUL'))
-	ProcessTokens(frame, event, unit, pcall(GetAuraSlots, unit, 'HARMFUL'))
+	ProcessTokens(frame, event, unit, GetAuraSlots(unit, 'HELPFUL'))
+	ProcessTokens(frame, event, unit, GetAuraSlots(unit, 'HARMFUL'))
 end
 
 local function ShouldSkipAura(frame, event, unit, updateInfo, showFunc)
@@ -243,14 +241,14 @@ end
 -- Blizzard didnt implement the tooltip functions on Era or Mists
 function oUF:GetAuraIndexByInstanceID(unit, auraInstanceID, filter)
 	local index = 1
-	local success, aura = pcall(GetAuraDataByIndex, unit, index, filter)
-	while (success and aura) do
+	local aura = GetAuraDataByIndex(unit, index, filter)
+	while aura do
 		if aura.auraInstanceID == auraInstanceID then
 			return index
 		end
 
 		index = index + 1
-		success, aura = pcall(GetAuraDataByIndex, unit, index, filter)
+		aura = GetAuraDataByIndex(unit, index, filter)
 	end
 end
 
