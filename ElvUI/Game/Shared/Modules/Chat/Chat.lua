@@ -151,13 +151,6 @@ local hyperlinkTypes = {
 	unit = true
 }
 
-local tabTexs = {
-	'',
-	'Selected',
-	'Active',
-	'Highlight'
-}
-
 local historyTypes = { -- most of these events are set in FindURL_Events, this is mainly used to ignore types
 	CHAT_MSG_WHISPER			= 'WHISPER',
 	CHAT_MSG_WHISPER_INFORM		= 'WHISPER',
@@ -898,6 +891,16 @@ function CH:EditBoxFocusLost()
 	self.historyIndex = 0
 end
 
+function CH:GetChatWindowInfo(id)
+	local name, size, r, g, b, a, isShown, isLocked, isDocked, isUninteractable = GetChatWindowInfo(id)
+
+	if not size or size == 0 then
+		size = _G.CHAT_FRAME_DEFAULT_FONT_SIZE
+	end
+
+	return name, size, r, g, b, a, isShown, isLocked, isDocked, isUninteractable
+end
+
 function CH:UpdateEditboxFont(chatFrame)
 	local style = GetCVar('chatStyle')
 	if style == 'classic' and CH.LeftChatWindow then
@@ -910,7 +913,7 @@ function CH:UpdateEditboxFont(chatFrame)
 
 	local id = chatFrame:GetID()
 	local font, outline = LSM:Fetch('font', CH.db.font), CH.db.fontOutline
-	local _, fontSize = _G.FCF_GetChatWindowInfo(id)
+	local _, fontSize = CH:GetChatWindowInfo(id)
 
 	local editbox = ChooseBoxForSend(chatFrame)
 	editbox:FontTemplate(font, fontSize, outline)
@@ -937,18 +940,39 @@ function CH:PositionButtonFrame(chat)
 	chat.buttonFrame:SetClipsChildren(true)
 end
 
+do
+	local tabTexs = { '', 'Selected', 'Active', 'Highlight' }
+	function CH:ClearTabTextures(name)
+		for _, tex in next, tabTexs do
+			local t, l, m, r = name..'Tab', tex..'Left', tex..'Middle', tex..'Right'
+			local main = _G[t]
+			local left = _G[t..l] or (main and main[l])
+			local middle = _G[t..m] or (main and main[m])
+			local right = _G[t..r] or (main and main[r])
+
+			if left then left:SetTexture() end
+			if middle then middle:SetTexture() end
+			if right then right:SetTexture() end
+		end
+	end
+end
+
 function CH:StyleChat(frame)
 	local name = frame:GetName()
 	local tab = CH:GetTab(frame)
 
 	local id = frame:GetID()
-	local _, fontSize = _G.FCF_GetChatWindowInfo(id)
+	local _, fontSize, colorR, colorG, colorB, colorA = CH:GetChatWindowInfo(id)
 	local font, size, outline = LSM:Fetch('font', CH.db.font), fontSize, CH.db.fontOutline
 	frame:FontTemplate(font, size, outline)
 
 	frame:SetTimeVisible(CH.db.inactivityTimer)
 	frame:SetMaxLines(CH.db.maxLines)
 	frame:SetFading(CH.db.fade)
+
+	if frame.Background then
+		frame.Background:SetVertexColor(colorR, colorG, colorB, colorA)
+	end
 
 	if tab.Text then
 		tab:SetScript('OnUpdate', CH.Tab_OnUpdate)
@@ -992,24 +1016,11 @@ function CH:StyleChat(frame)
 	charCount:Width(40)
 	editbox.characterCount = charCount
 
-	for _, texName in pairs(tabTexs) do
-		local t, l, m, r = name..'Tab', texName..'Left', texName..'Middle', texName..'Right'
-		local main = _G[t]
-		local left = _G[t..l] or (main and main[l])
-		local middle = _G[t..m] or (main and main[m])
-		local right = _G[t..r] or (main and main[r])
-
-		if left then left:SetTexture() end
-		if middle then middle:SetTexture() end
-		if right then right:SetTexture() end
-	end
+	hooksecurefunc(tab, 'SetAlpha', CH.ChatFrameTab_SetAlpha)
+	tab:Height(22)
 
 	tab.Text:ClearAllPoints()
 	tab.Text:Point('CENTER', tab, 0, -1)
-
-	hooksecurefunc(tab, 'SetAlpha', CH.ChatFrameTab_SetAlpha)
-
-	tab:Height(22)
 
 	if tab.conversationIcon then
 		tab.conversationIcon:ClearAllPoints()
@@ -1022,7 +1033,7 @@ function CH:StyleChat(frame)
 		editbox.focusMid:SetAlpha(0)
 	end
 
-	-- stuff to hide
+	CH:ClearTabTextures(name)
 	CH:PositionButtonFrame(frame)
 
 	local scrollBar = frame.ScrollBar
@@ -2659,6 +2670,10 @@ function CH:SetupChat()
 		if chat then
 			CH:StyleChat(chat)
 
+			if not chat.oldAlpha then
+				CH:FCF_SetWindowAlpha(chat)
+			end
+
 			_G.FCFTab_UpdateAlpha(chat)
 
 			local id = chat:GetID()
@@ -3670,24 +3685,25 @@ CH.TabStyles = {
 function CH:FCFTab_UpdateColors(tab, selected)
 	if not tab then return end
 
+	local chat = CH:GetOwner(tab)
+	local name = CH:GetChatWindowInfo(tab:GetID())
+	if not name then
+		name = (chat and chat.name) or UNKNOWN
+	end
+
 	if tab:GetParent() == _G.ChatConfigFrameChatTabManager then
 		if selected then
 			tab.Text:SetTextColor(1, 1, 1)
 		end
 
-		local name = GetChatWindowInfo(tab:GetID())
 		if name and E:NotSecretValue(name) then
 			tab.Text:SetText(name)
 		end
 
 		tab:SetAlpha(1) -- for some reason blizzard likes to change the alpha here? idk
-	else -- actual chat tab and other
-		local chat = CH:GetOwner(tab)
-		if not chat then return end
-
+	elseif chat then -- actual chat tab and other
 		tab.selected = selected
 
-		local name = chat.name or UNKNOWN
 		local whisper = tab.conversationIcon and chat.chatTarget
 		tab.whisperName = (whisper and not tab.whisperName) and E:NotSecretValue(name) and gsub(E:StripMyRealm(name), '([%S]-)%-[%S]+', '%1|cFF999999*|r') or nil
 
@@ -4044,6 +4060,8 @@ function CH:Initialize()
 	CH:UpdateEditboxAnchors()
 	CH:HandleChatVoiceIcons()
 
+	CH:SecureHook(_G.EditModeManagerFrame, 'UpdateLayoutInfo', 'ResnapDock')
+
 	if _G.ChatFrameUtil and _G.ChatFrameUtil.ActivateChat then
 		CH:SecureHook(_G.ChatFrameUtil, 'ActivateChat', 'ChatEdit_ActivateChat')
 		CH:SecureHook(_G.ChatFrameUtil, 'DeactivateChat', 'ChatEdit_DeactivateChat')
@@ -4057,16 +4075,16 @@ function CH:Initialize()
 	CH:SecureHook('FCFTab_UpdateColors')
 	CH:SecureHook('FCFDock_SelectWindow')
 	CH:SecureHook('FCFDock_ScrollToSelectedTab')
-	CH:SecureHook('FCF_SetWindowAlpha')
-	CH:SecureHook('FCF_SetButtonSide', 'PositionButtonFrame')
+	CH:SecureHook('FCFDockOverflowButton_UpdatePulseState')
 	CH:SecureHook('FCF_Close', 'PostChatClose')
 	CH:SecureHook('FCF_DockFrame', 'SnappingChanged')
 	CH:SecureHook('FCF_ResetChatWindows', 'ClearSnapping')
 	CH:SecureHook('FCF_SavePositionAndDimensions', 'SnappingChanged')
+	CH:SecureHook('FCF_SetButtonSide', 'PositionButtonFrame')
 	CH:SecureHook('FCF_SetChatWindowFontSize', 'SetChatFont')
 	CH:SecureHook('FCF_UnDockFrame', 'SnappingChanged')
+	CH:SecureHook('FCF_SetWindowAlpha')
 	CH:SecureHook('RedockChatWindows', 'ClearSnapping')
-	CH:SecureHook('FCFDockOverflowButton_UpdatePulseState')
 	CH:SecureHook('UIDropDownMenu_AddButton')
 	CH:SecureHook('GetPlayerInfoByGUID')
 
@@ -4083,10 +4101,6 @@ function CH:Initialize()
 	CH:RegisterEvent('GROUP_ROSTER_UPDATE', 'CheckLFGRoles')
 	CH:RegisterEvent('PET_BATTLE_CLOSE')
 	CH:RegisterEvent('CVAR_UPDATE')
-
-	if E.hasEditMode then
-		CH:SecureHook(_G.EditModeManagerFrame, 'UpdateLayoutInfo', 'ResnapDock')
-	end
 
 	if E.Retail then
 		CH:RegisterEvent('SOCIAL_QUEUE_UPDATE', 'SocialQueueEvent')
