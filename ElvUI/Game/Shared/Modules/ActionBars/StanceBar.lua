@@ -155,7 +155,7 @@ function AB:PositionAndSizeBarShapeShift()
 		end
 
 		AB:HandleButton(bar, button, i, lastButton, lastColumnButton)
-		AB:StyleButton(button, nil, useMasque, true)
+		AB:StyleButton(button, nil, useMasque, true, 'stanceBar')
 
 		if useMasque then
 			MasqueGroup:AddButton(bar.buttons[i])
@@ -230,6 +230,8 @@ function AB:AdjustMaxStanceButtons(event)
 end
 
 function AB:UpdateStanceBindings()
+	bar.db = AB.db.stanceBar
+
 	for i = 1, NUM_STANCE_SLOTS do
 		local button = _G['ElvUI_StanceBarButton'..i]
 		if not button then break end

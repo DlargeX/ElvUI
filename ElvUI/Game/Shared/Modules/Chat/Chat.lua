@@ -19,7 +19,6 @@ local CreateFrame = CreateFrame
 local FlashClientIcon = FlashClientIcon
 local GetBNPlayerCommunityLink = GetBNPlayerCommunityLink
 local GetChannelName = GetChannelName
-local GetChatWindowInfo = GetChatWindowInfo
 local GetCursorPosition = GetCursorPosition
 local GetNumGroupMembers = GetNumGroupMembers
 local GetPlayerCommunityLink = GetPlayerCommunityLink
@@ -44,6 +43,8 @@ local ToggleQuickJoinPanel = ToggleQuickJoinPanel
 local UIParent = UIParent
 local UnitName = UnitName
 
+local EncodeBase64 = C_EncodingUtil.EncodeBase64
+local DecodeBase64 = C_EncodingUtil.DecodeBase64
 local C_BattleNet_GetAccountInfoByID = C_BattleNet.GetAccountInfoByID
 local C_BattleNet_GetFriendAccountInfo = C_BattleNet.GetFriendAccountInfo
 local C_BattleNet_GetFriendGameAccountInfo = C_BattleNet.GetFriendGameAccountInfo
@@ -653,7 +654,7 @@ function CH:InsertEmotions(msg)
 		local pattern = E:EscapeString(word)
 		local emoji = CH.Smileys[pattern]
 		if emoji and strmatch(msg, '[%s%p]-'..pattern..'[%s%p]*') then
-			local encode = E.Libs.Deflate:EncodeForPrint(word) -- btw keep `|h|cFFffffff|r|h` as it is
+			local encode = EncodeBase64(word) -- btw keep `|h|cFFffffff|r|h` as it is
 			msg = gsub(msg, '([%s%p]-)'..pattern..'([%s%p]*)', (encode and ('%1|Helvmoji:%%'..encode..'|h|cFFffffff|r|h') or '%1')..emoji..'%2')
 		end
 	end
@@ -891,16 +892,6 @@ function CH:EditBoxFocusLost()
 	self.historyIndex = 0
 end
 
-function CH:GetChatWindowInfo(id)
-	local name, size, r, g, b, a, isShown, isLocked, isDocked, isUninteractable = GetChatWindowInfo(id)
-
-	if not size or size == 0 then
-		size = _G.CHAT_FRAME_DEFAULT_FONT_SIZE
-	end
-
-	return name, size, r, g, b, a, isShown, isLocked, isDocked, isUninteractable
-end
-
 function CH:UpdateEditboxFont(chatFrame)
 	local style = GetCVar('chatStyle')
 	if style == 'classic' and CH.LeftChatWindow then
@@ -912,8 +903,8 @@ function CH:UpdateEditboxFont(chatFrame)
 	end
 
 	local id = chatFrame:GetID()
-	local font, outline = LSM:Fetch('font', CH.db.font), CH.db.fontOutline
-	local _, fontSize = CH:GetChatWindowInfo(id)
+	local font, outline = CH.db.font, CH.db.fontOutline
+	local _, fontSize = _G.FCF_GetChatWindowInfo(id)
 
 	local editbox = ChooseBoxForSend(chatFrame)
 	editbox:FontTemplate(font, fontSize, outline)
@@ -962,17 +953,13 @@ function CH:StyleChat(frame)
 	local tab = CH:GetTab(frame)
 
 	local id = frame:GetID()
-	local _, fontSize, colorR, colorG, colorB, colorA = CH:GetChatWindowInfo(id)
-	local font, size, outline = LSM:Fetch('font', CH.db.font), fontSize, CH.db.fontOutline
+	local _, fontSize = _G.FCF_GetChatWindowInfo(id)
+	local font, size, outline = CH.db.font, fontSize, CH.db.fontOutline
 	frame:FontTemplate(font, size, outline)
 
 	frame:SetTimeVisible(CH.db.inactivityTimer)
 	frame:SetMaxLines(CH.db.maxLines)
 	frame:SetFading(CH.db.fade)
-
-	if frame.Background then
-		frame.Background:SetVertexColor(colorR, colorG, colorB, colorA)
-	end
 
 	if tab.Text then
 		tab:SetScript('OnUpdate', CH.Tab_OnUpdate)
@@ -1160,7 +1147,7 @@ do
 	local stripTextureFunc = function(w, x, y) if x=='' then return (w~='' and w) or (y~='' and y) or '' end end
 	local hyperLinkFunc = function(w, x, y) if w~='' then return end
 		local emoji = (x~='' and x) and strmatch(x, 'elvmoji:%%(.+)')
-		return (emoji and E.Libs.Deflate:DecodeForPrint(emoji)) or y
+		return (emoji and DecodeBase64(emoji)) or y
 	end
 	local fourString = function(v, w, x, y)
 		return format('%s%s%s', v, w, (v and v == '1' and x) or y)
@@ -1886,7 +1873,7 @@ function CH:GetBNFriendColor(name, id, useBTag)
 	end
 
 	local info = C_BattleNet_GetAccountInfoByID(id)
-	local BNET_TAG = info and info.isBattleTagFriend and info.battleTag and strmatch(info.battleTag,'([^#]+)')
+	local BNET_TAG = info and info.battleTag and strmatch(info.battleTag,'([^#]+)')
 	local TAG = (useBTag or CH.db.useBTagName) and BNET_TAG
 
 	local Class
@@ -2582,11 +2569,27 @@ function CH:ChatFrame_OnEvent(frame, ...)
 	if CH:ChatFrame_MessageEventHandler(frame, ...) then return end
 end
 
-function CH:FloatingChatFrame_OnEvent(...)
-	CH:ChatFrame_OnEvent(...)
+function CH:FloatingChatFrame_OnEvent(frame, event, ...)
+	CH:ChatFrame_OnEvent(frame, event, ...)
 
-	if _G.FloatingChatFrame_OnEvent then
-		_G.FloatingChatFrame_OnEvent(...)
+	-- copy of FloatingChatFrameMixin:OnEvent without `ChatFrameMixin.OnEvent`
+	if event == 'UPDATE_CHAT_WINDOWS' or event == 'UPDATE_FLOATING_CHAT_WINDOWS' then
+		_G.FloatingChatFrame_Update(frame:GetID(), 1)
+
+		frame.isInitialized = 1 -- set but not used for a check, shouldnt be an issue with tainting
+	elseif event == 'UPDATE_CHAT_COLOR' then
+		local chatType, r, g, b = ...
+		if not (frame.isTemporary and frame.chatType == chatType) then return end
+
+		local tab = CH:GetTab(frame)
+		if not tab then return end
+
+		local selected = tab.selectedColorTable
+		if selected then
+			selected.r, selected.g, selected.b = r, g, b
+		end
+
+		_G.FCFTab_UpdateColors(tab, not frame.isDocked or frame == _G.FCFDock_GetSelectedWindow(_G.GeneralDockManager))
 	end
 end
 
@@ -2669,10 +2672,6 @@ function CH:SetupChat()
 		local chat = _G[frameName]
 		if chat then
 			CH:StyleChat(chat)
-
-			if not chat.oldAlpha then
-				CH:FCF_SetWindowAlpha(chat)
-			end
 
 			_G.FCFTab_UpdateAlpha(chat)
 
@@ -2882,7 +2881,7 @@ function CH:SetChatFont(dropDown, chatFrame, fontSize)
 	if not chatFrame then chatFrame = _G.FCF_GetCurrentChatFrame() end
 	if not fontSize then fontSize = dropDown.value end
 
-	chatFrame:FontTemplate(LSM:Fetch('font', CH.db.font), fontSize, CH.db.fontOutline)
+	chatFrame:FontTemplate(CH.db.font, fontSize, CH.db.fontOutline)
 
 	CH:UpdateEditboxFont(chatFrame)
 end
@@ -3685,25 +3684,24 @@ CH.TabStyles = {
 function CH:FCFTab_UpdateColors(tab, selected)
 	if not tab then return end
 
-	local chat = CH:GetOwner(tab)
-	local name = CH:GetChatWindowInfo(tab:GetID())
-	if not name then
-		name = (chat and chat.name) or UNKNOWN
-	end
-
 	if tab:GetParent() == _G.ChatConfigFrameChatTabManager then
 		if selected then
 			tab.Text:SetTextColor(1, 1, 1)
 		end
 
+		local name = _G.FCF_GetChatWindowInfo(tab:GetID())
 		if name and E:NotSecretValue(name) then
 			tab.Text:SetText(name)
 		end
 
 		tab:SetAlpha(1) -- for some reason blizzard likes to change the alpha here? idk
-	elseif chat then -- actual chat tab and other
+	else -- actual chat tab and other
+		local chat = CH:GetOwner(tab)
+		if not chat then return end
+
 		tab.selected = selected
 
+		local name = chat.name or UNKNOWN
 		local whisper = tab.conversationIcon and chat.chatTarget
 		tab.whisperName = (whisper and not tab.whisperName) and E:NotSecretValue(name) and gsub(E:StripMyRealm(name), '([%S]-)%-[%S]+', '%1|cFF999999*|r') or nil
 
@@ -3992,7 +3990,7 @@ function CH:Tab_OnUpdate(elapsed)
 	self.lastUpdate = (self.lastUpdate or 0) + elapsed
 
 	if self.lastUpdate > 0.1 and self.Text:GetFontObject() == _G.GameFontNormalSmall then
-		self.Text:FontTemplate(LSM:Fetch('font', CH.db.tabFont), CH.db.tabFontSize, CH.db.tabFontOutline)
+		self.Text:FontTemplate(CH.db.tabFont, CH.db.tabFontSize, CH.db.tabFontOutline)
 	end
 end
 

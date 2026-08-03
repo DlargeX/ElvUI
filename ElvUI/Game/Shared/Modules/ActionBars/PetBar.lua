@@ -171,7 +171,7 @@ function AB:PositionAndSizeBarPet()
 
 		AB:HandleButtonAutoCast(bar, button)
 		AB:HandleButton(bar, button, i, lastButton, lastColumnButton)
-		AB:StyleButton(button, nil, useMasque, true)
+		AB:StyleButton(button, nil, useMasque, true, 'barPet')
 	end
 
 	AB:HandleBackdropMultiplier(bar, backdropSpacing, buttonSpacing, db.widthMult, db.heightMult, anchorUp, anchorLeft, horizontal, lastShownButton, anchorRowButton)
@@ -186,9 +186,12 @@ function AB:PositionAndSizeBarPet()
 end
 
 function AB:UpdatePetBindings()
+	bar.db = AB.db.barPet
+
 	for i, button in next, bar.buttons do
 		if button.HotKey then
 			button.HotKey:SetText(GetBindingKey('BONUSACTIONBUTTON'..i))
+
 			AB:FixKeybindText(button)
 			AB:FixKeybindColor(button)
 		end

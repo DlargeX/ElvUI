@@ -82,7 +82,6 @@ local buttonDefaults = {
 	},
 }
 
-AB.RegisterCooldown = E.RegisterCooldown
 AB.handledBars = {} --List of all bars
 AB.handledbuttons = {} --List of all buttons that have been modified.
 AB.barDefaults = {
@@ -384,7 +383,7 @@ function AB:PositionAndSizeBar(barName)
 		AB:HandleButtonAutoCast(bar, button)
 		AB:HandleButtonState(button, i, vehicleIndex, pages)
 		AB:HandleButton(bar, button, i, lastButton, lastColumnButton)
-		AB:StyleButton(button, nil, bar.MasqueGroup and E.private.actionbar.masque.actionbars)
+		AB:StyleButton(button, nil, bar.MasqueGroup and E.private.actionbar.masque.actionbars, nil, 'bar'..button.header.id)
 	end
 
 	AB:HandleBackdropMultiplier(bar, backdropSpacing, buttonSpacing, db.widthMult, db.heightMult, anchorUp, anchorLeft, horizontal, lastShownButton, anchorRowButton)
@@ -707,18 +706,35 @@ do
 	end
 end
 
-function AB:UpdateButtonSettings(specific)
-	if not E.private.actionbar.enable then return end
-
-	if InCombatLockdown() then
-		AB.NeedsUpdateButtonSettings = true
-		AB:RegisterEvent('PLAYER_REGEN_ENABLED')
-		return
-	end
-
+-- normally UpdateBarConfig and UpdateBarPosition would be the same function
+-- however, because of Classic HC we need to split the load on init and another
+-- part to load later, so fonts will load in properly from plugins with LSM ~Simpy
+function AB:UpdateBarConfig(specific)
 	for barName, bar in next, AB.handledBars do
 		if not specific or specific == barName then
-			AB:UpdateButtonConfig(barName, bar.bindButtons) -- config them first
+			AB:UpdateButtonConfig(barName, bar.bindButtons)
+		end
+	end
+
+	AB:UpdatePetBindings()
+	AB:UpdateStanceBindings() -- needs to be after AdjustMaxStanceButtons in the chain
+
+	if E.Retail or E.Mists then
+		if IsInBattle() then -- handle the first set of bindings unless in a pet battle
+			AB:UpdateBinds() -- no function passed, clears bindings
+		else
+			AB:HandleBinds() -- set override binds
+		end
+
+		AB:UpdateExtraBindings()
+	else
+		AB:HandleBinds()
+	end
+end
+
+function AB:UpdateBarPosition(specific)
+	for barName, bar in next, AB.handledBars do
+		if not specific or specific == barName then
 			AB:PositionAndSizeBar(barName) -- db is set here, button style, and paging also runs here
 
 			for _, button in next, bar.buttons do
@@ -730,6 +746,19 @@ function AB:UpdateButtonSettings(specific)
 			end
 		end
 	end
+end
+
+function AB:UpdateButtonSettings(specific)
+	if not E.private.actionbar.enable then return end
+
+	if InCombatLockdown() then
+		AB.NeedsUpdateButtonSettings = true
+		AB:RegisterEvent('PLAYER_REGEN_ENABLED')
+		return
+	end
+
+	AB:UpdateBarPosition(specific)
+	E:Delay(0.1, AB.UpdateBarConfig, AB, specific) -- see note above function about why this is delayed
 
 	if not specific then
 		-- we can safely toggle these events when we arent using the handle overlay
@@ -745,11 +774,7 @@ function AB:UpdateButtonSettings(specific)
 		AB:PositionAndSizeBarPet()
 		AB:PositionAndSizeBarShapeShift()
 
-		AB:UpdatePetBindings()
-		AB:UpdateStanceBindings() -- call after AdjustMaxStanceButtons
-
 		if E.Retail or E.Mists then
-			AB:UpdateExtraBindings()
 			AB:UpdateFlyoutButtons()
 
 			-- handle LAB custom flyout button sizes again
@@ -771,7 +796,7 @@ function AB:GetPage(bar, defaultPage, condition)
 	return condition..' '..defaultPage
 end
 
-function AB:StyleButton(button, noBackdrop, useMasque, ignoreNormal)
+function AB:StyleButton(button, noBackdrop, useMasque, ignoreNormal, cooldownKey)
 	local name = button:GetName()
 	local icon = button.icon or _G[name..'Icon']
 	local hotkey = button.HotKey or _G[name..'HotKey']
@@ -834,7 +859,7 @@ function AB:StyleButton(button, noBackdrop, useMasque, ignoreNormal)
 	end
 
 	if not AB.handledbuttons[button] then
-		E:RegisterCooldown(button.cooldown, 'actionbar')
+		E:RegisterCooldown(button.cooldown, 'actionbar', cooldownKey)
 
 		if button.AuraCooldown then
 			E:RegisterCooldown(button.AuraCooldown, 'targetaura')
@@ -1343,8 +1368,7 @@ function AB:GetFont(name, size, outline)
 	local slug = E:CanFlagSlug(outline)
 	if slug then outline = outline..'SLUG' end
 
-	local font = LSM:Fetch('font', name or AB.db.font)
-	return font, size or AB.db.fontSize, outline, slug
+	return name or AB.db.font, size or AB.db.fontSize, outline, slug
 end
 
 function AB:GetHotkeyConfig(db)
@@ -1352,11 +1376,11 @@ function AB:GetHotkeyConfig(db)
 	local offsetX = db and db.hotkeyTextXOffset or 0
 	local offsetY = db and db.hotkeyTextYOffset or -3
 
-	local color = db and db.useHotkeyColor and db.hotkeyColor or AB.db.fontColor
-	local show = not (db and not db.hotkeytext)
+	local enabled = db and db.hotkeytext
+	local color = (db and db.useHotkeyColor and db.hotkeyColor) or AB.db.fontColor
 
-	local font, size, flags, slug = AB:GetFont(db and db.hotkeyFont, db and db.hotkeyFontSize, db and db.hotkeyFontOutline)
-	return font, size, flags, slug, anchor, offsetX, offsetY, AB:GetTextJustify(anchor), { color.r or 1, color.g or 1, color.b or 1, color.a or 1 }, show
+	local font, size, flags, slug = AB:GetFont(enabled and db.hotkeyFont, enabled and db.hotkeyFontSize, enabled and db.hotkeyFontOutline)
+	return enabled, font, size, flags, slug, anchor, offsetX, offsetY, AB:GetTextJustify(anchor), { color.r or 1, color.g or 1, color.b or 1, color.a or 1 }
 end
 
 do
@@ -1390,16 +1414,14 @@ function AB:UpdateButtonConfig(barName, buttonName)
 
 	local hotkeyText = text.hotkey
 	if hotkeyText then
-		local font, size, flags, slug, anchor, offsetX, offsetY, justify, color = AB:GetHotkeyConfig(db)
+		local _, font, size, flags, slug, anchor, offsetX, offsetY, justify, color = AB:GetHotkeyConfig(db)
 		hotkeyText.color = color
 		hotkeyText.justifyH = justify
 
 		local fontText = hotkeyText.font
 		if fontText then
-			fontText.font = font
-			fontText.size = size
-			fontText.flags = flags
-			fontText.slug = slug
+			fontText.size, fontText.flags, fontText.slug = size, flags, slug
+			fontText.font = LSM:Fetch('font', font)
 		end
 
 		local position = hotkeyText.position
@@ -1415,7 +1437,9 @@ function AB:UpdateButtonConfig(barName, buttonName)
 	if countText then
 		local fontText = countText.font
 		if fontText then
-			fontText.font, fontText.size, fontText.flags, fontText.slug = AB:GetFont(db and db.countFont, db and db.countFontSize, db and db.countFontOutline)
+			local font, size, flags, slug = AB:GetFont(db and db.countFont, db and db.countFontSize, db and db.countFontOutline)
+			fontText.size, fontText.flags, fontText.slug = size, flags, slug
+			fontText.font = LSM:Fetch('font', font)
 		end
 
 		local position = countText.position
@@ -1436,7 +1460,9 @@ function AB:UpdateButtonConfig(barName, buttonName)
 	if macroText then
 		local fontText = macroText.font
 		if fontText then
-			fontText.font, fontText.size, fontText.flags, fontText.slug = AB:GetFont(db and db.macroFont, db and db.macroFontSize, db and db.macroFontOutline)
+			local font, size, flags, slug = AB:GetFont(db and db.macroFont, db and db.macroFontSize, db and db.macroFontOutline)
+			fontText.size, fontText.flags, fontText.slug = size, flags, slug
+			fontText.font = LSM:Fetch('font', font)
 		end
 
 		local position = macroText.position
@@ -1510,9 +1536,10 @@ do
 		local hotkey = button.HotKey
 		if not hotkey then return end
 
-		local font, size, flags, slug, anchor, offsetX, offsetY, justify, color, show = AB:GetHotkeyConfig(button:GetParent().db)
+		local bar = button:GetParent()
+		local enabled, font, size, flags, slug, anchor, offsetX, offsetY, justify, color = AB:GetHotkeyConfig(bar.db)
 
-		hotkey:SetShown(show)
+		hotkey:SetShown(enabled)
 
 		local text = hotkey:GetText()
 		local rangeIndicator = text == _G.RANGE_INDICATOR
@@ -2057,13 +2084,6 @@ function AB:Initialize()
 
 	if (E.Wrath and E.myclass == 'SHAMAN') and AB.db.totemBar.enable then
 		AB:CreateTotemBar()
-	end
-
-	-- handle the first set of bindings unless in a pet battle
-	if (E.Retail or E.Mists) and IsInBattle() then
-		AB:UpdateBinds() -- no function passed, clears bindings
-	else
-		AB:HandleBinds() -- set override binds
 	end
 
 	-- We handle actionbar lock for regular bars, but the lock on PetBar needs to be handled by WoW so make some necessary updates

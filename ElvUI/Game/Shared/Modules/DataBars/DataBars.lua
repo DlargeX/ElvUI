@@ -102,7 +102,7 @@ function DB:UpdateAll()
 		bar.holder:EnableMouse(not bar.db.clickThrough)
 		bar.holder:SetFrameLevel(bar.db.frameLevel)
 		bar.holder:SetFrameStrata(bar.db.frameStrata)
-		bar.text:FontTemplate(LSM:Fetch('font', bar.db.font), bar.db.fontSize, bar.db.fontOutline)
+		bar.text:FontTemplate(bar.db.font, bar.db.fontSize, bar.db.fontOutline)
 		bar.text:ClearAllPoints()
 		bar.text:Point(bar.db.anchorPoint, bar.db.xOffset, bar.db.yOffset)
 
@@ -196,13 +196,21 @@ function DB:CreateAll()
 	end
 end
 
+function DB:PLAYER_LOGIN()
+	if E.Retail then
+		DB:HonorBar_Update()
+	end
+
+	DB:UpdateAll()
+end
+
 function DB:Initialize()
 	DB.Initialized = true
 	DB.StatusBars = {}
 
 	DB:CreateAll()
-	DB:UpdateAll()
 
+	DB:RegisterEvent('PLAYER_LOGIN')
 	DB:RegisterEvent('PLAYER_LEVEL_UP', 'HandleVisibility')
 	DB:RegisterEvent('PLAYER_ENTERING_WORLD', 'HandleVisibility')
 	DB:RegisterEvent('PLAYER_REGEN_DISABLED', 'HandleVisibility')

@@ -62,11 +62,10 @@ E.GetThreatSituation = oUF.GetThreatSituation
 E.UnitNotUnit = oUF.UnitNotUnit
 E.UnitIsUnit = oUF.UnitIsUnit
 
-Engine[1] = E
-Engine[2] = {}
-Engine[3] = E.privateVars.profile
-Engine[4] = E.DF.profile
-Engine[5] = E.DF.global
+for i, k in next, { E, {}, E.privateVars.profile, E.DF.profile, E.DF.global } do
+	Engine[i] = k -- E, L, V, P, G
+end
+
 _G.ElvUI = Engine
 
 E.ActionBars = E:NewModule('ActionBars','AceHook-3.0','AceEvent-3.0')
@@ -78,12 +77,12 @@ E.Chat = E:NewModule('Chat','AceTimer-3.0','AceHook-3.0','AceEvent-3.0')
 E.DataBars = E:NewModule('DataBars','AceEvent-3.0')
 E.DataTexts = E:NewModule('DataTexts','AceTimer-3.0','AceHook-3.0','AceEvent-3.0')
 E.DebugTools = E:NewModule('DebugTools','AceEvent-3.0','AceHook-3.0')
-E.Distributor = E:NewModule('Distributor','AceEvent-3.0','AceTimer-3.0','AceComm-3.0','AceSerializer-3.0')
+E.Distributor = E:NewModule('Distributor','AceEvent-3.0','AceTimer-3.0','AceComm-3.0')
 E.EditorMode = E:NewModule('EditorMode','AceEvent-3.0')
 E.Layout = E:NewModule('Layout','AceEvent-3.0')
 E.Minimap = E:NewModule('Minimap','AceHook-3.0','AceEvent-3.0','AceTimer-3.0')
 E.Misc = E:NewModule('Misc','AceEvent-3.0','AceTimer-3.0','AceHook-3.0')
-E.ModuleCopy = E:NewModule('ModuleCopy','AceEvent-3.0','AceTimer-3.0','AceComm-3.0','AceSerializer-3.0')
+E.ModuleCopy = E:NewModule('ModuleCopy')
 E.NamePlates = E:NewModule('NamePlates','AceHook-3.0','AceEvent-3.0','AceTimer-3.0')
 E.PluginInstaller = E:NewModule('PluginInstaller')
 E.PrivateAuras = E:NewModule('PrivateAuras','AceEvent-3.0')
@@ -183,7 +182,6 @@ do
 	E:AddLib('LDB', 'LibDataBroker-1.1')
 	E:AddLib('SimpleSticky', 'LibSimpleSticky-1.0')
 	E:AddLib('CustomGlow', 'LibCustomGlow-1.0')
-	E:AddLib('Deflate', 'LibDeflate')
 	E:AddLib('Masque', 'Masque', true)
 	E:AddLib('Translit', 'LibTranslit-1.0')
 	E:AddLib('Dispel', 'LibDispel-1.0')
@@ -474,7 +472,7 @@ function E:SetEasyMenuAnchor(menu, frame)
 end
 
 function E:ResetProfile()
-	E:StaggeredUpdateAll()
+	E:UpdateAll()
 end
 
 function E:OnProfileReset()
@@ -502,7 +500,8 @@ do
 		UnitFrames = 'unitframe'
 	}
 
-	function E:SetupDB()
+	-- we call this when profile references change:
+	function E:SetupDB() -- E.db, E.private, E.global
 		for key, value in next, info do
 			local module = E[key]
 			if module then
@@ -516,7 +515,14 @@ do
 	end
 end
 
-function E:OnInitialize()
+function E:RefreshDB()
+	E.data:RegisterDefaults(E.DF)
+	E.charSettings:RegisterDefaults(E.privateVars)
+
+	E:UpdateDB()
+end
+
+function E:PrepDB()
 	if not ElvCharacterDB then
 		ElvCharacterDB = {}
 	end
@@ -525,6 +531,20 @@ function E:OnInitialize()
 	ElvPrivateData = nil --Depreciated
 	ElvData = nil --Depreciated
 
+	local data = E.Libs.AceDB:New('ElvDB', E.DF, true)
+	data.RegisterCallback(E, 'OnProfileChanged', 'UpdateAll')
+	data.RegisterCallback(E, 'OnProfileCopied', 'UpdateAll')
+	data.RegisterCallback(E, 'OnProfileReset', 'OnProfileReset')
+	E.data = data
+
+	local charSettings = E.Libs.AceDB:New('ElvPrivateDB', E.privateVars)
+	charSettings.RegisterCallback(E, 'OnProfileChanged', ReloadUI)
+	charSettings.RegisterCallback(E, 'OnProfileCopied', ReloadUI)
+	charSettings.RegisterCallback(E, 'OnProfileReset', 'OnPrivateProfileReset')
+	E.charSettings = charSettings
+end
+
+function E:InitDB()
 	E.db = E:CopyTable({}, E.DF.profile)
 	E.global = E:CopyTable({}, E.DF.global)
 	E.private = E:CopyTable({}, E.privateVars.profile)
@@ -547,6 +567,13 @@ function E:OnInitialize()
 		end
 	end
 
+	E:SetupDB()
+end
+
+function E:OnInitialize()
+	E:PrepDB() -- generate AceDB
+	E:InitDB() -- starting profile
+
 	E.SpellBookTooltip = CreateFrame('GameTooltip', 'ElvUI_SpellBookTooltip', UIParent, 'GameTooltipTemplate')
 	E.ConfigTooltip = CreateFrame('GameTooltip', 'ElvUI_ConfigTooltip', UIParent, 'GameTooltipTemplate')
 	E.ScanTooltip = CreateFrame('GameTooltip', 'ElvUI_ScanTooltip', WorldFrame, 'GameTooltipTemplate')
@@ -566,9 +593,11 @@ function E:OnInitialize()
 
 	E:DisableAddons()
 	E:CheckAddons()
-	E:SetupDB()
 	E:UIMult()
 	E:UpdateMedia()
+	E:UpdateTexCoords()
+	E:UpdateCustomClassColors()
+	E:UpdateBlizzardSpecialFonts()
 
 	if not E.OtherAddons.Tukui then
 		E:InitializeInitialModules()
