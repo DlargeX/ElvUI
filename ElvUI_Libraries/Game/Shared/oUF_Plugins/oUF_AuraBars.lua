@@ -368,4 +368,6 @@ local function Disable(self)
 	end
 end
 
-oUF:AddElement('AuraBars', Update, Enable, Disable)
+if not oUF.isPTR then
+	oUF:AddElement('AuraBars', Update, Enable, Disable)
+end

@@ -3,7 +3,6 @@
 ------------------------------------------------------------------------
 local E, L, V, P, G = unpack(ElvUI)
 local TT = E:GetModule('Tooltip')
-local UF = E:GetModule('UnitFrames')
 local ElvUF = E.oUF
 
 local _G = _G
@@ -38,8 +37,7 @@ local RequestBattlefieldScoreData = RequestBattlefieldScoreData
 local UIParent = UIParent
 local UnitExists = UnitExists
 local UnitIsVisible = UnitIsVisible
-local UIParentLoadAddOn = UIParentLoadAddOn
-local UnitClassBase = UnitClassBase
+local UnitHasPowerType = UnitHasPowerType
 local UnitClassification = UnitClassification
 local UnitFactionGroup = UnitFactionGroup
 local UnitGroupRolesAssigned = UnitGroupRolesAssigned
@@ -51,6 +49,8 @@ local UnitIsPlayer = UnitIsPlayer
 local UnitSex = UnitSex
 local UnitThreatSituation = UnitThreatSituation
 local UnitSelectionType = UnitSelectionType
+local UIParentLoadAddOn = UIParentLoadAddOn
+local LoadAddOnWithErrorHandling = LoadAddOnWithErrorHandling
 
 local WorldFrame = WorldFrame
 local GetWatchedFactionInfo = GetWatchedFactionInfo
@@ -83,6 +83,7 @@ local C_PvP_IsRatedBattleground = C_PvP.IsRatedBattleground
 local C_Spell_GetSpellCharges = C_Spell.GetSpellCharges
 local C_Spell_GetSpellInfo = C_Spell.GetSpellInfo
 
+local POWERTYPE_MANA = Enum.PowerType.Mana or 0
 local AddOnRestrictionType = Enum.AddOnRestrictionType or {}
 local LuaCurveTypeLinear = Enum.LuaCurveType and Enum.LuaCurveType.Linear
 local LuaCurveTypeStep = Enum.LuaCurveType and Enum.LuaCurveType.Step
@@ -850,9 +851,17 @@ do
 	end
 end
 
+function E:LoadAddon(addon)
+	if UIParentLoadAddOn then
+		return UIParentLoadAddOn(addon)
+	elseif LoadAddOnWithErrorHandling then
+		LoadAddOnWithErrorHandling(addon)
+	end
+end
+
 function E:Dump(object, inspect)
 	local debugTools = IsAddOnLoaded('Blizzard_DebugTools')
-	if not debugTools then UIParentLoadAddOn('Blizzard_DebugTools') end
+	if not debugTools then E:LoadAddon('Blizzard_DebugTools') end
 
 	if inspect then
 		local tableType = type(object)
@@ -1022,23 +1031,6 @@ do
 		else
 			return GetWatchedFactionData()
 		end
-	end
-end
-
-function E:FIRST_FRAME_RENDERED()
-	E:UpdateMedia()
-
-	E:Delay(0.01, E.UpdateBlizzardFonts, E)
-	E:Delay(0.02, E.UpdateMediaItems, E)
-	E:Delay(0.03, E.UpdateFontTemplates, E)
-	E:Delay(0.04, E.UpdateStatusBars, E)
-
-	if UF.Initialized then
-		E:Delay(0.05, UF.Update_FontStrings, UF)
-	end
-
-	if UF.Initialized then
-		E:Delay(0.06, UF.Update_StatusBars, UF)
 	end
 end
 
@@ -1411,13 +1403,13 @@ end
 function E:GetClassificationType(unit)
 	if UnitIsPlayer(unit) then return end
 
-	local baseClass = UnitClassBase(unit)
 	local _, instanceType = IsInInstance()
+	local hasMana = UnitHasPowerType(unit, POWERTYPE_MANA)
 	local classification = UnitClassification(unit)
 	local unitLevel = E:UnitEffectiveLevel(unit)
 	local maxLevel = E.expansionLevelMax
 
-	if instanceType == 'party' and baseClass == 'PALADIN' then
+	if instanceType == 'party' and hasMana then
 		return 'caster' -- In dungeons, check caster first so elite casters aren't missed
 	elseif classification == 'worldboss' or classification == 'rareelite' or classification == 'rare' then
 		return classification
@@ -1425,7 +1417,7 @@ function E:GetClassificationType(unit)
 		return 'eliteBoss'
 	elseif classification == 'elite' and (unitLevel >= (maxLevel + 1)) then
 		return 'eliteMini'
-	elseif baseClass == 'PALADIN' then
+	elseif hasMana then
 		return 'caster'
 	end
 end
@@ -1460,11 +1452,11 @@ function E:LoadAPI()
 	E:RegisterEvent('PLAYER_ENTERING_WORLD')
 	E:RegisterEvent('PLAYER_REGEN_ENABLED')
 	E:RegisterEvent('PLAYER_REGEN_DISABLED')
-	E:RegisterEvent('FIRST_FRAME_RENDERED')
 	E:RegisterEvent('UI_SCALE_CHANGED', 'PixelScaleChanged')
 
 	E:GROUP_ROSTER_UPDATE()
 	E:SetupGameMenu()
+	E:UpdateTexCoords()
 
 	if E.Retail or E.Mists then
 		E:PopulateSpecInfo()

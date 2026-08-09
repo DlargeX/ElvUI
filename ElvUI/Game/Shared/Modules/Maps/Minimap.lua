@@ -23,7 +23,6 @@ local PlaySound = PlaySound
 local ShowUIPanel = ShowUIPanel
 local ToggleFrame = ToggleFrame
 local UIParent = UIParent
-local UIParentLoadAddOn = UIParentLoadAddOn
 
 local MainMenuMicroButton = MainMenuMicroButton
 local MainMenuMicroButton_SetNormal = MainMenuMicroButton_SetNormal
@@ -69,7 +68,7 @@ if E.Retail or E.Wrath or E.Mists then
 end
 
 if E.Retail or E.Mists then
-	tinsert(menuList, {text = _G.ENCOUNTER_JOURNAL, microOffset = 'EJMicroButton', func = function() if not IsAddOnLoaded('Blizzard_EncounterJournal') then UIParentLoadAddOn('Blizzard_EncounterJournal') end ToggleFrame(_G.EncounterJournal) end })
+	tinsert(menuList, {text = _G.ENCOUNTER_JOURNAL, microOffset = 'EJMicroButton', func = function() if not IsAddOnLoaded('Blizzard_EncounterJournal') then E:LoadAddon('Blizzard_EncounterJournal') end ToggleFrame(_G.EncounterJournal) end })
 end
 
 if E.Retail then
@@ -244,28 +243,6 @@ function M:ADDON_LOADED(_, addon)
 	elseif addon == 'Blizzard_EncounterJournal' and E.Retail then
 		-- Since the default non-quest map is full screen, it overrides the showing of the encounter journal
 		hooksecurefunc('EJ_HideNonInstancePanels', M.HideNonInstancePanels)
-	end
-end
-
-do
-	local killFrames = {
-		_G.MinimapBorderTop,
-		_G.MiniMapMailBorder,
-		_G.MinimapNorthTag,
-		_G.MiniMapWorldMapButton,
-		_G.MinimapZoneTextButton
-	}
-
-	function M:PLAYER_LOGIN()
-		tinsert(killFrames, E.Retail and Minimap.ZoomIn or _G.MinimapZoomIn)
-		tinsert(killFrames, E.Retail and Minimap.ZoomOut or _G.MinimapZoomOut)
-		tinsert(killFrames, E.Retail and _G.MiniMapTracking or _G.MinimapToggleButton)
-
-		for _, frame in next, killFrames do
-			frame:Kill()
-		end
-
-		M:UpdateSettings()
 	end
 end
 
@@ -745,6 +722,26 @@ function M:SetGetMinimapShape()
 	end
 end
 
+do
+	local killFrames = {
+		_G.MinimapBorderTop,
+		_G.MiniMapMailBorder,
+		_G.MinimapNorthTag,
+		_G.MiniMapWorldMapButton,
+		_G.MinimapZoneTextButton
+	}
+
+	tinsert(killFrames, E.Retail and Minimap.ZoomIn or _G.MinimapZoomIn)
+	tinsert(killFrames, E.Retail and Minimap.ZoomOut or _G.MinimapZoomOut)
+	tinsert(killFrames, E.Retail and _G.MiniMapTracking or _G.MinimapToggleButton)
+
+	function M:HideElements()
+		for _, frame in next, killFrames do
+			frame:Kill()
+		end
+	end
+end
+
 function M:Initialize()
 	if not E.private.general.minimap.enable then
 		return
@@ -852,7 +849,6 @@ function M:Initialize()
 	M:SetMinimapMask(not M.db.circle)
 
 	M:RegisterEvent('ADDON_LOADED')
-	M:RegisterEvent('PLAYER_LOGIN')
 	M:RegisterEvent('PLAYER_ENTERING_WORLD')
 	M:RegisterEvent('ZONE_CHANGED_NEW_AREA', 'Update_ZoneText')
 	M:RegisterEvent('ZONE_CHANGED_INDOORS', 'Update_ZoneText')
@@ -883,6 +879,9 @@ function M:Initialize()
 	if _G.HybridMinimap then
 		M:SetupHybridMinimap()
 	end
+
+	M:HideElements()
+	M:UpdateSettings()
 end
 
 E:RegisterModule(M:GetName())

@@ -236,9 +236,11 @@ function S:HandleFrame(frame, setBackdrop, template, x1, y1, x2, y2)
 	local portraitFrameOverlay = name and _G[name..'PortraitOverlay'] or frame.PortraitOverlay
 	local artFrameOverlay = name and _G[name..'ArtOverlayFrame'] or frame.ArtOverlayFrame
 	local closeButton = frame.CloseButton or name and _G[name..'CloseButton']
+	local borderTexture = frame.BorderTexture -- titan has a border here
 
 	frame:StripTextures()
 
+	if borderTexture then borderTexture:SetAlpha(0) end
 	if portraitFrame then portraitFrame:SetAlpha(0) end
 	if portraitFrameOverlay then portraitFrameOverlay:SetAlpha(0) end
 	if artFrameOverlay then artFrameOverlay:SetAlpha(0) end
@@ -287,10 +289,12 @@ function S:HandlePortraitFrame(frame, createBackdrop, noStrip)
 	local portraitFrameOverlay = name and _G[name..'PortraitOverlay'] or frame.PortraitOverlay
 	local artFrameOverlay = name and _G[name..'ArtOverlayFrame'] or frame.ArtOverlayFrame
 	local portraitFrameAlt = frame.portrait -- blizzard uses the same global name on two frames
+	local borderTexture = frame.BorderTexture -- titan has a border here
 
 	if not noStrip then
 		frame:StripTextures()
 
+		if borderTexture then borderTexture:SetAlpha(0) end
 		if portraitFrame then portraitFrame:SetAlpha(0) end
 		if portraitFrameOverlay then portraitFrameOverlay:SetAlpha(0) end
 		if portraitFrameAlt then portraitFrameAlt:SetAlpha(0) end
@@ -1256,11 +1260,20 @@ do --Tab Regions
 		'Right'
 	}
 
+	local hooked = {}
+	function S:HandleTabText(_, _, _, _, _, forced)
+		if forced then return end
+
+		self:ClearAllPoints()
+		self:SetPoint('CENTER', hooked[self], nil, nil, nil, true)
+	end
+
 	function S:HandleTab(tab, noBackdrop, template)
 		if not tab or (tab.backdrop and not noBackdrop) then return end
 
+		local tabName = tab:GetName()
 		for _, object in next, tabs do
-			local textureName = tab:GetName() and _G[tab:GetName()..object]
+			local textureName = tabName and _G[tabName..object]
 			if textureName then
 				textureName:SetTexture()
 			elseif tab[object] then
@@ -1273,6 +1286,17 @@ do --Tab Regions
 			highlightTex:SetTexture()
 		else
 			tab:StripTextures()
+		end
+
+		local text = tab.Text or (tabName and _G[tabName..'Text']) or (tab.GetFontString and tab:GetFontString())
+		if text then
+			text:ClearAllPoints()
+			text:Point('CENTER', tab)
+
+			if not hooked[text] then
+				hooksecurefunc(text, 'SetPoint', S.HandleTabText)
+				hooked[text] = tab
+			end
 		end
 
 		if not noBackdrop then
@@ -2335,11 +2359,7 @@ end
 function S:SkinIconTextAndCurrenciesWidget()
 end
 
-function S:SkinTextWithStateWidget(widgetFrame)
-	local text = widgetFrame.Text
-	if not text then return end
-
-	text:SetTextColor(1, 1, 1)
+function S:SkinTextWithStateWidget()
 end
 
 function S:SkinHorizontalCurrenciesWidget()
@@ -2428,19 +2448,6 @@ function S:ADDON_LOADED(_, addonName)
 	end
 end
 
-function S:PLAYER_LOGIN()
-	for addonName, object in next, S.addonsToLoad do
-		local isLoaded, isFinished = IsAddOnLoaded(addonName)
-		if isLoaded and isFinished then
-			S:CallLoadedAddon(addonName, object)
-		end
-	end
-
-	for index, func in next, S.nonAddonsToLoad do
-		S:CallLoadedNonAddon(index, func)
-	end
-end
-
 -- EXAMPLE:
 --- S:AddCallbackForAddon('Details', 'MyAddon_Details', MyAddon.SkinDetails)
 ---- arg1: Addon name (same as the toc): MyAddon.toc (without extension)
@@ -2518,6 +2525,13 @@ function S:Initialize()
 		S:CallLoadedNonAddon(index, func)
 	end
 
+	for addonName, object in next, S.addonsToLoad do
+		local isLoaded, isFinished = IsAddOnLoaded(addonName)
+		if isLoaded and isFinished then
+			S:CallLoadedAddon(addonName, object)
+		end
+	end
+
 	-- Early Skin Handling (populated before ElvUI is loaded from the Ace3 file)
 	if S.db.ace3Enable and S.EarlyAceWidgets then
 		for _, n in next, S.EarlyAceWidgets do
@@ -2550,6 +2564,5 @@ end
 
 -- Keep this outside, it's used for skinning addons before ElvUI load
 S:RegisterEvent('ADDON_LOADED')
-S:RegisterEvent('PLAYER_LOGIN')
 
 E:RegisterModule(S:GetName())

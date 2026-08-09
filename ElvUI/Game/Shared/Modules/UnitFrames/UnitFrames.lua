@@ -352,15 +352,16 @@ function UF:CreateRaisedElement(frame)
 	RaisedElement.__owner = frame
 
 	-- layer levels (level +1 is icons)
-	RaisedElement.AuraLevel = RaisedLevel
-	RaisedElement.PrivateAurasLevel = RaisedLevel + 5
-	RaisedElement.PVPSpecLevel = RaisedLevel + 10
-	RaisedElement.AuraBarLevel = RaisedLevel + 15
-	RaisedElement.RaidDebuffLevel = RaisedLevel + 20
-	RaisedElement.AuraWatchLevel = RaisedLevel + 25
-	RaisedElement.RestingIconLevel = RaisedLevel + 30
-	RaisedElement.RaidRoleLevel = RaisedLevel + 35
-	RaisedElement.CastBarLevel = RaisedLevel + 40
+	RaisedElement.AuraHighlightLevel = RaisedLevel
+	RaisedElement.AuraLevel = RaisedLevel + 5
+	RaisedElement.PrivateAurasLevel = RaisedLevel + 10
+	RaisedElement.PVPSpecLevel = RaisedLevel + 15
+	RaisedElement.AuraBarLevel = RaisedLevel + 20
+	RaisedElement.RaidDebuffLevel = RaisedLevel + 25
+	RaisedElement.AuraWatchLevel = RaisedLevel + 30
+	RaisedElement.RestingIconLevel = RaisedLevel + 35
+	RaisedElement.RaidRoleLevel = RaisedLevel + 40
+	RaisedElement.CastBarLevel = RaisedLevel + 45
 
 	return RaisedElement
 end
@@ -665,6 +666,10 @@ do
 	end
 end
 
+function UF:Update_Templates()
+	E:CoroutineUpdate(E.UpdateUnitframeTemplate, E.unitFrameElements)
+end
+
 function UF:Construct_PrivateAuras(frame)
 	local element = CreateFrame('Frame', frame.frameName..'PrivateAuras', frame.RaisedElementParent)
 	element.owner = frame
@@ -827,15 +832,15 @@ function UF:Update_AllFrames()
 
 	UF.multiplier = UF.db.multiplier
 
+	UF:UpdateAllHeaders()
 	UF:UpdateColors()
-
-	UF:Update_FontStrings()
-	UF:Update_StatusBars()
 
 	E:CoroutineUpdate(UF.Update_UnitFrame, UF.units)
 	E:CoroutineUpdate(UF.Update_GroupFrame, UF.groupunits)
 
-	UF:UpdateAllHeaders()
+	UF:Update_FontStrings()
+	UF:Update_StatusBars()
+	UF:Update_Templates()
 end
 
 function UF:UpdateGroupHeader(_, data)
@@ -2050,10 +2055,13 @@ function UF:SetStatusBarColor(bar, r, g, b, custom, overrideAlpha, overrideBackd
 		end
 	end
 
-	if bar.invertColors then
-		bar:GetStatusBarTexture():SetVertexColor(backR, backG, backB, backA)
-	else
-		bar:GetStatusBarTexture():SetVertexColor(mainR, mainG, mainB, mainA)
+	local barTexture = bar:GetStatusBarTexture()
+	if barTexture then
+		if bar.invertColors then
+			barTexture:SetVertexColor(backR, backG, backB, backA)
+		else
+			barTexture:SetVertexColor(mainR, mainG, mainB, mainA)
+		end
 	end
 end
 
@@ -2224,8 +2232,14 @@ do -- Clique support for registering clicks
 end
 
 function UF:UpdateAllElements(event)
-	if self.PrivateAuras and event == 'OnAttributeChanged' then
-		UF:Configure_PrivateAuras(self)
+	if event == 'OnAttributeChanged' then
+		if self.PrivateAuras then
+			UF:Configure_PrivateAuras(self)
+		end
+
+		if E.PTR then
+			UF:Configure_UnitAuras(self)
+		end
 	end
 end
 
@@ -2274,11 +2288,7 @@ function UF:Initialize()
 	if not E.private.unitframe.enable then return end
 	UF.Initialized = true
 
-	-- oUF factory waits for PLAYER_LOGIN this is not acceptable in Classic HC
-	-- so we force the loading here instead to skip `script ran too long` issue
 	ElvUF:Factory(UF.Setup)
-	ElvUF:RunFactoryQueue()
-	ElvUF:DisableFactory()
 
 	UF:UpdateColors()
 

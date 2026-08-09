@@ -139,4 +139,6 @@ local function Disable(self)
 	end
 end
 
-oUF:AddElement('AuraHighlight', Update, Enable, Disable)
+if not oUF.isPTR then
+	oUF:AddElement('AuraHighlight', Update, Enable, Disable)
+end

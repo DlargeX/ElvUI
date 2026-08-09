@@ -33,7 +33,46 @@ G.unitframe.aurafilters.TurtleBuffs = {
 G.unitframe.aurafilters.Blacklist = {
 	type = 'Blacklist',
 	desc = L["Auras you don't want to see on your frames."],
-	spells = {}
+	spells = {
+		-- Rogue Poisons
+		[2823]		= List(nil, false), -- Deadly Poison
+		[315584]	= List(nil, false), -- Instant Poison
+		[3408]		= List(nil, false), -- Crippling Poison
+		[381637]	= List(nil, false), -- Atrophic Poison
+		[381664]	= List(nil, false), -- Amplifying Poison
+		[8679]		= List(nil, false), -- Wound Poison
+		-- Shaman Imbuements
+		[319773]	= List(nil, false), -- Windfury Weapon
+		[319778]	= List(nil, false), -- Flametongue Weapon
+		[382021]	= List(nil, false), -- Earthliving Weapon
+		[382022]	= List(nil, false), -- Earthliving Weapon
+		[457496]	= List(nil, false), -- Tidecaller's Guard
+		[457481]	= List(nil, false), -- Tidecaller's Guard
+		[462757]	= List(nil, false), -- Thunderstrike Ward
+		[462742]	= List(nil, false), -- Thunderstrike Ward
+		-- Paladin Imbuements
+		[433568]	= List(), -- Rite of Sanctification
+		[433583]	= List(), -- Rite of Adjuration
+		-- Skyriding
+		[404464]	= List(), -- Flight Style: Skyriding
+		[404468]	= List(), -- Flight Style: Steady
+		[427490]	= List(), -- Ride Along
+		[447959]	= List(), -- Ride Along - Enabled
+		[447960]	= List(), -- Ride Along - Inactive
+		[377234]	= List(), -- Thrill of the Skies
+		-- Bloodlust + Heroism
+		[160455]	= List(), -- Fatigued | Netherwinds
+		[264689]	= List(), -- Fatigued | Primal Rage
+		[390435]	= List(), -- Exhaustion | Fury of the Aspects
+		[57723]		= List(), -- Exhaustion | Heroism
+		[57724]		= List(), -- Sated | Bloodlust
+		[80354]		= List(), -- Temporal Displacement | Time Warp
+		[95809]		= List(), -- Insanity | Ancient Hysteria
+		-- Social
+		[26013]		= List(), -- Deserter | Battlegrounds
+		[71041]		= List(), -- Dungeon Deserter | Dungeon Finder or Raid Finder
+		-- General auras starting here
+	}
 }
 
 G.unitframe.aurafilters.Blocklist = {
@@ -56,32 +95,53 @@ G.unitframe.aurafilters.Blocklist = {
 		[457481]	= List(nil, false), -- Tidecaller's Guard
 		[462757]	= List(nil, false), -- Thunderstrike Ward
 		[462742]	= List(nil, false), -- Thunderstrike Ward
+		-- Paladin Imbuements
+		[433568]	= List(), -- Rite of Sanctification
+		[433583]	= List(), -- Rite of Adjuration
 		-- Skyriding
 		[404464]	= List(), -- Flight Style: Skyriding
 		[404468]	= List(), -- Flight Style: Steady
 		[427490]	= List(), -- Ride Along
 		[447959]	= List(), -- Ride Along - Enabled
 		[447960]	= List(), -- Ride Along - Inactive
-		-- The rest
-		[160455]	= List(), -- Hunter Pet Fatigued
-		[26013]		= List(), -- Deserter
-		[264689]	= List(), -- Hunter Pet Fatigued
 		[377234]	= List(), -- Thrill of the Skies
-		[390435]	= List(), -- Exhaustion
-		[433568]	= List(), -- Rite of Sanctification
-		[433583]	= List(), -- Rite of Adjuration
-		[57723]		= List(), -- Exhaustion
-		[57724]		= List(), -- Sated
-		[71041]		= List(), -- Dungeon Deserter
-		[80354]		= List(), -- Temporal Displacement
-		[95809]		= List(), -- Hunter Pet Insanity
+		-- Bloodlust + Heroism
+		[160455]	= List(), -- Fatigued | Netherwinds
+		[264689]	= List(), -- Fatigued | Primal Rage
+		[390435]	= List(), -- Exhaustion | Fury of the Aspects
+		[57723]		= List(), -- Exhaustion | Heroism
+		[57724]		= List(), -- Sated | Bloodlust
+		[80354]		= List(), -- Temporal Displacement | Time Warp
+		[95809]		= List(), -- Insanity | Ancient Hysteria
+		-- Social
+		[26013]		= List(), -- Deserter | Battlegrounds
+		[71041]		= List(), -- Dungeon Deserter | Dungeon Finder or Raid Finder
+		-- General auras starting here
 	}
 }
 
 G.unitframe.aurafilters.Whitelist = {
 	type = 'Whitelist',
 	desc = L["Auras which should always be displayed."],
-	spells = {}
+	spells = {
+		-- General
+		[160029] = List(), -- Resurrecting | Pending Res
+		[225080] = List(), -- Reincarnation | Can use Reincarnate
+		[255234] = List(), -- Totemic Revival | Can accept Totem Res
+		-- Warlock
+		-- Priest
+		-- Mage
+		-- Rogue
+		-- Monk
+		-- Druid
+		-- Demon Hunter
+		-- Shaman
+		-- Hunter
+		-- Evoker
+		-- Warrior
+		-- Paladin
+		-- Death Knight
+	}
 }
 
 G.unitframe.aurafilters.RaidDebuffs = {
