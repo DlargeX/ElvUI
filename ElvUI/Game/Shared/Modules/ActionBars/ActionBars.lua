@@ -1839,9 +1839,7 @@ function AB:LAB_CooldownUpdate(button, start, duration, _, info)
 end
 
 function AB:LAB_UpdateTextElement(_, element, font, size, style, shadow)
-	local obj = E:GenerateFontObject('ElvUI_FontAB', font or E.media.normFont, size, style)
-	E:SetFontShadow(obj, style, shadow)
-	element:SetFontObject(obj)
+	E:SetFontShadow(element, style, shadow)
 end
 
 function AB:PLAYER_ENTERING_WORLD(event, initLogin, isReload)

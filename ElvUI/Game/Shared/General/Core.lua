@@ -511,7 +511,7 @@ do	-- i guess we finally need it ~Simpy
 		funcs[func] = info
 
 		if not ticker then
-			ticker = C_Timer_NewTicker(0.1, E.Coroutine_Process)
+			ticker = C_Timer_NewTicker(E.ClassicHC and 0.1 or 0.05, E.Coroutine_Process)
 		end
 	end
 
@@ -601,6 +601,10 @@ do
 
 		info.unitframes.r, info.unitframes.g, info.unitframes.b = unpack(E.media.unitframeBorderColor)
 		E:CoroutineUpdate(E.UpdateUnitframeBorderColor, E.unitFrameElements, info.unitframes)
+
+		if E.PTR and Tooltip.isStyled then
+			Tooltip:SetAuraButtonTooltipStyle()
+		end
 	end
 end
 
@@ -644,6 +648,10 @@ do
 
 		E:CoroutineUpdate(E.UpdateBackdropColor, E.frames, info)
 		E:CoroutineUpdate(E.UpdateUnitframeBackdropColor, E.unitFrameElements, info)
+
+		if E.PTR and Tooltip.isStyled then
+			Tooltip:SetAuraButtonTooltipStyle()
+		end
 	end
 end
 

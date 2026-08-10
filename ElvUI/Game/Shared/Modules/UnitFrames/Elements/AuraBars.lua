@@ -101,6 +101,14 @@ function UF:AuraBars_GetFilter(element, unit)
 	return (not isEnemy and (not reaction or reaction > 4) and (element.friendlyAuraType or 'HELPFUL')) or element.enemyAuraType or 'HARMFUL'
 end
 
+function UF:AuraBars_UpdateFilter(bars, unit)
+	bars.filter = UF:AuraBars_GetFilter(bars, unit)
+	bars.barColor = (bars.filter == 'HARMFUL' and UF.db.colors.auraBarDebuff) or UF.db.colors.auraBarBuff
+
+	UF:UpdateFilters(bars) -- attach the objects
+	UF:GroupFilters(bars, bars.filter) -- build the groups
+end
+
 function UF:Configure_AuraBars(frame)
 	local bars = frame.AuraBars
 	local db = frame.db and frame.db.aurabar
@@ -213,20 +221,19 @@ function UF:Configure_AuraBars(frame)
 			bars.size = db.height
 			bars.numAuras = db.maxBars
 			bars.maxFrameCount = db.maxBars
-			bars.statusbarTexture = LSM:Fetch('statusbar', UF.db.statusbar)
-			bars.sortMethod = E.AuraContainerSortMethod[db.sortMethod]
-			bars.filter = UF:AuraBars_GetFilter(bars, frame.unit)
-			bars.barColor = (bars.filter == 'HARMFUL' and UF.db.colors.auraBarDebuff) or UF.db.colors.auraBarBuff
 			bars.isTransparent = UF.db.colors.transparentAurabars -- always on for now
 			bars.invertAurabars = UF.db.colors.invertAurabars
 			bars.maxDuration = (db.maxDuration and db.maxDuration > 0) and db.maxDuration or nil
+			bars.sortMethod = E.AuraContainerSortMethod[db.sortMethod]
+			bars.statusbarTexture = LSM:Fetch('statusbar', UF.db.statusbar)
+			bars.countPosition, bars.countXOffset, bars.countYOffset = db.countPosition, db.countXOffset, db.countYOffset
+			bars.countFont, bars.countFontSize, bars.countFontOutline = db.countFont, db.countFontSize, db.countFontOutline
 
-			bars.allowList = db.useAllowlist and E:Auras_GetFilter(E.global.unitframe.aurafilters, 'Whitelist') or nil
-			bars.blockList = db.useBlocklist and E:Auras_GetFilter(E.global.unitframe.aurafilters, 'Blacklist') or nil
+			bars.allowList = db.useAllowlist and E:Auras_GetFilter(E.global.unitframe.aurafilters, db.allowList or 'Whitelist') or nil
+			bars.blockList = db.useBlocklist and E:Auras_GetFilter(E.global.unitframe.aurafilters, db.blockList or 'Blacklist') or nil
 			bars.candidateFilters = E:Auras_CanidateFilters(bars.allowList, bars.blockList, bars.maxDuration)
 
-			UF:UpdateFilters(bars) -- attach the objects
-			UF:GroupFilters(bars, bars.filter) -- build the groups
+			UF:AuraBars_UpdateFilter(bars, frame.unit)
 
 			E:Auras_GroupUnit(bars, frame.unit)
 			E:Auras_SetContainer(bars)

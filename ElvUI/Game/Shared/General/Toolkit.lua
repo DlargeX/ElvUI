@@ -507,9 +507,8 @@ local function FontTemplate(fs, fontName, fontSize, fontStyle, skip)
 	end
 
 	local font = (fontName and LSM:Fetch('font', fontName)) or E.media.normFont
-	local obj = E:GenerateFontObject('ElvUI_FontTemplate', font, fontSize, fontStyle)
-	E:SetFontShadow(obj, fontStyle, shadow)
-	fs:SetFontObject(obj)
+	fs:SetFont(font, fontSize, fontStyle)
+	E:SetFontShadow(fs, fontStyle, shadow)
 end
 
 local function StyleButton(button, noHover, noPushed, noChecked)

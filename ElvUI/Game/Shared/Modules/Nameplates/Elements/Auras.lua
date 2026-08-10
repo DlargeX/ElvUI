@@ -172,16 +172,21 @@ function NP:Configure_Auras(nameplate, which)
 	end
 
 	if E.PTR then
+		auras.noMouse = true
 		auras.keepSizeRatio = db.keepSizeRatio
 		auras.maxFrameCount = auras.numAuras
 		auras.sortMethod = E.AuraContainerSortMethod[db.sortMethod]
 		auras.nameplateType = nameplate.frameType
 		auras.maxDuration = (db.maxDuration and db.maxDuration > 0) and db.maxDuration or nil
-		auras.noMouse = true
+		auras.countPosition, auras.countXOffset, auras.countYOffset = db.countPosition, db.countXOffset, db.countYOffset
+		auras.countFont, auras.countFontSize, auras.countFontOutline = db.countFont, db.countFontSize, db.countFontOutline
 
 		UF:UpdateFilters(auras) -- attach the objects
 		UF:GroupFilters(auras, auras.filter) -- build the groups
-		auras.candidateFilters = E:Auras_CanidateFilters(db.useAllowlist and NP.FilterAllow or nil, db.useBlocklist and NP.FilterBlock or nil, auras.maxDuration)
+
+		auras.allowList = db.useAllowlist and E:Auras_GetFilter(E.global.unitframe.aurafilters, db.allowList or 'Whitelist') or nil
+		auras.blockList = db.useBlocklist and E:Auras_GetFilter(E.global.unitframe.aurafilters, db.blockList or 'Blacklist') or nil
+		auras.candidateFilters = E:Auras_CanidateFilters(auras.allowList, auras.blockList, auras.maxDuration)
 
 		E:Auras_SetContainer(auras)
 		E:Auras_SetLineSize(auras)

@@ -7,6 +7,11 @@ local next = next
 
 function S:StyleTooltips()
 	if not (E.private.skins.blizzard.enable and E.private.skins.blizzard.tooltip) then return end
+	TT.isStyled = true
+
+	if E.PTR then
+		TT:SetAuraButtonTooltipStyle()
+	end
 
 	for _, tt in next, {
 		_G.ItemRefTooltip,
