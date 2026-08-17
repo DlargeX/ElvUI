@@ -53,7 +53,7 @@ Used to populate the tooltip when the widget is hovered.
 local function UpdateTooltip(element)
 	if GameTooltip:IsForbidden() then return end
 
-	local text = _G.PartyUtil.GetPhasedReasonString(element.reason, element.__owner.unit)
+	local text = _G.PartyUtil.GetPhasedReasonString(element.reason, element.__owner.__unit)
 	if(text) then
 		GameTooltip:SetText(text, nil, nil, nil, nil, true)
 		GameTooltip:Show()
@@ -76,7 +76,7 @@ local function onLeave()
 end
 
 local function Update(self, event, unit)
-	if(self.unit ~= unit) then return end
+	if(self.__unit ~= unit) then return end
 
 	local element = self.PhaseIndicator
 
@@ -92,7 +92,7 @@ local function Update(self, event, unit)
 	-- BUG: UnitPhaseReason returns wrong data for friendly NPCs in phased scenarios like WM or Chromie Time
 	-- https://github.com/Stanzilla/WoWUIBugs/issues/49
 	local reason = UnitIsPlayer(unit) and UnitIsConnected(unit) and UnitPhaseReason(unit) or nil
-	local worldtier = reason == PhaseReason.TimerunningHwt -- phased in open world (hero / nonhero) but not phased in dungeons
+	local worldtier = oUF:NotSecretValue(reason) and (reason == PhaseReason.TimerunningHwt) -- phased in open world (hero / nonhero) but not phased in dungeons
 	local shouldShow = (worldtier and not IsInInstance()) or (not worldtier and reason)
 
 	element:SetShown(shouldShow)
@@ -122,7 +122,7 @@ local function Path(self, ...)
 end
 
 local function ForceUpdate(element)
-	return Path(element.__owner, 'ForceUpdate', element.__owner.unit)
+	return Path(element.__owner, 'ForceUpdate', element.__owner.__unit)
 end
 
 local function Enable(self)

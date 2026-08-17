@@ -17,9 +17,7 @@ local GetSpellSubtext = GetSpellSubtext
 
 local quickSearchText, selectedSpell, selectedFilter, filterList, spellList = '', nil, nil, {}, {}
 local auraBarDefaults = { enable = true, color = { r = 1, g = 1, b = 1, a = 1 } }
-local includeRetail = { Blocklist = not E.PTR, Blacklist = E.PTR, Whitelist = E.PTR }
 local overrideNames = {
-	Blocklist = not E.Retail and L["Blocklist |cFF888888(Midnight)|r"] or nil,
 	Blacklist = not E.Retail and L["Blacklist |cFF888888(Legacy)|r"] or nil
 }
 
@@ -95,9 +93,7 @@ local function SetFilterList()
 	local list = E.global.unitframe.aurafilters
 	if list then
 		for filter in pairs(list) do
-			if (E.PTR or not E.Retail) or includeRetail[filter] then
-				filterList[filter] = overrideNames[filter] or filter
-			end
+			filterList[filter] = overrideNames[filter] or filter
 		end
 	end
 
@@ -112,9 +108,7 @@ local function ResetFilterList()
 	local list = G.unitframe.aurafilters
 	if list then
 		for filter in pairs(list) do
-			if (E.PTR or not E.Retail) or includeRetail[filter] then
-				filterList[filter] = filter
-			end
+			filterList[filter] = filter
 		end
 	end
 
@@ -128,7 +122,7 @@ local function DeleteFilterList()
 	if list then
 		local defaultList = G.unitframe.aurafilters
 		for filter in pairs(list) do
-			if ((E.PTR or not E.Retail) or includeRetail[filter]) and not defaultList[filter] then
+			if not defaultList[filter] then
 				filterList[filter] = filter
 			end
 		end
@@ -142,7 +136,7 @@ local function DeleteFilterListDisable()
 	if list then
 		local defaultList = G.unitframe.aurafilters
 		for filter in pairs(list) do
-			if ((E.PTR or not E.Retail) or includeRetail[filter]) and not defaultList[filter] then
+			if not defaultList[filter] then
 				return false
 			end
 		end
@@ -401,11 +395,11 @@ E.Options.args.filters = ACH:Group(L["Filters"], nil, 3, 'tab')
 local Filters = E.Options.args.filters.args
 
 Filters.mainOptions = ACH:Group(L["Main Options"], nil, 1)
-Filters.mainOptions.args.createFilter = ACH:Input(L["Create Filter"], L["Create a filter, once created a filter can be set inside the buffs/debuffs section of each unit."], 1, nil, 140, nil, function(_, value) value = gsub(value, ',', '') E.global.unitframe.aurafilters[value] = { type = 'Whitelist', spells = {} } selectedFilter = value selectedSpell = nil end, nil, E.Retail and not E.PTR, ValidateCreateFilter)
+Filters.mainOptions.args.createFilter = ACH:Input(L["Create Filter"], L["Create a filter, once created a filter can be set inside the buffs/debuffs section of each unit."], 1, nil, 140, nil, function(_, value) value = gsub(value, ',', '') E.global.unitframe.aurafilters[value] = { type = 'Whitelist', spells = {} } selectedFilter = value selectedSpell = nil end, nil, nil, ValidateCreateFilter)
 Filters.mainOptions.args.selectFilter = ACH:Select(L["Select Filter"], nil, 2, SetFilterList, nil, nil, GetSelectedFilter, ResetSelectedFilter)
-Filters.mainOptions.args.deleteFilter = ACH:Select(L["Delete Filter"], L["Delete a created filter, you cannot delete pre-existing filters, only custom ones."], 3, DeleteFilterList, ConfirmResetFilter, nil, nil, function(_, value) E.global.unitframe.aurafilters[value] = nil ResetSelectedFilter() RemovePriority(value) end, DeleteFilterListDisable, E.Retail and not E.PTR)
+Filters.mainOptions.args.deleteFilter = ACH:Select(L["Delete Filter"], L["Delete a created filter, you cannot delete pre-existing filters, only custom ones."], 3, DeleteFilterList, ConfirmResetFilter, nil, nil, function(_, value) E.global.unitframe.aurafilters[value] = nil ResetSelectedFilter() RemovePriority(value) end, DeleteFilterListDisable)
 Filters.mainOptions.args.resetGroup = ACH:Select(L["Reset Filter"], L["This will reset the contents of this filter back to default. Any spell you have added to this filter will be removed."], 4, ResetFilterList, ConfirmResetFilter, nil, nil, ResetFilter)
-Filters.mainOptions.args.resetFilters = ACH:Execute(L["Reset All"], L["This reset excludes AuraBar Colors, Aura Highlight, and Aura Indicators."], 5, function() E:StaticPopup_Show('RESET_ALL_FILTERS') ResetSelectedFilter() end, nil, nil, 100, nil, nil, nil, E.Retail and not E.PTR)
+Filters.mainOptions.args.resetFilters = ACH:Execute(L["Reset All"], L["This reset excludes AuraBar Colors, Aura Highlight, and Aura Indicators."], 5, function() E:StaticPopup_Show('RESET_ALL_FILTERS') ResetSelectedFilter() end, nil, nil, 100)
 
 Filters.mainOptions.args.filterGroup = ACH:Group(function() return defaultFilterList[selectedFilter] or overrideNames[selectedFilter] or selectedFilter end, nil, 10, nil, nil, nil, nil, function() return not selectedFilter end)
 Filters.mainOptions.args.filterGroup.inline = true
@@ -426,7 +420,7 @@ Filters.mainOptions.args.auraIndicator.args.style = ACH:Select(L["Style"], nil, 
 Filters.mainOptions.args.auraIndicator.args.color = ACH:Color(' ', nil, 4, true, nil, nil, nil, nil, function() local spell = GetSelectedSpell() if not spell then return end local selectedTable = GetSelectedFilters() return selectedTable[spell].style == 'texturedIcon' end)
 Filters.mainOptions.args.auraIndicator.args.spacer = ACH:Spacer(5)
 Filters.mainOptions.args.auraIndicator.args.anyUnit = ACH:Toggle(L["Show Aura From Other Players"], nil, 6, nil, nil, 205)
-Filters.mainOptions.args.auraIndicator.args.onlyShowMissing = ACH:Toggle(L["Show When Not Active"], nil, 7)
+Filters.mainOptions.args.auraIndicator.args.onlyShowMissing = ACH:Toggle(L["Show When Not Active"], nil, 7, nil, nil, nil, nil, nil, nil, E.Retail)
 Filters.mainOptions.args.auraIndicator.args.displayText = ACH:Toggle(L["Display Text"], nil, 8, nil, nil, nil, function(info) local spell = GetSelectedSpell() if not spell then return end local selectedTable = GetSelectedFilters() return (selectedTable[spell].style == 'timerOnly') or selectedTable[spell][info[#info]] end, nil, nil, function() local spell = GetSelectedSpell() if not spell then return end local selectedTable = GetSelectedFilters() return selectedTable[spell].style == 'timerOnly' end)
 
 Filters.mainOptions.args.auraIndicator.args.positionGroup = ACH:Group(L["Position"], nil, 15)

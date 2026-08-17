@@ -109,7 +109,7 @@ local function UpdateColor(self, event, runeID, alt)
 		color = self.colors.runes[rune.runeType] or self.colors.power.RUNES
 
 		if color then
-			rune:GetStatusBarTexture():SetVertexColor(color:GetRGB())
+			rune:SetStatusBarColor(color:GetRGB())
 		end
 	else
 		local specColor = spec and element.colorSpec and (spec > 0 and spec < 4)
@@ -126,7 +126,7 @@ local function UpdateColor(self, event, runeID, alt)
 			color = (specColor and self.colors.runes[spec or bar.runeType]) or self.colors.power.RUNES
 
 			if color then
-				bar:GetStatusBarTexture():SetVertexColor(color:GetRGB())
+				bar:SetStatusBarColor(color:GetRGB())
 			end
 		end
 	end
@@ -138,7 +138,7 @@ local function UpdateColor(self, event, runeID, alt)
 	* color - the used ColorMixin-based object (table?)
 	--]]
 	if(element.PostUpdateColor) then
-		element:PostUpdateColor(self.unit, color, rune)
+		element:PostUpdateColor(self.__unit, color, rune)
 	end
 end
 

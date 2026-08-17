@@ -1,39 +1,42 @@
 local E, L, V, P, G = unpack(ElvUI)
 
-local List = E.Filters.List
-local Aura = E.Filters.Aura
-
--- This used to be standalone and is now merged into G.unitframe.aurafilters.Whitelist
-G.unitframe.aurafilters.PlayerBuffs = nil
-
-G.unitframe.aurafilters.ClassDebuffs = {
-	type = 'Whitelist',
-	desc = L["Only important debuffs which influence your action priority. Recommended to be paired with 'Non Personal' set to 'Block'."],
-	spells = {}
-}
-
-G.unitframe.aurafilters.ImportantCC = {
-	type = 'Whitelist',
-	desc = L["Only important CC debuffs like Polymorph, Hex, Stuns. Also includes important cc-like debuffs, for example Mind Soothe and Solar Beam."],
-	spells = {}
-}
-
-G.unitframe.aurafilters.CCDebuffs = {
-	type = 'Whitelist',
-	desc = L["Debuffs that are some form of CC. This can be stuns, roots, slows, etc."],
-	spells = {}
-}
-
-G.unitframe.aurafilters.TurtleBuffs = {
-	type = 'Whitelist',
-	desc = L["Immunity buffs like Bubble and Ice Block, but also most major defensive class cooldowns."],
-	spells = {}
-}
+local List = E.Filters.List -- 1:priority, 2:enable, 3:stackThreshold
+local Aura = E.Filters.Aura -- 1:auraID, 2:includeIDs, 3:enabled, 4:point, 5:color, 6:anyUnit, 7:onlyShowMissing, 8:displayText, 9:xOffset, 10:yOffset
 
 G.unitframe.aurafilters.Blacklist = {
 	type = 'Blacklist',
 	desc = L["Auras you don't want to see on your frames."],
 	spells = {
+		-- Class Buffs
+		[1126]		= List(nil, false), -- Mark of the Wild
+		[1459]		= List(nil, false), -- Arcane Intellect
+		[21562]		= List(nil, false), -- Power Word: Fortitude
+		[369459]	= List(nil, false), -- Source of Magic
+		[381732]	= List(nil, false), -- Blessing of the Bronze
+		[381741]	= List(nil, false), -- Blessing of the Bronze
+		[381746]	= List(nil, false), -- Blessing of the Bronze
+		[381748]	= List(nil, false), -- Blessing of the Bronze
+		[381749]	= List(nil, false), -- Blessing of the Bronze
+		[381750]	= List(nil, false), -- Blessing of the Bronze
+		[381751]	= List(nil, false), -- Blessing of the Bronze
+		[381752]	= List(nil, false), -- Blessing of the Bronze
+		[381753]	= List(nil, false), -- Blessing of the Bronze
+		[381754]	= List(nil, false), -- Blessing of the Bronze
+		[381756]	= List(nil, false), -- Blessing of the Bronze
+		[381757]	= List(nil, false), -- Blessing of the Bronze
+		[381758]	= List(nil, false), -- Blessing of the Bronze
+		[462854]	= List(nil, false), -- Skyfury
+		[474754]	= List(nil, false), -- Symbiotic Relationship
+		[6673]		= List(nil, false), -- Battle Shout
+		-- Classes, mostly to fake resources
+		[1217607]	= List(nil, false), -- Void Metamorphosis
+		[1225789]	= List(nil, false), -- Void Metamorphosis
+		[1227702]	= List(nil, false), -- Collapsing Star
+		[124255]	= List(nil, false), -- Stagger
+		[205473]	= List(nil, false), -- Icicles
+		[260286]	= List(nil, false), -- Tip of the Spear
+		[344179]	= List(nil, false), -- Maelstrom Weapon
+		[405189]	= List(nil, false), -- Overflowing Power | Berserk
 		-- Rogue Poisons
 		[2823]		= List(nil, false), -- Deadly Poison
 		[315584]	= List(nil, false), -- Instant Poison
@@ -41,6 +44,7 @@ G.unitframe.aurafilters.Blacklist = {
 		[381637]	= List(nil, false), -- Atrophic Poison
 		[381664]	= List(nil, false), -- Amplifying Poison
 		[8679]		= List(nil, false), -- Wound Poison
+		[5761]		= List(nil, false), -- Numbing Poison
 		-- Shaman Imbuements
 		[319773]	= List(nil, false), -- Windfury Weapon
 		[319778]	= List(nil, false), -- Flametongue Weapon
@@ -60,6 +64,7 @@ G.unitframe.aurafilters.Blacklist = {
 		[447959]	= List(), -- Ride Along - Enabled
 		[447960]	= List(), -- Ride Along - Inactive
 		[377234]	= List(), -- Thrill of the Skies
+		[418590]	= List(), -- Static Charge
 		-- Bloodlust + Heroism
 		[160455]	= List(), -- Fatigued | Netherwinds
 		[264689]	= List(), -- Fatigued | Primal Rage
@@ -69,54 +74,17 @@ G.unitframe.aurafilters.Blacklist = {
 		[80354]		= List(), -- Temporal Displacement | Time Warp
 		[95809]		= List(), -- Insanity | Ancient Hysteria
 		-- Social
+		[1313593]	= List(), -- Deserter
 		[26013]		= List(), -- Deserter | Battlegrounds
 		[71041]		= List(), -- Dungeon Deserter | Dungeon Finder or Raid Finder
-		-- General auras starting here
-	}
-}
-
-G.unitframe.aurafilters.Blocklist = {
-	type = 'Blacklist',
-	desc = L["Non-Secret Auras you don't want to see on your frames."],
-	spells = {
-		-- Rogue Poisons
-		[2823]		= List(nil, false), -- Deadly Poison
-		[315584]	= List(nil, false), -- Instant Poison
-		[3408]		= List(nil, false), -- Crippling Poison
-		[381637]	= List(nil, false), -- Atrophic Poison
-		[381664]	= List(nil, false), -- Amplifying Poison
-		[8679]		= List(nil, false), -- Wound Poison
-		-- Shaman Imbuements
-		[319773]	= List(nil, false), -- Windfury Weapon
-		[319778]	= List(nil, false), -- Flametongue Weapon
-		[382021]	= List(nil, false), -- Earthliving Weapon
-		[382022]	= List(nil, false), -- Earthliving Weapon
-		[457496]	= List(nil, false), -- Tidecaller's Guard
-		[457481]	= List(nil, false), -- Tidecaller's Guard
-		[462757]	= List(nil, false), -- Thunderstrike Ward
-		[462742]	= List(nil, false), -- Thunderstrike Ward
-		-- Paladin Imbuements
-		[433568]	= List(), -- Rite of Sanctification
-		[433583]	= List(), -- Rite of Adjuration
-		-- Skyriding
-		[404464]	= List(), -- Flight Style: Skyriding
-		[404468]	= List(), -- Flight Style: Steady
-		[427490]	= List(), -- Ride Along
-		[447959]	= List(), -- Ride Along - Enabled
-		[447960]	= List(), -- Ride Along - Inactive
-		[377234]	= List(), -- Thrill of the Skies
-		-- Bloodlust + Heroism
-		[160455]	= List(), -- Fatigued | Netherwinds
-		[264689]	= List(), -- Fatigued | Primal Rage
-		[390435]	= List(), -- Exhaustion | Fury of the Aspects
-		[57723]		= List(), -- Exhaustion | Heroism
-		[57724]		= List(), -- Sated | Bloodlust
-		[80354]		= List(), -- Temporal Displacement | Time Warp
-		[95809]		= List(), -- Insanity | Ancient Hysteria
-		-- Social
-		[26013]		= List(), -- Deserter | Battlegrounds
-		[71041]		= List(), -- Dungeon Deserter | Dungeon Finder or Raid Finder
-		-- General auras starting here
+		-- General Auras
+		[308312]	= List(), -- Time Trial Practice
+		[369968]	= List(), -- Racing
+		[388367]	= List(), -- Ohn'ahra's Gusts
+		[1283888]	= List(nil, false), -- [DNT] Aura Never Secret Test Spell
+		-- Dungeon Auras
+		[1254550]	= List(), -- Arcane Empowerment
+		[206151]	= List(), -- Challenger's Burden
 	}
 }
 
@@ -130,31 +98,21 @@ G.unitframe.aurafilters.Whitelist = {
 		[255234] = List(), -- Totemic Revival | Can accept Totem Res
 		-- Warlock
 		-- Priest
+		[10060] = List(), -- Power Infusion
 		-- Mage
 		-- Rogue
 		-- Monk
 		-- Druid
+		[29166] = List(), -- Innervate
 		-- Demon Hunter
 		-- Shaman
 		-- Hunter
 		-- Evoker
+		[406789] = List(), -- Spatial Paradox (Others)
 		-- Warrior
 		-- Paladin
 		-- Death Knight
 	}
-}
-
-G.unitframe.aurafilters.RaidDebuffs = {
-	type = 'Whitelist',
-	desc = L["List of important Dungeon and Raid debuffs. Includes affixes and utility on dead players like pending resurrection and available reincarnation."],
-	spells = {}
-}
-
--- Buffs applied by bosses, adds or trash
-G.unitframe.aurafilters.RaidBuffsElvUI = {
-	type = 'Whitelist',
-	desc = L["List of important Dungeon and Raid buffs."],
-	spells = {}
 }
 
 -- Aura indicators on UnitFrames (Hots, Shields, Externals)
@@ -296,11 +254,7 @@ G.unitframe.TalentChannelTicks = {
 }
 
 -- Increase ticks from auras
-G.unitframe.AuraChannelTicks = {
-	-- Priest
-	[47757]		= { filter = 'HELPFUL', spells = { [373183] = 6 } }, -- Harsh Discipline: Penance (heal)
-	[47758]		= { filter = 'HELPFUL', spells = { [373183] = 6 } }, -- Harsh Discipline: Penance (dps)
-}
+G.unitframe.AuraChannelTicks = {}
 
 -- Spells Effected By Haste, value is Base Tick Size
 G.unitframe.HastedChannelTicks = {

@@ -4,7 +4,7 @@ local UF = E:GetModule('UnitFrames')
 local CreateFrame = CreateFrame
 
 function UF:Construct_AuraWatch(frame)
-	if E.PTR then
+	if E.Retail then
 		local auras = E:Auras_Create(frame, 'AuraWatch')
 		auras:SetFrameLevel(frame.RaisedElementParent.AuraWatchLevel)
 		auras:SetInside(frame.Health)
@@ -16,8 +16,8 @@ function UF:Construct_AuraWatch(frame)
 		auras:SetInside(frame.Health)
 
 		auras.allowStacks = UF.SourceStacks -- fake stacking (same spell id)
-		auras.PostCreateIcon = UF.BuffIndicator_PostCreateIcon
-		auras.PostUpdateIcon = UF.BuffIndicator_PostUpdateIcon
+		auras.PostCreateIcon = UF.AuraWatch_PostCreateIcon
+		auras.PostUpdateIcon = UF.AuraWatch_PostUpdateIcon
 
 		return auras
 	end
@@ -25,20 +25,28 @@ end
 
 function UF:Configure_AuraWatch(frame, isPet)
 	local db = frame.db and frame.db.buffIndicator
-	if db and db.enable then
+
+	local enabled = db and db.enable
+	local auras = frame.AuraWatch
+	if E.Retail then
+		auras:SetEnabled(enabled)
+	end
+
+	if enabled then
 		if not frame:IsElementEnabled('AuraWatch') then
 			frame:EnableElement('AuraWatch')
 		end
 
-		local auras = frame.AuraWatch
 		auras.size = db.size
 		auras.countFont = db.countFont
 		auras.countFontSize = db.countFontSize
 		auras.countFontOutline = db.countFontOutline
 		auras.cooldownDB = E.db.cooldown.auraindicator
+		auras.isIndicator = true
+		auras.noMouse = true
 
 		local auraTable
-		if (frame.unit == 'pet' or isPet) and db.petSpecific then
+		if (frame.__unit == 'pet' or isPet) and db.petSpecific then
 			auraTable = E.global.unitframe.aurawatch.PET
 		elseif db.profileSpecific then
 			auraTable = E.db.unitframe.filters.aurawatch
@@ -47,12 +55,13 @@ function UF:Configure_AuraWatch(frame, isPet)
 			E:CopyTable(auraTable, E.global.unitframe.aurawatch.GLOBAL)
 		end
 
-		if E.PTR then
+		if E.Retail then
 			auras.filter = 'HELPFUL'
 
-			E:Auras_SetupIndicator(auras, auraTable)
-			E:Auras_GroupUnit(auras, frame.unit)
+			E:Auras_SetupList(auras, auraTable)
+			E:Auras_GroupUnit(auras, frame.__unit)
 			E:Auras_SetIndicator(auras)
+			E:Auras_UpdateIndicators(auras)
 		elseif auras.SetNewTable then
 			auras:SetNewTable(auraTable)
 		end
@@ -61,7 +70,7 @@ function UF:Configure_AuraWatch(frame, isPet)
 	end
 end
 
-function UF:BuffIndicator_PostCreateIcon(button)
+function UF:AuraWatch_PostCreateIcon(button)
 	button.cd:SetAllPoints(button.icon)
 
 	E:RegisterCooldown(button.cd, 'auraindicator')
@@ -78,7 +87,7 @@ function UF:BuffIndicator_PostCreateIcon(button)
 	button.count:SetJustifyH('RIGHT')
 end
 
-function UF:BuffIndicator_PostUpdateIcon(_, button)
+function UF:AuraWatch_PostUpdateIcon(_, button)
 	local settings = self.watched[button.spellID]
 	if not settings then return end -- This should never fail
 

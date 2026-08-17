@@ -118,7 +118,7 @@ function A:MasqueData(texture, highlight)
 end
 
 function A:SetStatusBarColor(bar, r, g, b)
-	bar:GetStatusBarTexture():SetVertexColor(r, g, b)
+	bar:SetStatusBarColor(r, g, b)
 end
 
 function A:UpdateStatusBar(button)
@@ -561,45 +561,62 @@ function A:UpdateHeader(header)
 	local width, height = db.size, (db.keepSizeRatio and db.size) or db.height
 
 	local minWidth, minHeight, xOffset, yOffset, wrapXOffset, wrapYOffset
-	if IS_HORIZONTAL_GROWTH[db.growthDirection] then
-		minWidth = ((db.wrapAfter == 1 and 0 or db.horizontalSpacing) + width) * db.wrapAfter
-		minHeight = (db.verticalSpacing + height) * db.maxWraps
-		xOffset = DIRECTION_TO_HORIZONTAL_SPACING_MULTIPLIER[db.growthDirection] * (db.horizontalSpacing + width)
-		yOffset = 0
-		wrapXOffset = 0
-		wrapYOffset = DIRECTION_TO_VERTICAL_SPACING_MULTIPLIER[db.growthDirection] * (db.verticalSpacing + height)
-	else
-		minWidth = (db.horizontalSpacing + width) * db.maxWraps
-		minHeight = ((db.wrapAfter == 1 and 0 or db.verticalSpacing) + height) * db.wrapAfter
-		xOffset = 0
-		yOffset = DIRECTION_TO_VERTICAL_SPACING_MULTIPLIER[db.growthDirection] * (db.verticalSpacing + height)
-		wrapXOffset = DIRECTION_TO_HORIZONTAL_SPACING_MULTIPLIER[db.growthDirection] * (db.horizontalSpacing + width)
-		wrapYOffset = 0
-	end
 
-	if E.PTR then
+	if E.Retail then
+		local group = header.filterLists.group1
+		group.sortMethod = E.AuraContainerSortMethod[db.sortMethod]
+		group.sortDirection = E.AuraContainerSortDirection[db.sortDir]
+
 		header.barDB = db
 		header.width = width
 		header.height = height
-		header.spacingX = db.horizontalSpacing
-		header.spacingY = db.verticalSpacing
+		header.size = db.size
+		header.spacing = db.horizontalSpacing
+		header.lineSpacing = db.verticalSpacing
 		header.keepSizeRatio = db.keepSizeRatio
-		header.sortMethod = E.AuraContainerSortMethod[db.sortMethod]
-		header.sortDirection = E.AuraContainerSortDirection[db.sortDir]
+		header.growthDirection = db.growthDirection
 		header.useStatusbar = db.barShow
 		header.barColor = db.barColor
+		header.numAuras = db.wrapAfter
+		header.maxFrameCount = db.wrapAfter * db.maxWraps
+		header.initialAnchor = DIRECTION_TO_POINT[db.growthDirection]
 		header.barTexture = LSM:Fetch('statusbar', db.barTexture)
 		header.countPosition, header.countXOffset, header.countYOffset = 'BOTTOMRIGHT', db.countXOffset, db.countYOffset
 		header.countFont, header.countFontSize, header.countFontOutline = db.countFont, db.countFontSize, db.countFontOutline
+		header.colorByType = group.filter == 'HARMFUL' and A.db.colorDebuffs
+		header.colorEnchants = A.db.colorEnchants
+		header.isTopAura = true
 
-		header.filters[header.auraType] = header.filter
+		header.useWidth = IS_HORIZONTAL_GROWTH[db.growthDirection]
+		if header.useWidth then
+			minHeight, minWidth  = height, (header.spacing + width) * db.wrapAfter
+		else
+			minWidth, minHeight  = width, (header.spacing + height) * db.wrapAfter
+		end
 
 		header:SetSize(minWidth, minHeight)
 
 		E:Auras_SetContainer(header)
+		E:Auras_SetLineSize(header)
 		E:Auras_UpdateButtons(header)
 	else
 		E:UpdateClassColor(db.barColor)
+
+		if IS_HORIZONTAL_GROWTH[db.growthDirection] then
+			minWidth = ((db.wrapAfter == 1 and 0 or db.horizontalSpacing) + width) * db.wrapAfter
+			minHeight = (db.verticalSpacing + height) * db.maxWraps
+			xOffset = DIRECTION_TO_HORIZONTAL_SPACING_MULTIPLIER[db.growthDirection] * (db.horizontalSpacing + width)
+			yOffset = 0
+			wrapXOffset = 0
+			wrapYOffset = DIRECTION_TO_VERTICAL_SPACING_MULTIPLIER[db.growthDirection] * (db.verticalSpacing + height)
+		else
+			minWidth = (db.horizontalSpacing + width) * db.maxWraps
+			minHeight = ((db.wrapAfter == 1 and 0 or db.verticalSpacing) + height) * db.wrapAfter
+			xOffset = 0
+			yOffset = DIRECTION_TO_VERTICAL_SPACING_MULTIPLIER[db.growthDirection] * (db.verticalSpacing + height)
+			wrapXOffset = DIRECTION_TO_HORIZONTAL_SPACING_MULTIPLIER[db.growthDirection] * (db.horizontalSpacing + width)
+			wrapYOffset = 0
+		end
 
 		header:SetAttribute('config-width', width)
 		header:SetAttribute('config-height', height)
@@ -728,11 +745,13 @@ function A:Initialize()
 	local mapOffsetX = 6 + E.Border
 
 	if E.private.auras.buffsHeader then
-		if E.PTR then
+		if E.Retail then
 			local buff = E:Auras_Create(E.UIParent, nil, 'ElvUIPlayerBuffs')
+			buff.filterLists = { group1 = { filter = 'HELPFUL' } }
+			buff.filters = { group1 = buff.filterLists.group1 }
 			buff.auraType = 'buffs'
-			buff.filter = 'HELPFUL'
 			buff.unit = 'player'
+
 			A.BuffFrame = buff
 
 			A:UpdateHeader(A.BuffFrame)
@@ -750,11 +769,13 @@ function A:Initialize()
 	end
 
 	if E.private.auras.debuffsHeader then
-		if E.PTR then
+		if E.Retail then
 			local debuff = E:Auras_Create(E.UIParent, nil, 'ElvUIPlayerDebuffs')
+			debuff.filterLists = { group1 = { filter = 'HARMFUL' } }
+			debuff.filters = { group1 = debuff.filterLists.group1 }
 			debuff.auraType = 'debuffs'
-			debuff.filter = 'HARMFUL'
 			debuff.unit = 'player'
+
 			A.DebuffFrame = debuff
 
 			A:UpdateHeader(A.DebuffFrame)

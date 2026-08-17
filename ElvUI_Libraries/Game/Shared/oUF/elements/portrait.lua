@@ -50,7 +50,7 @@ local function Update(self, event)
 	local element = self.Portrait
 	if not element then return end
 
-	local unit = self.unit
+	local unit = self.__unit
 	if not unit then return end
 
 	local guid = UnitGUID(unit)
@@ -89,12 +89,9 @@ local function Update(self, event)
 			else
 				element:SetModel([[Interface\Buttons\TalkToMeQuestionMark.m2]])
 			end
-		elseif element.useClassBase then
-			-- BUG: UnitClassBase can't be trusted
-			--      https://github.com/Stanzilla/WoWUIBugs/issues/621
-
+		elseif element.useClassBase then -- BUG: UnitClassBase can't be trusted: https://github.com/Stanzilla/WoWUIBugs/issues/621
 			local _, className = UnitClass(unit)
-			if className then
+			if oUF:NotSecretValue(className) and className then
 				element:SetAtlas('classicon-' .. className)
 			end
 		elseif not element.customTexture then
@@ -126,7 +123,7 @@ local function Path(self, ...)
 end
 
 local function ForceUpdate(element)
-	return Path(element.__owner, 'ForceUpdate', element.__owner.unit)
+	return Path(element.__owner, 'ForceUpdate', element.__owner.__unit)
 end
 
 local function Enable(self, unit)

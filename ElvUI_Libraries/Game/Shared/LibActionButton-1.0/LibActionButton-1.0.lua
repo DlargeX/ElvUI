@@ -1,7 +1,7 @@
 -- License: LICENSE.txt
 
 local MAJOR_VERSION = "LibActionButton-1.0-ElvUI"
-local MINOR_VERSION = 81 -- the real minor version is 151
+local MINOR_VERSION = 83 -- the real minor version is 155
 
 local LibStub = LibStub
 if not LibStub then error(MAJOR_VERSION .. " requires LibStub.") end
@@ -34,6 +34,7 @@ local GetCVar = C_CVar.GetCVar
 local EnableActionRangeCheck = C_ActionBar.EnableActionRangeCheck
 local IsAssistedCombatAction = C_ActionBar.IsAssistedCombatAction
 local IsConsumableSpell = C_Spell.IsConsumableSpell or IsConsumableSpell
+local HasAssistedCombatActionButtons = C_ActionBar.HasAssistedCombatActionButtons
 local IsSpellOverlayed = (C_SpellActivationOverlay and C_SpellActivationOverlay.IsSpellOverlayed) or IsSpellOverlayed
 local GetSpellLossOfControlCooldown = C_Spell.GetSpellLossOfControlCooldown or GetSpellLossOfControlCooldown
 
@@ -284,7 +285,7 @@ function lib:CreateButton(id, name, header, config)
 		KeyBound = LibStub("LibKeyBound-1.0", true)
 	end
 
-	local button = setmetatable(CreateFrame("CheckButton", name, header, "ActionButtonTemplate, SecureActionButtonTemplate"), Generic_MT)
+	local button = setmetatable(CreateFrame("CheckButton", name, header, (WoWRetail and "PingableActionButtonTemplate, " or "").."ActionButtonTemplate, SecureActionButtonTemplate"), Generic_MT)
 	button:RegisterForDrag("LeftButton", "RightButton")
 	button:RegisterForClicks("AnyDown", "AnyUp")
 
@@ -316,6 +317,7 @@ function lib:CreateButton(id, name, header, config)
 	button:SetScript("OnAttributeChanged", nil) -- inherited templates bring in a handler here which we don't want, so get rid of it
 
 	-- unwanted mixin functions, which we override through the metatable
+	button.GetActionButtonInfo = nil
 	button.HasAction = nil
 
 	button.id = id
@@ -415,11 +417,16 @@ function SetupSecureSnippets(button)
 		local type, action = (self:GetAttribute(format("labtype-%s", state)) or "empty"), self:GetAttribute(format("labaction-%s", state))
 
 		self:SetAttribute("type", type)
+
 		if type ~= "empty" and type ~= "custom" then
 			local action_field = (type == "pet") and "action" or type
 			self:SetAttribute(action_field, action)
 			self:SetAttribute("action_field", action_field)
 		end
+
+		local actionID, _, hasAction = self:GetAttribute("type") == "action" and self:GetAttribute("action")
+		if actionID then _, hasAction = GetActionInfo(actionID) end
+		self:SetAttribute('ping-receiver', hasAction) -- replicate UpdatePingAttributes ~Simpy
 
 		local updateReleaseCasting = self:GetAttribute("UpdateReleaseCasting")
 		if updateReleaseCasting then
@@ -1273,8 +1280,7 @@ function Generic:OnEnter()
 	end
 
 	if self._state_type == "action" and self.NewActionTexture then
-		ClearNewActionHighlight(self._state_action, false, false)
-		UpdateNewAction(self)
+		ClearNewActionHighlight(self._state_action, false, false, self)
 	end
 
 	if FlyoutButtonMixin and UseCustomFlyout then
@@ -1351,7 +1357,7 @@ function Generic:PostClick(button, down)
 	self._receiving_drag = nil
 
 	if self._state_type == "action" and lib.ACTION_HIGHLIGHT_MARKS[self._state_action] then
-		ClearNewActionHighlight(self._state_action, false, false)
+		ClearNewActionHighlight(self._state_action, false, false, self)
 	end
 
 	if down and IsMouseButtonDown() then
@@ -1573,6 +1579,18 @@ function OnEvent(_, event, arg1, arg2, arg3, arg4)
 		if UseCustomFlyout then
 			UpdateFlyoutSpells()
 		end
+
+		if HasAssistedCombatActionButtons() then
+			for button in next, ButtonRegistry do
+				if button._state_type == 'action' then
+					local actionType, _, subType = GetActionInfo(button._state_action)
+					if actionType == 'spell' and subType == 'assistedcombat' then
+						ClearNewActionHighlight(button._state_action, true, false, button)
+						Update(button, event)
+					end
+				end
+			end
+		end
 	elseif event == "UNIT_MODEL_CHANGED" then
 		for button in next, ActiveButtons do
 			local texture = button:GetTexture()
@@ -1592,7 +1610,7 @@ function OnEvent(_, event, arg1, arg2, arg3, arg4)
 	elseif event == "ACTIONBAR_SLOT_CHANGED" then
 		for button in next, ButtonRegistry do
 			if button._state_type == "action" and (arg1 == 0 or arg1 == tonumber(button._state_action)) then
-				ClearNewActionHighlight(button._state_action, true, false)
+				ClearNewActionHighlight(button._state_action, true, false, button)
 				Update(button, event)
 			end
 		end
@@ -2184,29 +2202,22 @@ function Update(self, which)
 		self.icon:SetTexture(texture)
 		self.icon:Show()
 
-		if not WoWClassic then
-			if not self.MasqueSkinned then
-				self.SlotBackground:Hide()
-				if self.config.hideElements.border then
-					self.NormalTexture:SetTexture()
-					self.icon:RemoveMaskTexture(self.IconMask)
-					self.HighlightTexture:SetSize(52, 51)
-					self.HighlightTexture:SetPoint("TOPLEFT", self, "TOPLEFT", -2.5, 2.5)
-					self.CheckedTexture:SetSize(52, 51)
-					self.CheckedTexture:SetPoint("TOPLEFT", self, "TOPLEFT", -2.5, 2.5)
-				else
-					self:SetNormalAtlas("UI-HUD-ActionBar-IconFrame-AddRow")
-					self.icon:AddMaskTexture(self.IconMask)
-					self.HighlightTexture:SetSize(46, 45)
-					self.HighlightTexture:SetPoint("TOPLEFT")
-					self.CheckedTexture:SetSize(46, 45)
-					self.CheckedTexture:SetPoint("TOPLEFT")
-				end
-			end
-		else
-			self:SetNormalTexture("Interface\\Buttons\\UI-Quickslot2")
-			if not self.LBFSkinned and not self.MasqueSkinned then
-				self.NormalTexture:SetTexCoord(0, 0, 0, 0)
+		if not self.MasqueSkinned then
+			self.SlotBackground:Hide()
+			if self.config.hideElements.border then
+				self.NormalTexture:SetTexture()
+				self.icon:RemoveMaskTexture(self.IconMask)
+				self.HighlightTexture:SetSize(52, 51)
+				self.HighlightTexture:SetPoint("TOPLEFT", self, "TOPLEFT", -2.5, 2.5)
+				self.CheckedTexture:SetSize(52, 51)
+				self.CheckedTexture:SetPoint("TOPLEFT", self, "TOPLEFT", -2.5, 2.5)
+			else
+				self:SetNormalAtlas("UI-HUD-ActionBar-IconFrame-AddRow")
+				self.icon:AddMaskTexture(self.IconMask)
+				self.HighlightTexture:SetSize(46, 45)
+				self.HighlightTexture:SetPoint("TOPLEFT")
+				self.CheckedTexture:SetSize(46, 45)
+				self.CheckedTexture:SetPoint("TOPLEFT")
 			end
 		end
 	else
@@ -2219,19 +2230,12 @@ function Update(self, which)
 			self.cooldown:Hide()
 		end
 
-		if not WoWClassic then
-			if not self.MasqueSkinned then
-				self.SlotBackground:Show()
-				if self.config.hideElements.borderIfEmpty then
-					self.NormalTexture:SetTexture()
-				else
-					self:SetNormalAtlas("UI-HUD-ActionBar-IconFrame-AddRow")
-				end
-			end
-		else
-			self:SetNormalTexture("Interface\\Buttons\\UI-Quickslot")
-			if not self.LBFSkinned and not self.MasqueSkinned then
-				self.NormalTexture:SetTexCoord(-0.15, 1.15, -0.15, 1.17)
+		if not self.MasqueSkinned then
+			self.SlotBackground:Show()
+			if self.config.hideElements.borderIfEmpty then
+				self.NormalTexture:SetTexture()
+			else
+				self:SetNormalAtlas("UI-HUD-ActionBar-IconFrame-AddRow")
 			end
 		end
 	end
@@ -2425,7 +2429,7 @@ if WoWRetail then
 		local locShouldReplaceCooldown = locInfo.shouldReplaceNormalCooldown and self.config.lossOfControlCooldown
 		local showLoC = locInfo.isActive and self.config.lossOfControlCooldown
 		local showCharge = not locShouldReplaceCooldown and chargeInfo.isActive
-		local showNormal = not locShouldReplaceCooldown and cooldownInfo.isActive
+		local showNormal = not showCharge and not locShouldReplaceCooldown and cooldownInfo.isActive
 
 		SetOrClearCooldown(self.cooldown, showNormal, self:GetCooldownDuration())
 		SetOrClearCooldown(self.chargeCooldown, showCharge, self:GetChargeDuration())
@@ -2689,12 +2693,18 @@ function SpellVFX_PlaySpellInterruptedAnim(self)
 	end
 end
 
-function ClearNewActionHighlight(action, preventIdenticalActionsFromClearing, value)
+function ClearNewActionHighlight(action, preventIdenticalActionsFromClearing, value, button)
 	lib.ACTION_HIGHLIGHT_MARKS[action] = value
 
-	for button in next, ButtonRegistry do
+	if button then
 		if button._state_type == "action" and action == tonumber(button._state_action) then
 			UpdateNewAction(button)
+		end
+	else
+		for btn in next, ButtonRegistry do
+			if btn._state_type == "action" and action == tonumber(btn._state_action) then
+				UpdateNewAction(btn)
+			end
 		end
 	end
 
@@ -2724,7 +2734,7 @@ hooksecurefunc("MarkNewActionHighlight", function(action)
 end)
 
 hooksecurefunc("ClearNewActionHighlight", function(action, preventIdenticalActionsFromClearing)
-	ClearNewActionHighlight(action, preventIdenticalActionsFromClearing, nil)
+	ClearNewActionHighlight(action, preventIdenticalActionsFromClearing)
 end)
 
 function UpdateNewAction(self)
@@ -3009,6 +3019,21 @@ Generic.GetLossOfControlCooldown = function(self)
 	end
 end
 
+Generic.GetActionButtonInfo = function(self)
+	local actionType, id, subType = GetActionInfo(self._state_action)
+	local isUsable, notEnoughMana = IsUsableAction(self._state_action)
+
+	local info = {
+		id = id,
+		actionType = actionType,
+		subType = subType,
+		isUsable = isUsable,
+		notEnoughMana = notEnoughMana
+	}
+
+	return info
+end
+
 -----------------------------------------------------------
 --- Action Button
 
@@ -3107,8 +3132,10 @@ Action.GetSpellId               = function(self)
 	elseif actionType == "macro" then
 		if subType == "spell" then
 			return id
+		elseif subType == "item" then
+			return nil -- item macros seems to return bogus values we can't support
 		else
-			return (GetMacroSpell(id))
+			return (GetMacroSpell(id)) -- classic does not use the subType, so keep this as a fallback
 		end
 	end
 end
@@ -3162,7 +3189,7 @@ if GetSpellLossOfControlCooldown then
 else
 	GetSpellLoCCooldownInfoFallback = function() end
 end
-local GetSpellLossOfControlCooldownInfo = C_Spell and C_Spell.GetSpellLossOfControlCooldownInfo or GetSpellLoCCooldownInfoFallback
+local GetSpellLossOfControlCooldownInfo = C_Spell.GetSpellLossOfControlCooldownInfo
 
 -----------------------------------------------------------
 --- Spell Button
@@ -3186,15 +3213,13 @@ Spell.GetSpellId               = function(self) return self._state_action end
 if C_Spell.GetSpellDisplayCount then
 	Spell.GetDisplayCount      = function(self) return C_Spell.GetSpellDisplayCount(self._state_action) end
 end
-
--- Cooldown duration objects from 12.0
-if C_Spell and C_Spell.GetSpellChargeDuration then
+if C_Spell.GetSpellChargeDuration then -- Cooldown duration objects from 12.0
 	Spell.GetChargeDuration    = function(self) return C_Spell.GetSpellChargeDuration(self._state_action) end
 end
-if C_Spell and C_Spell.GetSpellCooldownDuration then
+if C_Spell.GetSpellCooldownDuration then
 	Spell.GetCooldownDuration  = function(self) return C_Spell.GetSpellCooldownDuration(self._state_action) end
 end
-if C_Spell and C_Spell.GetSpellLossOfControlCooldownDuration then
+if C_Spell.GetSpellLossOfControlCooldownDuration then
 	Spell.GetLoCCooldownDuration = function(self) return C_Spell.GetSpellLossOfControlCooldownDuration(self._state_action) end
 end
 

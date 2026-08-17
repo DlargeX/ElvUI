@@ -162,7 +162,7 @@ local function UpdateColor(element, powerType)
 	if(color) then
 		for i = 1, #element do
 			local bar = element[i]
-			bar:GetStatusBarTexture():SetVertexColor(color:GetRGB())
+			bar:SetStatusBarColor(color:GetRGB())
 		end
 	end
 
@@ -173,7 +173,7 @@ local function UpdateColor(element, powerType)
 	* color - the used ColorMixin-based object (table?)
 	--]]
 	if(element.PostUpdateColor) then
-		element:PostUpdateColor(element.__owner.unit, color)
+		element:PostUpdateColor(element.__owner.__unit, color)
 	end
 end
 
@@ -495,7 +495,7 @@ local function VisibilityPath(self, ...)
 end
 
 local function ForceUpdate(element)
-	return VisibilityPath(element.__owner, 'ForceUpdate', element.__owner.unit)
+	return VisibilityPath(element.__owner, 'ForceUpdate', element.__owner.__unit)
 end
 
 local function CheckCharges(self, event)

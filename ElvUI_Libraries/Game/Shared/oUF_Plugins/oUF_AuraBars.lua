@@ -20,7 +20,7 @@ local UnitIsEnemy = UnitIsEnemy
 local UnitReaction = UnitReaction
 local GameTooltip = GameTooltip
 
-local WrapString = C_StringUtil and C_StringUtil.WrapString
+local WrapString = C_StringUtil.WrapString
 local GetAuraApplicationDisplayCount = C_UnitAuras.GetAuraApplicationDisplayCount
 local GetAuraDuration = C_UnitAuras.GetAuraDuration
 
@@ -305,7 +305,7 @@ local function UpdateAuras(self, event, unit, updateInfo)
 end
 
 local function Update(self, event, unit)
-	if(self.unit ~= unit) then return end
+	if(self.__unit ~= unit) then return end
 
 	UpdateAuras(self, event, unit)
 
@@ -320,7 +320,7 @@ local function Update(self, event, unit)
 end
 
 local function ForceUpdate(element)
-	return Update(element.__owner, 'ForceUpdate', element.__owner.unit)
+	return Update(element.__owner, 'ForceUpdate', element.__owner.__unit)
 end
 
 local function Enable(self)
@@ -368,6 +368,6 @@ local function Disable(self)
 	end
 end
 
-if not oUF.isPTR then
+if not oUF.isRetail then
 	oUF:AddElement('AuraBars', Update, Enable, Disable)
 end

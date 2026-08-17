@@ -81,7 +81,7 @@ local function UpdateColor(self, event, unit, powerType)
 	end
 
 	if(color) then
-		element:GetStatusBarTexture():SetVertexColor(color:GetRGB())
+		element:SetStatusBarColor(color:GetRGB())
 	end
 
 	--[[ Callback: AdditionalPower:PostUpdateColor(color)
@@ -225,7 +225,7 @@ local function VisibilityPath(self, ...)
 end
 
 local function ForceUpdate(element)
-	return VisibilityPath(element.__owner, 'ForceUpdate', element.__owner.unit)
+	return VisibilityPath(element.__owner, 'ForceUpdate', element.__owner.__unit)
 end
 
 local function Enable(self, unit)

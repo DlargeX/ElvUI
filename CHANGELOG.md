@@ -1,3 +1,63 @@
+### Version 15.22 [ August 15th 2026 ]
+*   **Auras**
+    *   Buff highlighting works again (Filters > Aura Highlight).
+    *   Aura border colors now obey the setting but might require a reload after changing currently.
+    *   Private auras seem to not really be a thing anymore or it seems, they do not want us to be able to filter them separately.  All settings for them removed except the anchor for Private Raid Warnings and scale.
+    *   Top Aura item enchantments were not spaced and were before auras instead of after. 
+    *   Unitframe Auras not obeying click-through setting.
+    *   Aura Indicators not switching from color to texture properly.
+    *   Top Aura statusbars not toggling properly.
+    *   Top Aura flow direction and wrap should be back to normal.
+    *   Aura highlight obeys only player setting again.
+    *   Aura indicators obeys their only player setting too.
+    *   Aura indicator setting for Show When Not Active hidden; may not be possible on Retail anymore.
+    *   Nameplate and Unitframe auras will grow from Center when anchored to Top or Bottom.
+    *   Aura Max Wrap and Per Row settings work again.
+    *   Display Frame and Display Auras should show auras again (or you can use edit mode) but Smart Aura doesn't show correctly.
+    *   Aura Color by Type setting is working again.  Color by Dispel maybe readded later.
+*   **Not Auras**
+    *   Blizzard Loot roll was appearing alongside ours.
+    *   Party frame for player was smaller because incorrectly detecting alternative power.
+    *   Toolkit SetScaleAnimationMode error during PvPMatch restriction.
+    *   Nameplate unit faction changing would cause an error because of secrets.
+    *   Nameplate class colors should work again.
+    *   Unitframe role causing an error because of secrets.
+    *   Fonts for Name and Combat should register properly when set from external source.
+    *   Chat editbox secret error about insetRight.
+    *   Actionbar one button rotation should be updated correctly.
+    *   Actionbar charges shouldn't overlap with normal cooldowns again.
+    *   Actionbar buttons are pingable now.
+    *   Unitframe for Player is now pingable to show resources.
+    *   Chat will show the name of who pinged.
+    *   Text to Speech is currently blocked during secret restrictions.
+    *   Fonts has several missing entries.
+    *   Chat panel texture not having the correctly alpha at login.
+
+### Version 15.21 [ August 11th 2026 ]
+*   Aurabars for focus unitframe not updating.
+*   Removed Display Player option for Raid Frames.
+*   Chat: Discord Info table not sending to message formatter correctly.
+*   33.3333% secrets secreted by secret technology.
+*   Castbar: Harsh Discipline Penance ticks are secret ticks.
+*   Nameplate semi-locked to Player filter temporarily.  Checkboxes will not work; only Max Duration, Allow, and Block list can be adjusted for now.
+*   Aura Indicators not setting properly and filters from older versions causing an error.
+*   Debuff Highlight was layered on top of names and not using the correct colors also, Buff highlight is not setup yet.
+*   Bags not displaying gold text at login.
+
+### Version 15.20 [ August 11th 2026 ]
+*   Hotfix: Health error with oUF on Classic.
+
+### Version 15.19 [ August 11th 2026 ]
+*   **Midnight**
+    *   All aura systems reworked (some settings not finished).
+*   **General**
+    *   Profile: Export strings now use Blizzards encoding API.  Please check discord for how to upgrade the old strings.
+    *   Auras: Top Aura offhand enchants weren't showing on login.
+    *   Cooldown: Color and Low Threshold (decimals) options readded.
+    *   Cooldown: Seconds threshold to display in minutes color until a given time.
+    *   Cooldown: Overrides added to Actionbars, Unitframes, and Nameplates.  This allows altered settings per-frame or bar.
+    *   Chat: History displaying wrong battlenet friend from previous session message.
+
 ### Version 15.18 [ July 7th 2026 ]
 *   Nameplate issue involving GetNamePlateForUnit.
 *   Skinned edit mode settings frame dropdowns. (Thanks Daenarys)

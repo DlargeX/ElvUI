@@ -2,15 +2,17 @@ local E, L, V, P, G = unpack(ElvUI)
 local NP = E:GetModule('NamePlates')
 local UF = E:GetModule('UnitFrames')
 
+local next = next
 local unpack = unpack
 local strfind = strfind
+local strlower = strlower
 
 local CreateFrame = CreateFrame
 
 function NP:Construct_Auras(nameplate)
 	local Auras, Buffs, Debuffs
 
-	if E.PTR then
+	if E.Retail then
 		Auras = E:Auras_Create(nameplate, 'Auras')
 	else
 		Auras = CreateFrame('Frame', '$parentAuras', nameplate)
@@ -31,7 +33,7 @@ function NP:Construct_Auras(nameplate)
 		Auras.rows = {}
 	end
 
-	if E.PTR then
+	if E.Retail then
 		Buffs = E:Auras_Create(nameplate, 'Buffs')
 	else
 		Buffs = CreateFrame('Frame', '$parentBuffs', nameplate)
@@ -52,7 +54,7 @@ function NP:Construct_Auras(nameplate)
 		Buffs.rows = {}
 	end
 
-	if E.PTR then
+	if E.Retail then
 		Debuffs = E:Auras_Create(nameplate, 'Debuffs')
 	else
 		Debuffs = CreateFrame('Frame', '$parentDebuffs', nameplate)
@@ -78,7 +80,6 @@ function NP:Construct_Auras(nameplate)
 	Auras.SetPosition = UF.SetPosition
 	Auras.PostCreateButton = NP.Construct_AuraIcon
 	Auras.PostUpdateButton = UF.PostUpdateAura
-	Auras.GetBlizzardAuras = NP.GetBlizzardCrowdControl
 	Auras.CustomFilter = NP.AuraFilter
 
 	Buffs.PreUpdate = UF.PreUpdateAura
@@ -86,7 +87,6 @@ function NP:Construct_Auras(nameplate)
 	Buffs.SetPosition = UF.SetPosition
 	Buffs.PostCreateButton = NP.Construct_AuraIcon
 	Buffs.PostUpdateButton = UF.PostUpdateAura
-	Buffs.GetBlizzardAuras = NP.GetBlizzardBuffs
 	Buffs.CustomFilter = NP.AuraFilter
 
 	Debuffs.PreUpdate = UF.PreUpdateAura
@@ -94,7 +94,6 @@ function NP:Construct_Auras(nameplate)
 	Debuffs.SetPosition = UF.SetPosition
 	Debuffs.PostCreateButton = NP.Construct_AuraIcon
 	Debuffs.PostUpdateButton = UF.PostUpdateAura
-	Debuffs.GetBlizzardAuras = NP.GetBlizzardDebuffs
 	Debuffs.CustomFilter = NP.AuraFilter
 
 	nameplate.Auras_, nameplate.Buffs_, nameplate.Debuffs_ = Auras, Buffs, Debuffs
@@ -129,24 +128,68 @@ function NP:Construct_AuraIcon(button)
 	NP:UpdateAuraSettings(button)
 end
 
-function NP:Configure_UnitAuras(nameplate)
-	E:Auras_SetUnit(nameplate.Auras_, nameplate.unit)
-	E:Auras_SetUnit(nameplate.Buffs_, nameplate.unit)
-	E:Auras_SetUnit(nameplate.Debuffs_, nameplate.unit)
+function NP:Configure_AuraUnit(nameplate)
+	E:Auras_SetUnit(nameplate.Auras_, nameplate.__unit)
+	E:Auras_SetUnit(nameplate.Buffs_, nameplate.__unit)
+	E:Auras_SetUnit(nameplate.Debuffs_, nameplate.__unit)
 end
 
-function NP:Configure_AllAuras(nameplate)
+function NP:Configure_AuraUpdate(nameplate)
 	E:Auras_UpdateButtons(nameplate.Auras_)
 	E:Auras_UpdateButtons(nameplate.Buffs_)
 	E:Auras_UpdateButtons(nameplate.Debuffs_)
 end
 
+function NP:Configure_AuraFilters(nameplate, which)
+	local frameType = nameplate.frameType
+	if not frameType then return end
+
+	local obj = NP.AuraContainers[frameType]
+	local info = obj and obj[which]
+	if not info then return end
+
+	return info.filters
+end
+
+do
+	local types = { 'Auras', 'Debuffs', 'Buffs' }
+	function NP:Configure_AuraContainers()
+		for frameType, data in next, NP.AuraContainers do
+			local plateDB = NP:PlateDB(nil, frameType)
+			for _, which in next, types do
+				local info = data[which]
+				if not info then
+					info = { filters = {} }
+					data[which] = info
+				end
+
+				local auraType = strlower(which)
+				local db = plateDB[auraType]
+				if db then
+					info.filterLists = db.filterLists
+
+					UF:GroupFilters(info, info.filterLists)
+				end
+			end
+		end
+	end
+end
+
+function NP:GetAuraFilter(which, db)
+	if which == 'Auras' then -- this wont actually use helpful for blizzard auras its just to stop it from trying debuffs too
+		return db.filter or 'HARMFUL'
+	elseif E.Retail then
+		return (which == 'Buffs' and 'HELPFUL') or 'HARMFUL'
+	end
+end
+
 function NP:Configure_Auras(nameplate, which)
 	local plateDB = NP:PlateDB(nameplate)
 	local auras = nameplate[which]
-	local auraType = which:lower()
+	local auraType = strlower(which)
 	local db = plateDB[auraType]
 
+	auras.isNameplate = true
 	auras.size = db.size
 	auras.height = not db.keepSizeRatio and db.height
 	auras.numAuras = db.numAuras
@@ -157,40 +200,37 @@ function NP:Configure_Auras(nameplate, which)
 	auras.xOffset = db.xOffset
 	auras.yOffset = db.yOffset
 	auras.anchorPoint = db.anchorPoint
+	auras.colorByType = NP.db.colors.auraByType
 	auras.auraSort = UF.SortAuraFuncs[E.Retail and 'PLAYER' or db.sortMethod]
-	auras.initialAnchor = E.InversePoints[db.anchorPoint]
-	auras.filterList = UF:ConvertFilters(auras, db.priority)
 	auras.smartPosition, auras.smartFluid = UF:SetSmartPosition(nameplate)
 	auras.attachTo = UF:GetAuraAnchorFrame(nameplate, db.attachTo) -- keep below SetSmartPosition
 	auras.num = db.numAuras * db.numRows
 	auras.db = db -- for auraSort
 
-	if which == 'Auras' then -- this wont actually use helpful for blizzard auras its just to stop it from trying debuffs too
-		auras.filter = (NP.db.useBlizzardAuras and 'HELPFUL') or db.filter or 'HARMFUL'
-	elseif E.PTR then
-		auras.filter = (which == 'Buffs' and 'HELPFUL') or 'HARMFUL'
-	end
+	local growDown = auras.yOffset == 'DOWN'
+	auras.paddingLeft, auras.paddingRight, auras.paddingTop, auras.paddingBottom = 0, 0, growDown and 1 or 0, growDown and 0 or 1
 
-	if E.PTR then
+	local initialAnchor = E.InversePoints[db.anchorPoint]
+	if E.Retail then
 		auras.noMouse = true
+		auras.auraType = auraType
+		auras.maxFrameCount = auras.num
+		auras.initialAnchor = E.CenterPoint[db.anchorPoint] or initialAnchor
 		auras.keepSizeRatio = db.keepSizeRatio
-		auras.maxFrameCount = auras.numAuras
 		auras.sortMethod = E.AuraContainerSortMethod[db.sortMethod]
 		auras.nameplateType = nameplate.frameType
-		auras.maxDuration = (db.maxDuration and db.maxDuration > 0) and db.maxDuration or nil
 		auras.countPosition, auras.countXOffset, auras.countYOffset = db.countPosition, db.countXOffset, db.countYOffset
 		auras.countFont, auras.countFontSize, auras.countFontOutline = db.countFont, db.countFontSize, db.countFontOutline
+		auras.forceShowAuras = nameplate == NP.TestFrame
 
-		UF:UpdateFilters(auras) -- attach the objects
-		UF:GroupFilters(auras, auras.filter) -- build the groups
-
-		auras.allowList = db.useAllowlist and E:Auras_GetFilter(E.global.unitframe.aurafilters, db.allowList or 'Whitelist') or nil
-		auras.blockList = db.useBlocklist and E:Auras_GetFilter(E.global.unitframe.aurafilters, db.blockList or 'Blacklist') or nil
-		auras.candidateFilters = E:Auras_CanidateFilters(auras.allowList, auras.blockList, auras.maxDuration)
+		auras.filters = NP:Configure_AuraFilters(nameplate, which)
 
 		E:Auras_SetContainer(auras)
 		E:Auras_SetLineSize(auras)
 	else
+		auras.filterList = UF:ConvertFilters(auras, db.priority)
+		auras.initialAnchor = initialAnchor
+
 		local index = 1
 		while auras[index] do
 			local button = auras[index]
@@ -214,8 +254,6 @@ end
 function NP:Update_Auras(nameplate)
 	local db = NP:PlateDB(nameplate)
 
-	nameplate.usingBlizzardAuras = NP.db.useBlizzardAuras
-
 	if db.auras.enable or db.debuffs.enable or db.buffs.enable then
 		if not nameplate:IsElementEnabled('Auras') then
 			nameplate:EnableElement('Auras')
@@ -225,10 +263,15 @@ function NP:Update_Auras(nameplate)
 		nameplate.Buffs_:ClearAllPoints()
 		nameplate.Debuffs_:ClearAllPoints()
 
-		if E.PTR then
+		if E.Retail then
 			nameplate.Auras_:SetEnabled(db.auras.enable)
+			nameplate.Auras_:SetShown(db.auras.enable)
+
 			nameplate.Debuffs_:SetEnabled(db.debuffs.enable)
+			nameplate.Debuffs_:SetShown(db.debuffs.enable)
+
 			nameplate.Buffs_:SetEnabled(db.buffs.enable)
+			nameplate.Buffs_:SetShown(db.buffs.enable)
 		end
 
 		if db.auras.enable then
@@ -283,6 +326,4 @@ function NP:UpdateAuraSettings(button)
 	end
 
 	button.needsButtonTrim = true
-
-	UF:UpdateFilters(button)
 end

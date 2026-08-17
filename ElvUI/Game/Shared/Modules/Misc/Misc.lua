@@ -34,7 +34,6 @@ local IsInRaid = IsInRaid
 local IsPartyLFG = IsPartyLFG
 local IsShiftKeyDown = IsShiftKeyDown
 local PlaySound = PlaySound
-local RaidNotice_AddMessage = RaidNotice_AddMessage
 local RepairAllItems = RepairAllItems
 local StaticPopup_Hide = StaticPopup_Hide
 local StaticPopupSpecial_Hide = StaticPopupSpecial_Hide
@@ -57,7 +56,6 @@ local GetItemInfo = C_Item.GetItemInfo
 local IsAddOnLoaded = C_AddOns.IsAddOnLoaded
 local IsFriend = C_FriendList.IsFriend
 local SetWatchedFactionByID = C_Reputation.SetWatchedFactionByID
-local RaidWarningUtil_AddMessage = RaidWarningUtil and RaidWarningUtil.AddMessage
 
 local LE_GAME_ERR_GUILD_NOT_ENOUGH_MONEY = LE_GAME_ERR_GUILD_NOT_ENOUGH_MONEY
 local LE_GAME_ERR_NOT_ENOUGH_MONEY = LE_GAME_ERR_NOT_ENOUGH_MONEY
@@ -85,10 +83,10 @@ local function KillFeedback(frame)
 end
 
 function M:AddRaidNoticeMessage(noticeFrame, textString, colorInfo, displayTime)
-	if RaidWarningUtil_AddMessage then
-		RaidWarningUtil_AddMessage(textString, colorInfo, displayTime)
+	if _G.RaidWarningUtil then
+		_G.RaidWarningUtil.AddMessage(textString, colorInfo, displayTime)
 	else
-		RaidNotice_AddMessage(noticeFrame, textString, colorInfo, displayTime)
+		_G.RaidNotice_AddMessage(noticeFrame, textString, colorInfo, displayTime)
 	end
 end
 
@@ -286,7 +284,7 @@ function M:DisbandRaidGroup()
 				end
 			end
 		end
-	elseif not myIndex and UnitIsGroupLeader('player', LE_PARTY_CATEGORY_HOME) then
+	elseif UnitIsGroupLeader('player', LE_PARTY_CATEGORY_HOME) then
 		for i = MAX_PARTY_MEMBERS, 1, -1 do
 			local name = UnitName('party'..i)
 			if name then

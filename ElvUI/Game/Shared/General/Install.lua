@@ -182,6 +182,8 @@ function E:SetupCVars(noDisplayMsg)
 	E:SetCVar('fstack_preferParentKeys', 0) -- Add back the frame names via fstack!
 
 	if E.Retail then
+		E:SetCVar('worldMapShowPlayerCoords', 0)
+		E:SetCVar('worldMapShowCursorCoords', 0)
 		E:SetCVar('cameraDistanceMaxZoomFactor', 2.6) -- This has a setting on classic/tbc
 	else
 		E:SetCVar('alwaysShowActionBars', 1)
@@ -535,7 +537,6 @@ function E:LayoutAnniversary()
 	E.db.general.minimap.resetZoom.time = 5
 	E.db.general.minimap.size = 226
 	E.db.general.objectiveFrameHeight = 750
-	E.db.general.privateAuras.icon.size = 66
 	E.db.general.resurrectSound = true
 	E.db.general.talkingHeadFrameScale = 1
 	E.db.general.totems.growthDirection = 'HORIZONTAL'

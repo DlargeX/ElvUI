@@ -77,7 +77,7 @@ local function UpdateTooltip(self)
 	if GameTooltip:IsForbidden() then return end
 
 	-- we need compatibility here because this wasnt implemented on Era or Mists
-	oUF:SetTooltipByAuraInstanceID(GameTooltip, self.__owner.__owner.unit, self.auraInstanceID, self.filter)
+	oUF:SetTooltipByAuraInstanceID(GameTooltip, self.__owner.__owner.__unit, self.auraInstanceID, self.filter)
 end
 
 local function onEnter(self)
@@ -353,7 +353,7 @@ local function filterIcons(frame, which, unit, filter, limit, offset, dontHide)
 	local element = frame[which]
 	local forceShow = element.forceShow
 
-	local unitAuraFiltered = (element.GetBlizzardAuras and element:GetBlizzardAuras(frame)) or AuraFiltered[filter][unit]
+	local unitAuraFiltered = AuraFiltered[filter][unit]
 	local auraInstanceID, aura = next(unitAuraFiltered)
 	while (aura or forceShow) and (visible < limit) do
 		local result = updateAura(frame, which, unit, aura, index, offset, filter, visible)
@@ -387,9 +387,7 @@ local function filterIcons(frame, which, unit, filter, limit, offset, dontHide)
 end
 
 local function UpdateAuras(self, event, unit, updateInfo)
-	if self.usingBlizzardAuras then
-		if event == 'UNIT_AURA' then return end -- we send a fake event: FAKE_REFRESH_AURAS
-	elseif oUF:ShouldSkipAuraUpdate(self, event, unit, updateInfo) then
+	if oUF:ShouldSkipAuraUpdate(self, event, unit, updateInfo) then
 		return
 	end
 
@@ -469,7 +467,7 @@ local function UpdateAuras(self, event, unit, updateInfo)
 end
 
 local function Update(self, event, unit)
-	if (self.isForced and event ~= 'ElvUI_UpdateAllElements') or (self.unit ~= unit) then return end
+	if (self.isForced and event ~= 'ElvUI_UpdateAllElements') or (self.__unit ~= unit) then return end
 
 	-- Assume no event means someone wants to re-anchor things. This is usually done by UpdateAllElements and :ForceUpdate.
 	if not event or event == 'ForceUpdate' or event == 'ElvUI_UpdateAllElements' then
@@ -482,7 +480,7 @@ local function Update(self, event, unit)
 end
 
 local function ForceUpdate(element)
-	return Update(element.__owner, 'ForceUpdate', element.__owner.unit)
+	return Update(element.__owner, 'ForceUpdate', element.__owner.__unit)
 end
 
 local function Enable(self)

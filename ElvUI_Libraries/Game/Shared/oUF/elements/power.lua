@@ -84,7 +84,6 @@ local _, ns = ...
 local oUF = ns.oUF
 local Private = oUF.Private
 
-local unitSelectionType = Private.unitSelectionType
 local unpack = unpack
 
 local UnitClass = UnitClass
@@ -107,6 +106,8 @@ local GetUnitPowerBarInfo = GetUnitPowerBarInfo
 local ALTERNATE_POWER_INDEX = Enum.PowerType.Alternate or 10
 local StatusBarInterpolation = Enum.StatusBarInterpolation
 
+local GetSelectionType = Private.unitSelectionType
+
 --[[ Override: Power:GetDisplayPower(unit)
 Used to get info on the unit's alternative power, if any.
 Should return the power type index (see [Enum.PowerType.Alternate](https://warcraft.wiki.gg/wiki/Enum.PowerType))
@@ -120,24 +121,32 @@ type and zero for the minimum value.
 --]]
 local function GetDisplayPower(_, unit)
 	local barInfo = GetUnitPowerBarInfo(unit)
-	if(barInfo and barInfo.showOnRaid and (UnitInParty(unit) or UnitInRaid(unit))) then
+	local unitRaid, unitParty = UnitInRaid(unit), UnitInParty(unit)
+	local unitSecret = oUF:IsSecretValue(unitRaid) or oUF:IsSecretValue(unitParty) -- what do i do here?
+	local showOnRaid = barInfo and barInfo.showOnRaid and not unitSecret and (unitRaid or unitParty)
+	if showOnRaid then
 		return ALTERNATE_POWER_INDEX, barInfo.minPower
 	end
 end
 
 local function UpdateColor(self, event, unit)
-	if(self.unit ~= unit) then return end
+	if(self.__unit ~= unit) then return end
 	local element = self.Power
 
 	local isPlayer = UnitIsPlayer(unit) or (oUF.isRetail and UnitInPartyIsAI(unit))
+	local unitSelectionType = GetSelectionType(unit, element.considerSelectionInCombatHostile) -- Private.unitSelectionType
+	local unitThreat = UnitThreatSituation('player', unit)
+	local unitControlled = UnitPlayerControlled(unit)
+	local unitReaction = UnitReaction(unit, 'player')
+	local _, classToken = UnitClass(unit)
 
 	local r, g, b, color, atlas
 	if(element.colorDisconnected and not UnitIsConnected(unit)) then
 		color = self.colors.disconnected
-	elseif(element.colorTapping and not UnitPlayerControlled(unit) and UnitIsTapDenied(unit)) then
+	elseif(element.colorTapping and not unitControlled and UnitIsTapDenied(unit)) then
 		color = self.colors.tapped
-	elseif(element.colorThreat and not UnitPlayerControlled(unit) and UnitThreatSituation('player', unit)) then
-		color =  self.colors.threat[UnitThreatSituation('player', unit)]
+	elseif(element.colorThreat and not unitControlled and unitThreat) then
+		color =  self.colors.threat[unitThreat]
 	elseif(element.colorPower) then
 		local pType, pToken, altR, altG, altB = UnitPowerType(unit)
 		if element.displayType then
@@ -179,20 +188,17 @@ local function UpdateColor(self, event, unit)
 				color = self.colors.smooth
 			end
 		end
-	elseif(element.colorClass and isPlayer)
-		or (element.colorClassNPC and not isPlayer)
-		or (element.colorClassPet and UnitPlayerControlled(unit) and not isPlayer) then
-		local _, class = UnitClass(unit)
-		color = self.colors.class[class]
-	elseif(element.colorSelection and unitSelectionType(unit, element.considerSelectionInCombatHostile)) then
-		color = self.colors.selection[unitSelectionType(unit, element.considerSelectionInCombatHostile)]
-	elseif(element.colorReaction and UnitReaction(unit, 'player')) then
-		color = self.colors.reaction[UnitReaction(unit, 'player')]
+	elseif oUF:NotSecretValue(classToken) and classToken and ((element.colorClass and isPlayer) or (element.colorClassNPC and not isPlayer) or (element.colorClassPet and unitControlled and not isPlayer)) then
+		color = self.colors.class[classToken]
+	elseif(element.colorSelection and unitSelectionType) then
+		color = self.colors.selection[unitSelectionType]
+	elseif(element.colorReaction and unitReaction) then
+		color = self.colors.reaction[unitReaction]
 	end
 
 	if(atlas) then
 		element:SetStatusBarTexture(atlas)
-		element:GetStatusBarTexture():SetVertexColor(1, 1, 1)
+		element:SetStatusBarColor(1, 1, 1)
 	else
 		if(element.__texture) then
 			element:SetStatusBarTexture(element.__texture)
@@ -200,9 +206,9 @@ local function UpdateColor(self, event, unit)
 
 		-- it's done this way so that only non-standard powers have r, g, b values
 		if(b) then
-			element:GetStatusBarTexture():SetVertexColor(r, g, b)
+			element:SetStatusBarColor(r, g, b)
 		elseif(color) then
-			element:GetStatusBarTexture():SetVertexColor(color:GetRGB())
+			element:SetStatusBarColor(color:GetRGB())
 		end
 	end
 
@@ -233,7 +239,7 @@ local function ColorPath(self, ...)
 end
 
 local function Update(self, event, unit)
-	if(self.unit ~= unit) then return end
+	if(self.__unit ~= unit) then return end
 	local element = self.Power
 
 	--[[ Callback: Power:PreUpdate(unit)
@@ -300,7 +306,7 @@ local function Path(self, event, ...)
 end
 
 local function ForceUpdate(element)
-	return Path(element.__owner, 'ForceUpdate', element.__owner.unit)
+	return Path(element.__owner, 'ForceUpdate', element.__owner.__unit)
 end
 
 --[[ Power:SetColorDisconnected(state, isForced)

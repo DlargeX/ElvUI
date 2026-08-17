@@ -13,14 +13,18 @@ local UnitIsConnected = UnitIsConnected
 local CreateFrame = CreateFrame
 local UnitPowerType = UnitPowerType
 
+local C_ClassColor_GetClassColor = C_ClassColor.GetClassColor
 local StatusBarInterpolation = Enum.StatusBarInterpolation
 local POWERTYPE_ALTERNATE = Enum.PowerType.Alternate or 10
 
 function NP:Power_UpdateColor(_, unit)
-	if self.unit ~= unit then return end
+	if self.__unit ~= unit then return end
 
 	local element = self.Power
 	local ptype, ptoken, altR, altG, altB = UnitPowerType(unit)
+	local unitControlled = UnitPlayerControlled(unit)
+	local unitReaction = UnitReaction(unit, 'player')
+	local _, classToken = UnitClass(unit)
 	element.token = ptoken
 
 	local Selection = element.colorSelection and E:UnitSelectionType(unit, element.considerSelectionInCombatHostile)
@@ -28,7 +32,7 @@ function NP:Power_UpdateColor(_, unit)
 	local r, g, b, color, atlas
 	if element.colorDisconnected and not UnitIsConnected(unit) then
 		color = self.colors.disconnected
-	elseif element.colorTapping and not UnitPlayerControlled(unit) and UnitIsTapDenied(unit) then
+	elseif element.colorTapping and not unitControlled and UnitIsTapDenied(unit) then
 		color = self.colors.tapped
 	elseif element.colorPower then
 		if element.displayType ~= POWERTYPE_ALTERNATE then
@@ -51,13 +55,12 @@ function NP:Power_UpdateColor(_, unit)
 		if element.useAtlas and color and color.atlas then
 			atlas = color.atlas
 		end
-	elseif (element.colorClass and self.isPlayer) or (element.colorClassNPC and not self.isPlayer) or (element.colorClassPet and UnitPlayerControlled(unit) and not self.isPlayer) then
-		local _, class = UnitClass(unit)
-		color = self.colors.class[class]
+	elseif (element.colorClass and self.isPlayer) or (element.colorClassNPC and not self.isPlayer) or (element.colorClassPet and unitControlled and not self.isPlayer) then
+		color = (E:IsSecretValue(classToken) and C_ClassColor_GetClassColor(classToken)) or self.colors.class[classToken]
 	elseif Selection then
 		color = NP.Colors.selection[Selection]
-	elseif element.colorReaction and UnitReaction(unit, 'player') then
-		color = NP.Colors.reactions[UnitReaction(unit, 'player')]
+	elseif element.colorReaction and unitReaction then
+		color = NP.Colors.reactions[unitReaction]
 	elseif element.colorSmooth then
 		if E.Retail then
 			local curve = self.colors.power.MANA:GetCurve()

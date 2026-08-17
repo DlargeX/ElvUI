@@ -29,6 +29,7 @@ local UnitReaction = UnitReaction
 local UnitWidgetSet = UnitWidgetSet
 
 local UnitNameplateShowsWidgetsOnly = UnitNameplateShowsWidgetsOnly
+local C_ClassColor_GetClassColor = C_ClassColor.GetClassColor
 local C_NamePlate_GetNamePlateForUnit = C_NamePlate.GetNamePlateForUnit
 local C_NamePlate_GetNamePlates = C_NamePlate.GetNamePlates
 local GetCVarDefault = C_CVar.GetCVarDefault
@@ -42,6 +43,12 @@ local Blacklist = {
 	ENEMY_NPC = { enable = true, health = { enable = true }, },
 	FRIENDLY_NPC = { enable = true, health = { enable = true }, },
 }
+
+NP.AuraContainers = {}
+
+for key in next, Blacklist do
+	NP.AuraContainers[key] = {}
+end
 
 function NP:ResetAuraPriority()
 	for unitType, content in pairs(E.db.nameplates.units) do
@@ -57,14 +64,17 @@ function NP:ResetAuraPriority()
 				debuffs.filters.priority = default.debuffs.filters.priority
 			end
 
-			for key in next, E.AuraDefaults do
-				if buffs then
-					buffs[key] = default.buffs[key]
-				end
+			local auras = content.auras
+			if auras then
+				UF:ResetFilters_AuraGroup(auras.filterLists, default.auras.filterLists)
+			end
 
-				if debuffs then
-					debuffs[key] = default.debuffs[key]
-				end
+			if buffs then
+				UF:ResetFilters_AuraGroup(buffs.filterLists, default.buffs.filterLists)
+			end
+
+			if debuffs then
+				UF:ResetFilters_AuraGroup(debuffs.filterLists, default.debuffs.filterLists)
 			end
 		end
 	end
@@ -85,8 +95,12 @@ end
 
 do
 	local empty = {}
-	function NP:PlateDB(nameplate)
-		return (nameplate and NP.db.units[nameplate.frameType]) or empty
+	function NP:PlateDB(nameplate, frameType)
+		if not frameType then
+			frameType = nameplate and nameplate.frameType
+		end
+
+		return NP.db.units[frameType] or empty
 	end
 end
 
@@ -128,7 +142,9 @@ function NP:SetCVars()
 
 	-- The order of these is important !!
 
-	if not E.Retail then
+	if E.Retail then
+		E:SetCVar('nameplateShowFriendlyRealmName', 0)
+	else
 		E:SetCVar('nameplateMaxDistance', db.loadDistance)
 	end
 
@@ -299,8 +315,6 @@ function NP:StylePlate(nameplate)
 	nameplate:ClearAllPoints()
 	nameplate:Point('CENTER')
 
-	nameplate.blizzAuras = { BuffList = {}, DebuffList = {}, CrowdControlList = {} }
-
 	nameplate.StackingBounds = NP:Construct_StackingBounds(nameplate)
 	nameplate.RaisedElement = NP:Construct_RaisedElement(nameplate)
 	nameplate.Health = NP:Construct_Health(nameplate)
@@ -324,7 +338,6 @@ function NP:StylePlate(nameplate)
 	nameplate.PvPClassificationIndicator = NP:Construct_PvPClassificationIndicator(nameplate) -- Cart / Flag / Orb / Assassin Bounty
 	nameplate.PVPRole = NP:Construct_PVPRole(nameplate)
 	nameplate.Cutaway = NP:Construct_Cutaway(nameplate)
-	nameplate.PrivateAuras = NP:Construct_PrivateAuras(nameplate)
 
 	NP:Construct_Auras(nameplate)
 	NP:Construct_ClassPowerTwo(nameplate)
@@ -421,7 +434,6 @@ function NP:UpdatePlate(nameplate, updateBase)
 		NP:Update_TargetIndicator(nameplate)
 		NP:Update_ThreatIndicator(nameplate)
 		NP:Update_Cutaway(nameplate)
-		NP:Update_PrivateAuras(nameplate)
 		NP:Update_ClassPowerTwo(nameplate)
 
 		if nameplate == NP.PlayerFrame then
@@ -436,7 +448,6 @@ function NP:DisablePlate(nameplate, nameOnly, hideRaised)
 	end
 
 	NP:ReparentElements(nameplate, E.HiddenFrame)
-	NP:Update_PrivateAuras(nameplate, true)
 
 	if nameOnly then
 		NP:Update_Tags(nameplate)
@@ -581,7 +592,11 @@ function NP:ConfigurePlates(init)
 	NP.SkipFading = true
 
 	if NP.TestFrame:IsEnabled() then
-		NP.NAME_PLATE_UNIT_ADDED(NP.TestFrame, 'NAME_PLATE_UNIT_ADDED', NP.TestFrame.unit)
+		NP.NAME_PLATE_UNIT_ADDED(NP.TestFrame, 'NAME_PLATE_UNIT_ADDED', NP.TestFrame.__unit)
+	end
+
+	if E.Retail then
+		NP:Configure_AuraContainers()
 	end
 
 	local staticEvent = (NP.db.units.PLAYER.enable and NP.db.units.PLAYER.useStaticPosition) and 'NAME_PLATE_UNIT_ADDED' or 'NAME_PLATE_UNIT_REMOVED'
@@ -598,11 +613,11 @@ function NP:ConfigurePlates(init)
 				staticFunc(NP.PlayerFrame, staticEvent, 'player')
 			else
 				nameplate.previousType = nil -- keep over the callback, we still need a full update
-				NP.NAME_PLATE_UNIT_ADDED(nameplate, 'NAME_PLATE_UNIT_ADDED', nameplate.unit)
+				NP.NAME_PLATE_UNIT_ADDED(nameplate, 'NAME_PLATE_UNIT_ADDED', nameplate.__unit)
 			end
 
-			if E.PTR then
-				NP:Configure_AllAuras(nameplate)
+			if E.Retail then
+				NP:Configure_AuraUpdate(nameplate)
 			end
 
 			nameplate:UpdateAllElements('ForceUpdate')
@@ -719,7 +734,7 @@ function NP:PLAYER_TARGET_CHANGED(_, unit)
 end
 
 function NP:NAME_PLATE_UNIT_ADDED(_, unit)
-	if not unit then unit = self.unit end
+	if not unit then unit = self.__unit end
 
 	self.widgetsOnly = E.Retail and self.blizzPlate and UnitNameplateShowsWidgetsOnly(unit)
 	self.widgetSet = E.Retail and UnitWidgetSet(unit)
@@ -739,8 +754,10 @@ function NP:NAME_PLATE_UNIT_ADDED(_, unit)
 	self.battleFaction = E:GetUnitBattlefieldFaction(unit)
 	self.unitName, self.unitRealm = UnitName(unit)
 	self.npcID, self.unitGUID = NP:UnitNPCID(unit)
+
 	self.className, self.classFile, self.classID = UnitClass(unit)
-	self.classColor = (self.isPlayer and E:ClassColor(self.classFile)) or (self.repReaction and NP.Colors.reactions[self.repReaction]) or nil
+	self.classColor = self.isPlayer and (E:IsSecretValue(self.classFile) and C_ClassColor_GetClassColor(self.classFile) or E:ClassColor(self.classFile))
+	self.reactionColor = self.repReaction and NP.Colors.reactions[self.repReaction]
 
 	local specID, specIcon
 	local spec = E.Retail and E:GetUnitSpecInfo(unit)
@@ -759,8 +776,8 @@ function NP:NAME_PLATE_UNIT_ADDED(_, unit)
 	NP:UpdatePlateType(self)
 	NP:UpdatePlateSize(self)
 
-	if E.PTR then
-		NP:Configure_UnitAuras(self)
+	if E.Retail then
+		NP:Configure_AuraUnit(self)
 	end
 
 	self.softTargetFrame = self.blizzPlate and self.blizzPlate.SoftTargetFrame
@@ -841,7 +858,7 @@ function NP:NAME_PLATE_UNIT_REMOVED(event, unit)
 end
 
 function NP:UNIT_FACTION(_, unit)
-	if not unit or self.unit ~= unit then return end
+	if not unit or self.__unit ~= unit then return end
 
 	self.isMe = E:UnitIsUnit(unit, 'player')
 	self.reaction = UnitReaction('player', unit) -- Player Reaction
@@ -851,7 +868,7 @@ function NP:UNIT_FACTION(_, unit)
 	self.faction = UnitFactionGroup(unit)
 	self.isPVPSanctuary = UnitIsPVPSanctuary(unit)
 	self.battleFaction = E:GetUnitBattlefieldFaction(unit)
-	self.classColor = (self.isPlayer and E:ClassColor(self.classFile)) or (self.repReaction and NP.Colors.reactions[self.repReaction]) or nil
+	self.reactionColor = self.repReaction and NP.Colors.reactions[self.repReaction]
 
 	NP:UpdatePlateType(self)
 	NP:UpdatePlateSize(self)
@@ -886,62 +903,7 @@ function NP:GetThreatSituationScale(indicator, db, status)
 end
 
 function NP:AuraFilter(...)
-	if not E.PTR and NP.db.useBlizzardAuras then
-		return true -- already filtered by blizzard
-	else
-		return UF.AuraFilter(self, ...)
-	end
-end
-
-function NP:BlizzardPlate_RefreshList(listFrame, auraList)
-	if E.PTR or not NP.db.useBlizzardAuras then return end
-
-	local blizzPlate = self:GetParent()
-	local plate = blizzPlate:GetParent()
-
-	local nameplate = plate and plate.unitFrame
-	local blizzAuras = nameplate and nameplate.blizzAuras
-	if not blizzAuras then return end
-
-	local list
-	if listFrame == self.BuffListFrame and auraList == self.buffList then
-		list = blizzAuras.BuffList
-	elseif listFrame == self.DebuffListFrame and auraList == self.debuffList then
-		list = blizzAuras.DebuffList
-	elseif listFrame == self.CrowdControlListFrame and auraList == self.crowdControlList then
-		list = blizzAuras.CrowdControlList
-	end
-
-	if list then
-		nameplate.allowAuraUpdate = true
-
-		NP:BlizzardAuras_UpdateAuras(list, listFrame, auraList)
-	end
-end
-
-function NP:BlizzardPlate_RefreshAuras(updateInfo)
-	if E.PTR or not NP.db.useBlizzardAuras then return end
-
-	NP:NamePlateCallBack('FAKE_REFRESH_AURAS', self.unitToken, updateInfo)
-end
-
-do
-	local hookedPlates = {}
-	function NP:BlizzardPlate_HookAuras(frame)
-		local auras = not E.PTR and E.Retail and frame.AurasFrame
-		if not auras then return end
-
-		if NP.db.useBlizzardAuras then
-			frame:RegisterUnitEvent('UNIT_AURA', frame.unit)
-		end
-
-		if not hookedPlates[frame] then
-			hookedPlates[frame] = true
-
-			hooksecurefunc(auras, 'RefreshList', NP.BlizzardPlate_RefreshList)
-			hooksecurefunc(auras, 'RefreshAuras', NP.BlizzardPlate_RefreshAuras)
-		end
-	end
+	return UF.AuraFilter(self, ...)
 end
 
 function NP:NamePlateCallBack(event, unit, updateInfo)
@@ -1042,37 +1004,11 @@ function NP:UpdateColors()
 end
 
 function NP:SetStatusBarColor(bar, r, g, b, a)
-	bar:GetStatusBarTexture():SetVertexColor(r, g, b, a)
+	bar:SetStatusBarColor(r, g, b, a)
 
 	if bar.bg then
 		bar.bg:SetVertexColor(r, g, b, NP.multiplier)
 	end
-end
-
-function NP:BlizzardAuras_UpdateAuras(list, listFrame, auraList)
-	wipe(list)
-
-	for _, child in next, { listFrame:GetChildren() } do
-		list[child.auraInstanceID] = auraList[child.auraInstanceID] or nil
-	end
-end
-
-function NP:BlizzardAuras_GetAuras(nameplate, which)
-	if E.PTR or not NP.db.useBlizzardAuras or not nameplate.blizzAuras then return end
-
-	return nameplate.blizzAuras[which] or nil
-end
-
-function NP:GetBlizzardCrowdControl(nameplate)
-	return NP:BlizzardAuras_GetAuras(nameplate, 'CrowdControlList')
-end
-
-function NP:GetBlizzardBuffs(nameplate)
-	return NP:BlizzardAuras_GetAuras(nameplate, 'BuffList')
-end
-
-function NP:GetBlizzardDebuffs(nameplate)
-	return NP:BlizzardAuras_GetAuras(nameplate, 'DebuffList')
 end
 
 function NP:Initialize()
@@ -1123,13 +1059,13 @@ function NP:Initialize()
 	staticSecure:SetAttribute('*type2', 'togglemenu')
 	staticSecure:SetAttribute('toggleForVehicle', true)
 	staticSecure:RegisterForClicks('LeftButtonDown', 'RightButtonDown')
-	staticSecure:SetScript('OnEnter', _G.UnitFrame_OnEnter)
-	staticSecure:SetScript('OnLeave', _G.UnitFrame_OnLeave)
+	staticSecure:SetScript('OnEnter', UF.UnitFrame_OnEnter)
+	staticSecure:SetScript('OnLeave', UF.UnitFrame_OnLeave)
 	staticSecure:ClearAllPoints()
 	staticSecure:Point('TOPLEFT', NP.PlayerMover)
 	staticSecure:Point('BOTTOMRIGHT', NP.PlayerMover)
 	staticSecure:Hide()
-	staticSecure.unit = 'player' -- Needed for OnEnter, OnLeave
+	staticSecure.__unit = 'player' -- Needed for OnEnter, OnLeave
 	NP.StaticSecure = staticSecure
 
 	local testFrame = ElvUF:Spawn('player', 'ElvNP_TestFrame')

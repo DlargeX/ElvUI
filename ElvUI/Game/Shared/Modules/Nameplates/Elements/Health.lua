@@ -14,9 +14,10 @@ local UnitIsConnected = UnitIsConnected
 local CreateFrame = CreateFrame
 
 local StatusBarInterpolation = Enum.StatusBarInterpolation
+local C_ClassColor_GetClassColor = C_ClassColor.GetClassColor
 
 function NP:Health_UpdateColor(_, unit)
-	if not unit or self.unit ~= unit then return end
+	if not unit or self.__unit ~= unit then return end
 
 	local element, color = self.Health
 	local controlled = UnitPlayerControlled(unit)
@@ -44,13 +45,13 @@ function NP:Health_UpdateColor(_, unit)
 	end
 
 	if not color then
+		local _, classToken = UnitClass(unit)
 		local useSelection = E.Retail and element.colorSelection and E:UnitSelectionType(unit, element.considerSelectionInCombatHostile)
 		local useReaction = element.colorReaction and UnitReaction(unit, 'player')
 		if useClassification then
 			color = NP.Colors.classification[useClassification]
 		elseif (element.colorClass and self.isPlayer) or (element.colorClassNPC and not self.isPlayer) or (element.colorClassPet and controlled and not self.isPlayer) then
-			local _, class = UnitClass(unit)
-			color = self.colors.class[class]
+			color = (E:IsSecretValue(classToken) and C_ClassColor_GetClassColor(classToken)) or self.colors.class[classToken]
 		elseif useSelection then
 			if useSelection == 3 then
 				useSelection = controlled and 5 or 3

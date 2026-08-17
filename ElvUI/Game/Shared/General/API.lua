@@ -57,12 +57,13 @@ local GetWatchedFactionInfo = GetWatchedFactionInfo
 local GetWatchedFactionData = C_Reputation.GetWatchedFactionData
 
 local IsPlayerAtEffectiveMaxLevel = IsPlayerAtEffectiveMaxLevel
+local UnregisterInternalEvent = GameEvent and GameEvent.UnregisterInternalEvent
 local GameRulesUtil_IsPlayerAtEffectiveMaxLevel = GameRulesUtil and GameRulesUtil.IsPlayerAtEffectiveMaxLevel
 local GameRulesUtil_GetEffectiveMaxLevelForPlayer = GameRulesUtil and GameRulesUtil.GetEffectiveMaxLevelForPlayer
 local GetAddOnRestrictionState = C_RestrictedActions and C_RestrictedActions.GetAddOnRestrictionState
-local CreateDuration = C_DurationUtil and C_DurationUtil.CreateDuration
-local CreateCurve = C_CurveUtil and C_CurveUtil.CreateCurve
-local CreateColorCurve = C_CurveUtil and C_CurveUtil.CreateColorCurve
+local CreateDuration = C_DurationUtil.CreateDuration
+local CreateCurve = C_CurveUtil.CreateCurve
+local CreateColorCurve = C_CurveUtil.CreateColorCurve
 local GetColorDataForItemQuality = ColorManager and ColorManager.GetColorDataForItemQuality
 local GetAuraDataByIndex = C_UnitAuras.GetAuraDataByIndex
 
@@ -251,15 +252,15 @@ function E:GetDateTime(localTime, unix)
 	end
 end
 
-function E:ClassColor(class, usePriestColor)
-	if not class then return end
+function E:ClassColor(classToken, usePriestColor)
+	if not classToken then return end
 
-	local custom = _G.CUSTOM_CLASS_COLORS and _G.CUSTOM_CLASS_COLORS[class]
+	local custom = _G.CUSTOM_CLASS_COLORS and _G.CUSTOM_CLASS_COLORS[classToken]
 	if custom then -- make sure the custom table is using ColorMixin
 		E:VerifyColorTable(custom, true)
 	end
 
-	local color = custom or _G.RAID_CLASS_COLORS[class]
+	local color = custom or _G.RAID_CLASS_COLORS[classToken]
 	if type(color) ~= 'table' then return end
 
 	if not color.colorStr then
@@ -268,7 +269,7 @@ function E:ClassColor(class, usePriestColor)
 		color.colorStr = 'ff'..color.colorStr
 	end
 
-	if usePriestColor and class == 'PRIEST' and tonumber(color.colorStr, 16) > tonumber(E.PriestColors.colorStr, 16) then
+	if (usePriestColor and classToken == 'PRIEST') and (tonumber(color.colorStr, 16) > tonumber(E.PriestColors.colorStr, 16)) then
 		return E.PriestColors
 	else
 		return color
@@ -344,7 +345,8 @@ do -- other non-english locales require this
 	end
 
 	function E:LocalizedClassName(className, unit)
-		local gender = (type(unit) == 'number' and unit) or (not unit and E.mygender) or UnitSex(unit)
+		local unitSex = UnitSex(unit)
+		local gender = (type(unit) == 'number' and unit) or (not unit and E.mygender) or (E:NotSecretValue(unitSex) and unitSex)
 		return (gender == 3 and classFemale[className]) or classMale[className]
 	end
 end
@@ -571,7 +573,7 @@ end
 
 function E:GetPlayerRole()
 	local role = E.allowRoles and UnitGroupRolesAssigned('player') or 'NONE'
-	return (role ~= 'NONE' and role) or E.myspecRole or 'NONE'
+	return E:NotSecretValue(role) and (role ~= 'NONE' and role) or E.myspecRole or 'NONE'
 end
 
 function E:CheckRole()
@@ -700,6 +702,10 @@ function E:UpdateAuraCurves()
 		end
 
 		E:UpdateAuraCurve(which, data)
+
+		if which == 'highlight' then
+			E.AuraHighlight.customDispelColorCurve = data
+		end
 	end
 end
 
@@ -710,7 +716,7 @@ end
 function E:UpdateDispelColor(debuffType, r, g, b, a)
 	local color = DebuffColors[debuffType]
 	if color then
-		color.r, color.g, color.b, color.a = r, g, b, a
+		color:SetRGBA(r, g, b, a)
 	end
 
 	local db = E.db.general.debuffColors[debuffType]
@@ -726,7 +732,11 @@ function E:UpdateDispelColors()
 		if color then
 			E:UpdateClassColor(db)
 
-			color.r, color.g, color.b = db.r, db.g, db.b
+			color:SetRGBA(db.r, db.g, db.b, db.a)
+
+			if E.Retail then
+				E.AuraDispel.customDispelColorMap[debuffType] = color
+			end
 		end
 	end
 end
@@ -1369,7 +1379,7 @@ function E:GROUP_ROSTER_UPDATE()
 	for i = 1, (isInRaid and GetNumGroupMembers()) or GetNumSubgroupMembers() do
 		local unit = group..i
 		local role = not E.allowRoles and (GetPartyAssignment('MAINTANK', unit) and 'TANK' or 'NONE') or UnitGroupRolesAssigned(unit)
-		if role then
+		if E:NotSecretValue(role) and role then
 			if E:UnitIsUnit(unit, 'player') then
 				unit = 'player'
 			end
@@ -1441,8 +1451,32 @@ function E:CheckRestrictionState(which)
 	return state
 end
 
-function E:IsChatRestricted()
-	return GetCVarBool('addonChatRestrictionsForced') or (E:CheckRestrictionState('ChallengeMode') > 1 or E:CheckRestrictionState('Encounter') > 1)
+function E:IsInRestrictionState(which)
+	return E:CheckRestrictionState(which) > 1
+end
+
+function E:IsRestrictedPvPMatch()
+	return GetCVarBool('addonPvPMatchRestrictionsForced') or E:IsInRestrictionState('PvPMatch')
+end
+
+function E:IsRestrictedCombat()
+	return GetCVarBool('addonCombatRestrictionsForced') or E:IsInRestrictionState('Combat')
+end
+
+function E:IsRestrictedEncounter()
+	return GetCVarBool('addonEncounterRestrictionsForced') or E:IsInRestrictionState('Encounter')
+end
+
+function E:IsRestrictedChat()
+	return GetCVarBool('addonChatRestrictionsForced') or (E:IsInRestrictionState('ChallengeMode') or E:IsInRestrictionState('Encounter'))
+end
+
+function E:UnregisterGameEvent(event)
+	if UnregisterInternalEvent then
+		UnregisterInternalEvent(event)
+	else
+		UIParent:UnregisterEvent(event)
+	end
 end
 
 function E:LoadAPI()
@@ -1473,14 +1507,16 @@ function E:LoadAPI()
 	E.ScanTooltip.GetHyperlinkInfo = E.ScanTooltip_HyperlinkInfo
 	E.ScanTooltip.GetInventoryInfo = E.ScanTooltip_InventoryInfo
 
-	if E.Retail or E.Mists then
+	if C_MountJournal_GetMountIDs then
 		for _, mountID in next, C_MountJournal_GetMountIDs() do
 			local _, _, sourceText = C_MountJournal_GetMountInfoExtraByID(mountID)
 			local _, spellID = C_MountJournal_GetMountInfoByID(mountID)
 			E.MountIDs[spellID] = mountID
 			E.MountText[mountID] = sourceText
 		end
+	end
 
+	if E.Retail or E.Mists then
 		E:RegisterEvent('NEUTRAL_FACTION_SELECT_RESULT')
 		E:RegisterEvent('PLAYER_SPECIALIZATION_CHANGED', 'CheckRole')
 		E:RegisterEvent('PET_BATTLE_CLOSE', 'AddNonPetBattleFrames')

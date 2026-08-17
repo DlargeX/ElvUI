@@ -279,13 +279,13 @@ local function UpdateAuras(self, event, unit, updateInfo)
 end
 
 local function Update(self, event, unit)
-	if self.unit ~= unit then return end
+	if self.__unit ~= unit then return end
 
 	UpdateAuras(self, event, unit)
 end
 
 local function ForceUpdate(element)
-	return Update(element.__owner, 'ForceUpdate', element.__owner.unit)
+	return Update(element.__owner, 'ForceUpdate', element.__owner.__unit)
 end
 
 local function SetNewTable(element, object)
@@ -320,6 +320,6 @@ local function Disable(self)
 	end
 end
 
-if not oUF.isPTR then
+if not oUF.isRetail then
 	oUF:AddElement('AuraWatch', Update, Enable, Disable)
 end

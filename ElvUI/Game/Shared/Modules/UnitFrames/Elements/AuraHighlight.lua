@@ -2,12 +2,18 @@ local E, L, V, P, G = unpack(ElvUI)
 local UF = E:GetModule('UnitFrames')
 
 local GetAuraDispelTypeColor = C_UnitAuras.GetAuraDispelTypeColor
+local UnitCanAssist = UnitCanAssist
+local CreateFrame = CreateFrame
 
 local FALLBACK = Mixin({ r = 0, g = 0, b = 0, a = 0 }, ColorMixin)
 
 function UF:Construct_AuraHighlight(frame)
-	if E.PTR then
-		return E:Auras_Create(frame, 'AuraHighlight')
+	if E.Retail then
+		local highlight = CreateFrame('Frame', '$parentAuraHighlight', frame)
+		highlight.good = E:Auras_Create(highlight, 'Good')
+		highlight.bad = E:Auras_Create(highlight, 'Bad')
+
+		return highlight
 	else
 		local element = frame:CreateTexture(nil, 'OVERLAY')
 		element:SetInside(frame.Health.backdrop)
@@ -32,22 +38,76 @@ function UF:Construct_AuraHighlight(frame)
 	end
 end
 
+function UF:SetEnabled_AuraHighlight(container, unit)
+	local canAssist = UnitCanAssist('player', unit)
+
+	container.canAssist = canAssist
+	container:SetEnabled(container.enabled and canAssist)
+end
+
+do
+	local filters = {
+		good = 'HELPFUL',
+		bad = 'HARMFUL|RAID'
+	}
+
+	function UF:AuraHighlight_SetupContainer(frame, highlight, which)
+		local container = highlight[which]
+		if not container then return end
+
+		container:SetAllPoints(frame.Health:GetStatusBarTexture())
+		container.blendMode = UF.db.colors.debuffHighlight.blendMode
+		container.highlightMode = E.db.unitframe.debuffHighlighting
+		container.glowAnchor = highlight.glowAnchor
+		container.filter = filters[which]
+		container.isHighlight = true
+
+		if not container.candidateTemp then
+			container.candidateTemp = {}
+		end -- trash object for reuse
+
+		if which == 'good' then
+			E:Auras_SetupList(container, E.global.unitframe.AuraHighlightColors)
+
+			container:SetFrameLevel(12) -- HealPrediction uses 11
+		else
+			container:SetFrameLevel(13)
+		end
+
+		E:Auras_GroupUnit(container, frame.__unit)
+		E:Auras_SetHighlight(container)
+	end
+end
+
 function UF:Configure_AuraHighlight(frame)
 	local mode = E.db.unitframe.debuffHighlighting
 	local db = mode ~= 'NONE' and (frame.db and frame.db.debuffHighlight)
-	if db and db.enable then
+
+	local enabled = db and db.enable
+	local highlight = frame.AuraHighlight
+	if E.Retail then
+		local good = highlight.good
+		good.enabled = enabled
+		good.key = 'good'
+
+		local bad = highlight.bad
+		bad.enabled = enabled
+		bad.key = 'bad'
+
+		UF:SetEnabled_AuraHighlight(good, frame.__unit)
+		UF:SetEnabled_AuraHighlight(bad, frame.__unit)
+	end
+
+	if enabled then
 		if not frame:IsElementEnabled('AuraHighlight') then
 			frame:EnableElement('AuraHighlight')
 		end
 
-		local highlight = frame.AuraHighlight
-		if E.PTR then
-			highlight.filter = 'HARMFUL|DISPELLABLE'
-			highlight.blendMode = UF.db.colors.debuffHighlight.blendMode
-			highlight:SetFrameLevel(frame.RaisedElementParent.AuraHighlightLevel)
-			highlight:SetAllPoints(frame.Health:GetStatusBarTexture())
-			E:Auras_GroupUnit(highlight, frame.unit)
-			E:Auras_SetHighlight(highlight)
+		highlight.glowAnchor = (frame.ThreatIndicator and frame.ThreatIndicator.MainGlow) or frame.TargetGlow
+
+		if E.Retail then
+			UF:AuraHighlight_SetupContainer(frame, highlight, 'good')
+			UF:AuraHighlight_SetupContainer(frame, highlight, 'bad')
 		else
 			highlight:SetBlendMode(UF.db.colors.debuffHighlight.blendMode)
 			highlight:SetAllPoints(frame.Health:GetStatusBarTexture())
@@ -56,10 +116,8 @@ function UF:Configure_AuraHighlight(frame)
 			if mode == 'GLOW' then
 				frame.AuraHighlightBackdrop = true
 
-				if frame.ThreatIndicator then
-					frame.AuraHightlightGlow:SetAllPoints(frame.ThreatIndicator.MainGlow)
-				elseif frame.TargetGlow then
-					frame.AuraHightlightGlow:SetAllPoints(frame.TargetGlow)
+				if highlight.glowAnchor then
+					frame.AuraHightlightGlow:SetAllPoints(highlight.glowAnchor)
 				end
 			else
 				frame.AuraHighlightBackdrop = false

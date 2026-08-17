@@ -35,7 +35,7 @@ local MAINASSIST_ICON = [[Interface\GROUPFRAME\UI-GROUP-MAINASSISTICON]]
 
 local function Update(self, event)
 	local element = self.RaidRoleIndicator
-	local unit = self.unit
+	local unit = self.__unit
 
 	--[[ Callback: RaidRoleIndicator:PreUpdate()
 	Called before the element has been updated.
@@ -46,8 +46,9 @@ local function Update(self, event)
 		element:PreUpdate()
 	end
 
+	local unitRaid = UnitInRaid(unit)
 	local inVehicle, role = (oUF.isRetail or oUF.isWrath or oUF.isMists) and UnitHasVehicleUI(unit)
-	if(UnitInRaid(unit) and not inVehicle) then
+	if oUF:NotSecretValue(unitRaid) and unitRaid and not inVehicle then
 		if(GetPartyAssignment('MAINTANK', unit)) then
 			role = 'MAINTANK'
 			element:SetTexture(MAINTANK_ICON)

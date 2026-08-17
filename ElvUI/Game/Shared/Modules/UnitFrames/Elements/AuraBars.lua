@@ -5,10 +5,8 @@ local LSM = E.Libs.LSM
 local ipairs = ipairs
 local strfind = strfind
 
-local UnitIsEnemy = UnitIsEnemy
-local UnitReaction = UnitReaction
 local CreateFrame = CreateFrame
-local WrapString = C_StringUtil and C_StringUtil.WrapString
+local WrapString = C_StringUtil.WrapString
 local GetAuraApplicationDisplayCount = C_UnitAuras.GetAuraApplicationDisplayCount
 
 local StatusBarInterpolation = Enum.StatusBarInterpolation
@@ -70,16 +68,17 @@ function UF:AuraBars_UpdateBar(bar)
 	bar.spark:Point('BOTTOM')
 	bar.spark:Point('TOP')
 
-	UF:UpdateFilters(bar)
-
 	UF:Update_FontString(bar.nameText)
 end
 
 function UF:Construct_AuraBarHeader(frame)
-	if E.PTR then
-		return E:Auras_Create(frame, 'AuraBars')
+	if E.Retail then
+		local bars = E:Auras_Create(frame, 'AuraBars')
+		bars:SetFrameLevel(frame.RaisedElementParent.AuraBarLevel)
+
+		return bars
 	else
-		local auraBar = CreateFrame('Frame', '$parent_AuraBars', frame, E.PTR and 'DisableUntrustedLayoutScriptsTemplate')
+		local auraBar = CreateFrame('Frame', '$parent_AuraBars', frame)
 		auraBar:SetFrameLevel(frame.RaisedElementParent.AuraBarLevel)
 		auraBar:SetSize(1, 1)
 
@@ -96,17 +95,11 @@ function UF:Construct_AuraBarHeader(frame)
 	end
 end
 
-function UF:AuraBars_GetFilter(element, unit)
-	local isEnemy, reaction = UnitIsEnemy(unit, 'player'), UnitReaction(unit, 'player')
-	return (not isEnemy and (not reaction or reaction > 4) and (element.friendlyAuraType or 'HELPFUL')) or element.enemyAuraType or 'HARMFUL'
-end
-
 function UF:AuraBars_UpdateFilter(bars, unit)
-	bars.filter = UF:AuraBars_GetFilter(bars, unit)
-	bars.barColor = (bars.filter == 'HARMFUL' and UF.db.colors.auraBarDebuff) or UF.db.colors.auraBarBuff
+	local friendly = UF:UnitIsFriendly(unit)
+	bars.filterLists = friendly and bars.friendlyFilter or bars.enemyFilter
 
-	UF:UpdateFilters(bars) -- attach the objects
-	UF:GroupFilters(bars, bars.filter) -- build the groups
+	UF:GroupFilters(bars, bars.filterLists) -- build the groups
 end
 
 function UF:Configure_AuraBars(frame)
@@ -133,7 +126,6 @@ function UF:Configure_AuraBars(frame)
 		bars.friendlyAuraType = db.friendlyAuraType
 		bars.enemyAuraType = db.enemyAuraType
 		bars.disableMouse = db.clickThrough
-		bars.filterList = UF:ConvertFilters(bars, db.priority)
 		bars.auraSort = UF.SortAuraFuncs[E.Retail and 'PLAYER' or db.sortMethod]
 		bars.tooltipAnchor = db.tooltipAnchorType
 		bars.tooltipAnchorX = db.tooltipAnchorX
@@ -142,9 +134,6 @@ function UF:Configure_AuraBars(frame)
 		for _, bar in ipairs(bars) do
 			UF:AuraBars_UpdateBar(bar)
 		end
-
-		E:UpdateClassColor(UF.db.colors.auraBarBuff)
-		E:UpdateClassColor(UF.db.colors.auraBarDebuff)
 
 		if not bars.Holder then
 			local holder = CreateFrame('Frame', nil, bars)
@@ -216,37 +205,41 @@ function UF:Configure_AuraBars(frame)
 			bars:Point(p3..p4, attachTo, p1..p4, xOffset or (right and -(BORDER * 2)) or (bars.height + UF.BORDER), yOffset)
 		end
 
-		if E.PTR then
+		if E.Retail then
 			bars.isAuraBar = true
 			bars.size = db.height
 			bars.numAuras = db.maxBars
 			bars.maxFrameCount = db.maxBars
 			bars.isTransparent = UF.db.colors.transparentAurabars -- always on for now
 			bars.invertAurabars = UF.db.colors.invertAurabars
-			bars.maxDuration = (db.maxDuration and db.maxDuration > 0) and db.maxDuration or nil
 			bars.sortMethod = E.AuraContainerSortMethod[db.sortMethod]
 			bars.statusbarTexture = LSM:Fetch('statusbar', UF.db.statusbar)
 			bars.countPosition, bars.countXOffset, bars.countYOffset = db.countPosition, db.countXOffset, db.countYOffset
 			bars.countFont, bars.countFontSize, bars.countFontOutline = db.countFont, db.countFontSize, db.countFontOutline
+			bars.friendlyFilter = db.friendlyFilter.filterLists
+			bars.enemyFilter = db.enemyFilter.filterLists
+			bars.forceShowAuras = frame.forceShowAuras
+			bars.customBackdropColor = UF.db.colors.customaurabarbackdrop and UF.db.colors.aurabar_backdrop or nil
 
-			bars.allowList = db.useAllowlist and E:Auras_GetFilter(E.global.unitframe.aurafilters, db.allowList or 'Whitelist') or nil
-			bars.blockList = db.useBlocklist and E:Auras_GetFilter(E.global.unitframe.aurafilters, db.blockList or 'Blacklist') or nil
-			bars.candidateFilters = E:Auras_CanidateFilters(bars.allowList, bars.blockList, bars.maxDuration)
+			UF:AuraBars_UpdateFilter(bars, frame.__unit)
 
-			UF:AuraBars_UpdateFilter(bars, frame.unit)
-
-			E:Auras_GroupUnit(bars, frame.unit)
+			E:Auras_GroupUnit(bars, frame.__unit)
 			E:Auras_SetContainer(bars)
 			E:Auras_SetLineSize(bars)
 
 			bars:SetEnabled(true)
+		else
+			E:UpdateClassColor(UF.db.colors.auraBarBuff)
+			E:UpdateClassColor(UF.db.colors.auraBarDebuff)
+
+			bars.filterList = UF:ConvertFilters(bars, db.priority)
 		end
 	else
 		if frame:IsElementEnabled('AuraBars') then
 			frame:DisableElement('AuraBars')
 		end
 
-		if E.PTR then
+		if E.Retail then
 			bars:SetEnabled(false)
 		end
 
@@ -293,7 +286,7 @@ function UF:PostUpdateBar_AuraBars(unit, bar, _, _, _, _, debuffType) -- unit, b
 		if E:IsSecretValue(bar.count) then
 			if bar.aura then
 				local minCount, maxCount = 2, 999
-				local count = GetAuraApplicationDisplayCount(bar.unit, bar.aura.auraInstanceID, minCount, maxCount)
+				local count = GetAuraApplicationDisplayCount(bar.__unit, bar.aura.auraInstanceID, minCount, maxCount)
 				bar.nameText:SetFormattedText('%s%s', count and WrapString(count, '[', '] ') or '', text)
 			else
 				bar.nameText:SetText(text)

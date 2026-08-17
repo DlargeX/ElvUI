@@ -1,6 +1,6 @@
-local ElvUI = select(2, ...)
-ElvUI[2] = ElvUI[1].Libs.ACL:GetLocale('ElvUI', ElvUI[1]:GetLocale()) -- Locale doesn't exist yet, make it exist.
-local E, L, V, P, G = unpack(ElvUI)
+local E, _, V, P, G = unpack(ElvUI)
+local L = E.Libs.ACL:GetLocale('ElvUI', E:GetLocale())
+ElvUI[2] = L -- Locale doesn't exist yet, make it exist
 
 local _G = _G
 local tonumber, next, unpack, tostring = tonumber, next, unpack, tostring
@@ -108,6 +108,11 @@ E.FrameLocks = {}
 E.VehicleLocks = {}
 E.CreditsList = {}
 E.ReverseTimer = {} -- Spells that we want to show the duration backwards (oUF_RaidDebuffs, ???)
+E.CenterPoint = {
+	BOTTOM = 'CENTER',
+	TOP = 'CENTER'
+}
+
 E.InversePoints = {
 	BOTTOM = 'TOP',
 	BOTTOMLEFT = 'TOPLEFT',
@@ -385,16 +390,7 @@ function E:UpdateMedia() -- late LSM data can trigger updates to fonts and bars:
 		E:UpdateClassColor(E.db.chat.tabSelectorColor)
 		E:UpdateClassColor(E.db.chat.tabSelectedTextColor)
 
-		-- Chat Panel Background Texture
-		local LeftChatPanel, RightChatPanel = _G.LeftChatPanel, _G.RightChatPanel
-		if LeftChatPanel and LeftChatPanel.tex and RightChatPanel and RightChatPanel.tex then
-			LeftChatPanel.tex:SetTexture(E.db.chat.panelBackdropNameLeft)
-			RightChatPanel.tex:SetTexture(E.db.chat.panelBackdropNameRight)
-
-			local a = E.db.general.backdropfadecolor.a or 0.5
-			LeftChatPanel.tex:SetAlpha(a)
-			RightChatPanel.tex:SetAlpha(a)
-		end
+		Layout:UpdatePanelTextures()
 	end
 
 	E:ValueFuncCall()
@@ -602,7 +598,7 @@ do
 		info.unitframes.r, info.unitframes.g, info.unitframes.b = unpack(E.media.unitframeBorderColor)
 		E:CoroutineUpdate(E.UpdateUnitframeBorderColor, E.unitFrameElements, info.unitframes)
 
-		if E.PTR and Tooltip.isStyled then
+		if E.Retail and Tooltip.isStyled then
 			Tooltip:SetAuraButtonTooltipStyle()
 		end
 	end
@@ -649,7 +645,7 @@ do
 		E:CoroutineUpdate(E.UpdateBackdropColor, E.frames, info)
 		E:CoroutineUpdate(E.UpdateUnitframeBackdropColor, E.unitFrameElements, info)
 
-		if E.PTR and Tooltip.isStyled then
+		if E.Retail and Tooltip.isStyled then
 			Tooltip:SetAuraButtonTooltipStyle()
 		end
 	end
@@ -2093,12 +2089,9 @@ function E:Initialize()
 
 		E.Initialized = true
 
-		if E.PTR then
-			E:InitializeAuras()
-		end
-
 		if E.Retail then
 			E:Tutorials()
+			E:InitializeAuras()
 		end
 
 		if E.db.general.tagUpdateRate and (E.db.general.tagUpdateRate ~= P.general.tagUpdateRate) then

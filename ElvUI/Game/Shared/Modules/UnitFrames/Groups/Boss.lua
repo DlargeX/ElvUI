@@ -6,6 +6,7 @@ local CreateFrame = CreateFrame
 local MAX_BOSS_FRAMES = 5
 
 local BossHeader = CreateFrame('Frame', 'BossHeader', E.UIParent)
+
 function UF:Construct_BossFrames(frame)
 	UF:PrepareFrame(frame, 'boss')
 	UF:ConstructFrame(frame, 'boss')
@@ -24,7 +25,6 @@ function UF:Construct_BossFrames(frame)
 	frame.RaidTargetIndicator = UF:Construct_RaidIcon(frame)
 	frame.Fader = UF:Construct_Fader()
 	frame.Cutaway = UF:Construct_Cutaway(frame)
-	frame.PrivateAuras = UF:Construct_PrivateAuras(frame)
 	frame.MouseGlow = UF:Construct_MouseGlow(frame)
 	frame.TargetGlow = UF:Construct_TargetGlow(frame)
 	frame.FocusGlow = UF:Construct_FocusGlow(frame)
