@@ -304,18 +304,25 @@ function UF:ResetAuraPriority()
 		local default = P.unitframe.units[unitName]
 		if default then
 			local buffs = content.buffs
-			if buffs and buffs.filters then
-				buffs.filters.priority = default.buffs.filters.priority
+			if buffs then
+				if buffs.filters then
+					buffs.filters.priority = default.buffs.filters.priority
+				end
+
+				if buffs.filterLists then
+					UF:ResetFilters_AuraGroup(buffs.filterLists, default.buffs.filterLists)
+				end
 			end
 
 			local debuffs = content.debuffs
-			if debuffs and debuffs.filters then
-				debuffs.filters.priority = default.debuffs.filters.priority
-			end
+			if debuffs then
+				if debuffs.filters then
+					debuffs.filters.priority = default.debuffs.filters.priority
+				end
 
-			local aurabar = content.aurabar
-			if aurabar then
-				aurabar.priority = default.aurabar.priority
+				if debuffs.filterLists then
+					UF:ResetFilters_AuraGroup(debuffs.filterLists, default.debuffs.filterLists)
+				end
 			end
 
 			local auras = content.auras
@@ -323,16 +330,17 @@ function UF:ResetAuraPriority()
 				UF:ResetFilters_AuraGroup(auras.filterLists, default.auras.filterLists)
 			end
 
-			if buffs then
-				UF:ResetFilters_AuraGroup(buffs.filterLists, default.buffs.filterLists)
-			end
-
-			if debuffs then
-				UF:ResetFilters_AuraGroup(debuffs.filterLists, default.debuffs.filterLists)
-			end
-
+			local aurabar = content.aurabar
 			if aurabar then
-				UF:ResetFilters_AuraGroup(aurabar.filterLists, default.aurabar.filterLists)
+				aurabar.priority = default.aurabar.priority
+
+				if aurabar.friendlyFilter and aurabar.friendlyFilter.filterLists then
+					UF:ResetFilters_AuraGroup(aurabar.friendlyFilter.filterLists, default.aurabar.friendlyFilter.filterLists)
+				end
+
+				if aurabar.enemyFilter and aurabar.enemyFilter.filterLists then
+					UF:ResetFilters_AuraGroup(aurabar.enemyFilter.filterLists, default.aurabar.enemyFilter.filterLists)
+				end
 			end
 		end
 	end
@@ -496,15 +504,24 @@ function UF:GetAuraOffset(p1, p2)
 	return x, y
 end
 
-function UF:GetAuraAnchorFrame(frame, attachTo)
+function UF:GetAuraAnchorFrame(frame, attachTo, container)
+	local auras, buffs, debuffs
+	if container then
+		auras, buffs, debuffs = container.Auras, container.Buffs, container.Debuffs
+	elseif frame.isNameplate then
+		auras, buffs, debuffs = frame.Auras_, frame.Buffs_, frame.Debuffs_
+	else
+		auras, buffs, debuffs = frame.Auras, frame.Buffs, frame.Debuffs
+	end
+
 	if attachTo == 'FRAME' then
 		return frame
-	elseif attachTo == 'AURAS' and frame.Auras then
-		return frame.Auras
-	elseif attachTo == 'BUFFS' and frame.Buffs then
-		return frame.Buffs
-	elseif attachTo == 'DEBUFFS' and frame.Debuffs then
-		return frame.Debuffs
+	elseif attachTo == 'AURAS' and auras then
+		return auras
+	elseif attachTo == 'BUFFS' and buffs then
+		return buffs
+	elseif attachTo == 'DEBUFFS' and debuffs then
+		return debuffs
 	elseif attachTo == 'HEALTH' and frame.Health then
 		return frame.Health
 	elseif attachTo == 'POWER' and frame.Power then
@@ -667,20 +684,21 @@ do
 	end
 end
 
-function UF:Update_StatusBar(statusBar, texture)
-	if not statusBar then return end
+function UF:Update_StatusBar(bar, texture)
+	if not bar then return end
 
 	if not texture then
 		texture = LSM:Fetch('statusbar', UF.db.statusbar)
 	end
 
-	local useBlank = (statusBar.parent and statusBar.parent.isTransparent) or statusBar.isTransparent
+	local parent = bar.parent or bar:GetParent() -- (parent is only used in prediction on UF but its not called here) or bg parent
+	local useBlank = (parent and parent.isTransparent) or bar.isTransparent
 	local newTexture = (not useBlank and texture) or E.media.blankTex
 
-	if statusBar:IsObjectType('StatusBar') then
-		statusBar:SetStatusBarTexture(newTexture)
-	elseif statusBar:IsObjectType('Texture') then
-		statusBar:SetTexture(newTexture)
+	if bar:IsObjectType('StatusBar') then
+		bar:SetStatusBarTexture(newTexture)
+	elseif bar:IsObjectType('Texture') then
+		bar:SetTexture(newTexture)
 	end
 end
 
@@ -2118,11 +2136,12 @@ function UF:ToggleTransparentStatusBar(isTransparent, statusBar, backdropTex, ad
 	statusBar.invertColors = invertColors
 	statusBar.backdropTex = backdropTex
 
+	local parent = statusBar:GetParent()
 	local orientation = statusBar:GetOrientation()
 	local barTexture = statusBar:GetStatusBarTexture() -- This fixes Center Pixel offset problem (normally this has > 2 points)
 	barTexture:SetInside(nil, 0, 0) -- This also unsnaps the texture
 
-	UF:HandleStatusBarTemplate(statusBar, statusBar:GetParent(), isTransparent)
+	UF:HandleStatusBarTemplate(statusBar, parent, isTransparent)
 
 	if isTransparent then
 		statusBar:SetStatusBarTexture(E.media.blankTex)
@@ -2245,9 +2264,39 @@ do
 end
 
 function UF:UpdateAllElements(event)
-	if event == 'OnAttributeChanged' and E.Retail then
+	if event == 'OnAttributeChanged' then
 		UF:Configure_UnitAuras(self)
 	end
+end
+
+function UF:Auras_ToggleContainer(frame, shown)
+	E:Auras_ToggleEnable(frame.Auras, shown)
+	E:Auras_ToggleEnable(frame.Buffs, shown)
+	E:Auras_ToggleEnable(frame.Debuffs, shown)
+	E:Auras_ToggleEnable(frame.AuraBars, shown)
+	E:Auras_ToggleEnable(frame.AuraWatch, shown)
+
+	local highlight = frame.AuraHighlight
+	if highlight then
+		E:Auras_ToggleEnable(highlight.good, shown)
+		E:Auras_ToggleEnable(highlight.bad, shown)
+	end
+end
+
+function UF:Show()
+	if self.hasAurasShown then return end
+
+	self.hasAurasShown = true
+
+	UF:Auras_ToggleContainer(self, true)
+end
+
+function UF:Hide()
+	if not self.hasAurasShown then return end
+
+	self.hasAurasShown = false
+
+	UF:Auras_ToggleContainer(self, false)
 end
 
 function UF:AfterStyleCallback()
@@ -2256,13 +2305,25 @@ function UF:AfterStyleCallback()
 	-- that would cause the auras to be shown when a new frame is spawned (tank2, assist2)
 	-- even when they are disabled. this makes sure the update happens after so its proper.
 
-	local unit = self.unitframeType
-	if unit == 'tank' or unit == 'tanktarget' then
+	local frameType = self.unitframeType
+	if frameType == 'tank' or frameType == 'tanktarget' then
 		UF:Update_TankFrames(self, UF.db.units.tank)
 		UF:Update_FontStrings()
-	elseif unit == 'assist' or unit == 'assisttarget' then
+	elseif frameType == 'assist' or frameType == 'assisttarget' then
 		UF:Update_AssistFrames(self, UF.db.units.assist)
 		UF:Update_FontStrings()
+	end
+
+	-- these hooks below are used for aura container setup
+	-- only needed on retail and we dont need on nameplates
+	if not E.Retail or self.isNameplate then return end
+
+	if self.Show then
+		hooksecurefunc(self, 'Show', UF.Show)
+	end
+
+	if self.Hide then
+		hooksecurefunc(self, 'Hide', UF.Hide)
 	end
 
 	if self.UpdateAllElements then
@@ -2287,7 +2348,7 @@ function UF:Initialize()
 	UF.PingableInfo.guid = E.myguid
 	UF.thinBorders = UF.db.thinBorders
 	UF.multiplier = UF.db.multiplier or 0.35
-	UF.multiplierPrediction = 1.25
+	UF.multiplierPrediction = 0.8
 	UF.maxAllowedGroups = 8
 
 	UF.SPACING = (UF.thinBorders or E.twoPixelsPlease) and 0 or 1

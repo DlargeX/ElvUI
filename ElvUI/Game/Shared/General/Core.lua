@@ -3,11 +3,11 @@ local L = E.Libs.ACL:GetLocale('ElvUI', E:GetLocale())
 ElvUI[2] = L -- Locale doesn't exist yet, make it exist
 
 local _G = _G
+local rawset, setmetatable = rawset, setmetatable
 local tonumber, next, unpack, tostring = tonumber, next, unpack, tostring
-local strjoin, wipe, sort, tinsert, tremove, tContains = strjoin, wipe, sort, tinsert, tremove, tContains
+local wipe, sort, tinsert, tremove, tContains = wipe, sort, tinsert, tremove, tContains
 local format, strfind, strrep, strlen, sub, gsub = format, strfind, strrep, strlen, strsub, gsub
 local assert, type, pcall, xpcall, print = assert, type, pcall, xpcall, print
-local rawget, rawset, setmetatable = rawget, rawset, setmetatable
 local co_yield, co_resume, co_create, co_status = coroutine.yield, coroutine.resume, coroutine.create, coroutine.status
 
 local Mixin = Mixin
@@ -217,12 +217,6 @@ do
 	end
 end
 
-function E:Print(...)
-	local frame = E.db and _G[E.db.general.messageRedirect] or _G.DEFAULT_CHAT_FRAME
-	local msg = strjoin('', E.media.hexvaluecolor or '|cff00b3ff', 'ElvUI:|r ', ...)
-	frame:AddMessage(msg)
-end
-
 function E:GrabColorPickerValues(r, g, b)
 	-- we must block the execution path to `ColorCallback` in `AceGUIWidget-ColorPicker-ElvUI`
 	-- in order to prevent an infinite loop from `OnValueChanged` when passing into `E.UpdateMedia` which eventually leads here again.
@@ -259,9 +253,9 @@ end
 function E:CheckClassColor(r, g, b)
 	r, g, b = E:GrabColorPickerValues(r, g, b)
 
-	for class in next, _G.RAID_CLASS_COLORS do
-		if class ~= E.myclass then
-			local color = E:ClassColor(class, true)
+	for classToken in next, _G.RAID_CLASS_COLORS do
+		if classToken ~= E.myclass then
+			local color = E:ClassColor(classToken, true)
 			local red, green, blue = E:GrabColorPickerValues(color.r, color.g, color.b)
 			if red == r and green == g and blue == b then
 				return true
@@ -804,23 +798,6 @@ do
 	end
 end
 
-function E:CopyTable(current, default, merge)
-	if type(current) ~= 'table' then
-		current = {}
-	end
-
-	if type(default) == 'table' then
-		for option, value in next, default do
-			local isTable = type(value) == 'table'
-			if not merge or (isTable or current[option] == nil) then
-				current[option] = (isTable and E:CopyTable(current[option], value, merge)) or value
-			end
-		end
-	end
-
-	return current
-end
-
 function E:RemoveEmptySubTables(tbl)
 	if type(tbl) ~= 'table' then
 		E:Print('Bad argument #1 to \'RemoveEmptySubTables\' (table expected)')
@@ -1127,15 +1104,15 @@ do
 			local num = GetNumGroupMembers()
 			if num ~= SendRecieveGroupSize then
 				if num > 1 and num > SendRecieveGroupSize then
-					if not SendMessageWaiting then
-						SendMessageWaiting = E:Delay(10, E.SendMessage)
+					if not SendMessageWaiting then -- read UpdateAll about why E is packed
+						SendMessageWaiting = E:Delay(10, E.SendMessage, E)
 					end
 				end
 				SendRecieveGroupSize = num
 			end
 		elseif event == 'PLAYER_ENTERING_WORLD' then
-			if not SendMessageWaiting then
-				SendMessageWaiting = E:Delay(10, E.SendMessage)
+			if not SendMessageWaiting then -- read UpdateAll about why E is packed
+				SendMessageWaiting = E:Delay(10, E.SendMessage, E)
 			end
 		end
 	end
@@ -1754,44 +1731,48 @@ end
 function E:UpdateAll()
 	E:UpdateStart()
 
-	E:Delay(0.02, E.UpdateLayout)
-	E:Delay(0.04, E.UpdateDataBars)
-	E:Delay(0.06, E.UpdateDataTexts)
+	-- pack E for two reasons:
+	-- 1) incase self needs to be E
+	-- 2) SecureHook can cause failure (for plugins)
+
+	E:Delay(0.02, E.UpdateLayout, E)
+	E:Delay(0.04, E.UpdateDataBars, E)
+	E:Delay(0.06, E.UpdateDataTexts, E)
 
 	if Auras.BuffFrame or Auras.DebuffFrame then
-		E:Delay(0.08, E.UpdateAuras)
+		E:Delay(0.08, E.UpdateAuras, E)
 	end
 
 	if ActionBars.Initialized then
-		E:Delay(0.10, E.UpdateActionBars)
+		E:Delay(0.10, E.UpdateActionBars, E)
 	end
 
 	if NamePlates.Initialized then
-		E:Delay(0.12, E.UpdateNamePlates)
+		E:Delay(0.12, E.UpdateNamePlates, E)
 	end
 
 	if Bags.Initialized then
-		E:Delay(0.14, E.UpdateBags)
+		E:Delay(0.14, E.UpdateBags, E)
 	end
 
 	if Chat.Initialized then
-		E:Delay(0.16, E.UpdateChat)
+		E:Delay(0.16, E.UpdateChat, E)
 	end
 
 	if Tooltip.Initialized then
-		E:Delay(0.18, E.UpdateTooltip)
+		E:Delay(0.18, E.UpdateTooltip, E)
 	end
 
 	if Minimap.Initialized then
-		E:Delay(0.20, E.UpdateMinimap)
+		E:Delay(0.20, E.UpdateMinimap, E)
 	end
 
 	if UnitFrames.Initialized then
-		E:Delay(0.22, E.UpdateUnitFrames)
+		E:Delay(0.22, E.UpdateUnitFrames, E)
 	end
 
-	E:Delay(0.24, E.UpdateMisc)
-	E:Delay(0.26, E.UpdateEnd)
+	E:Delay(0.24, E.UpdateMisc, E)
+	E:Delay(0.26, E.UpdateEnd, E)
 end
 
 function E:CreateFonts()
@@ -2022,37 +2003,6 @@ function E:ConvertActionBarKeybinds()
 	end
 end
 
-do
-	-- Shamelessly taken from AceDB-3.0 and stripped down by Simpy
-	function E:CopyDefaults(dest, src)
-		for k, v in next, src do
-			if type(v) == 'table' then
-				if not rawget(dest, k) then rawset(dest, k, {}) end
-				if type(dest[k]) == 'table' then E:CopyDefaults(dest[k], v) end
-			elseif rawget(dest, k) == nil then
-				rawset(dest, k, v)
-			end
-		end
-
-		return dest
-	end
-
-	function E:RemoveDefaults(db, defaults)
-		setmetatable(db, nil)
-
-		for k, v in next, defaults do
-			if type(v) == 'table' and type(db[k]) == 'table' then
-				E:RemoveDefaults(db[k], v)
-				if next(db[k]) == nil then db[k] = nil end
-			elseif db[k] == defaults[k] then
-				db[k] = nil
-			end
-		end
-
-		return db
-	end
-end
-
 function E:OnEnable()
 	E:Initialize()
 end
@@ -2091,7 +2041,6 @@ function E:Initialize()
 
 		if E.Retail then
 			E:Tutorials()
-			E:InitializeAuras()
 		end
 
 		if E.db.general.tagUpdateRate and (E.db.general.tagUpdateRate ~= P.general.tagUpdateRate) then

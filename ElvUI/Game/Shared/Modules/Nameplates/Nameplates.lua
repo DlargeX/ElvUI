@@ -45,9 +45,17 @@ local Blacklist = {
 }
 
 NP.AuraContainers = {}
+NP.AuraContainerFilterTypes = {}
+NP.AuraContainerFilterKeys = {
+	PLAYER = 'Player',
+	ENEMY_PLAYER = 'EnemyPlayer',
+	FRIENDLY_PLAYER = 'FriendlyPlayer',
+	ENEMY_NPC = 'EnemyNPC',
+	FRIENDLY_NPC = 'FriendlyNPC'
+}
 
 for key in next, Blacklist do
-	NP.AuraContainers[key] = {}
+	NP.AuraContainerFilterTypes[key] = {}
 end
 
 function NP:ResetAuraPriority()
@@ -55,26 +63,30 @@ function NP:ResetAuraPriority()
 		local default = P.nameplates.units[unitType]
 		if default then
 			local buffs = content.buffs
-			if buffs and buffs.filters then
-				buffs.filters.priority = default.buffs.filters.priority
+			if buffs then
+				if buffs.filters then
+					buffs.filters.priority = default.buffs.filters.priority
+				end
+
+				if buffs.filterLists then
+					UF:ResetFilters_AuraGroup(buffs.filterLists, default.buffs.filterLists)
+				end
 			end
 
 			local debuffs = content.debuffs
-			if debuffs and debuffs.filters then
-				debuffs.filters.priority = default.debuffs.filters.priority
+			if debuffs then
+				if debuffs.filters then
+					debuffs.filters.priority = default.debuffs.filters.priority
+				end
+
+				if debuffs.filterLists then
+					UF:ResetFilters_AuraGroup(debuffs.filterLists, default.debuffs.filterLists)
+				end
 			end
 
 			local auras = content.auras
-			if auras then
+			if auras and auras.filterLists then
 				UF:ResetFilters_AuraGroup(auras.filterLists, default.auras.filterLists)
-			end
-
-			if buffs then
-				UF:ResetFilters_AuraGroup(buffs.filterLists, default.buffs.filterLists)
-			end
-
-			if debuffs then
-				UF:ResetFilters_AuraGroup(debuffs.filterLists, default.debuffs.filterLists)
 			end
 		end
 	end
@@ -100,7 +112,7 @@ do
 			frameType = nameplate and nameplate.frameType
 		end
 
-		return NP.db.units[frameType] or empty
+		return (NP.db.units and NP.db.units[frameType]) or empty
 	end
 end
 
@@ -202,7 +214,7 @@ function NP:Style(unit)
 	local frameName = self:GetName()
 	self.frameName = frameName
 	self.blizzPlate = plate.UnitFrame
-	self.isNamePlate = true -- used in auraskip
+	self.isNameplate = true -- used in auraskip
 
 	if frameName == 'ElvNP_Player' then
 		NP.PlayerFrame = self
@@ -315,6 +327,7 @@ function NP:StylePlate(nameplate)
 	nameplate:ClearAllPoints()
 	nameplate:Point('CENTER')
 
+	nameplate.ActiveContainers = {} -- aura containers
 	nameplate.StackingBounds = NP:Construct_StackingBounds(nameplate)
 	nameplate.RaisedElement = NP:Construct_RaisedElement(nameplate)
 	nameplate.Health = NP:Construct_Health(nameplate)
@@ -596,13 +609,17 @@ function NP:ConfigurePlates(init)
 	end
 
 	if E.Retail then
-		NP:Configure_AuraContainers()
+		NP:AuraContainer_ConstructFilters() -- rebuilds the filters
 	end
 
 	local staticEvent = (NP.db.units.PLAYER.enable and NP.db.units.PLAYER.useStaticPosition) and 'NAME_PLATE_UNIT_ADDED' or 'NAME_PLATE_UNIT_REMOVED'
 	local staticFunc = NP[staticEvent]
 	if init then -- since this is a fake plate, we actually need to trigger this always
 		staticFunc(NP.PlayerFrame, staticEvent, 'player')
+
+		if E.Retail then
+			NP:AuraContainer_ConstructContainers() -- this spawns the containers
+		end
 
 		NP.PlayerFrame:UpdateAllElements('ForceUpdate')
 	else -- however, these only need to happen when changing options
@@ -777,7 +794,7 @@ function NP:NAME_PLATE_UNIT_ADDED(_, unit)
 	NP:UpdatePlateSize(self)
 
 	if E.Retail then
-		NP:Configure_AuraUnit(self)
+		self.AuraContainer = NP:AuraContainer_SetActive(self)
 	end
 
 	self.softTargetFrame = self.blizzPlate and self.blizzPlate.SoftTargetFrame
@@ -831,6 +848,10 @@ function NP:NAME_PLATE_UNIT_REMOVED(event, unit)
 	end
 
 	NP:UpdateNumPlates()
+
+	if E.Retail then
+		NP:AuraContainer_RemoveActive(self)
+	end
 
 	if self.softTargetFrame then
 		self.softTargetFrame:SetParent(self.blizzPlate)

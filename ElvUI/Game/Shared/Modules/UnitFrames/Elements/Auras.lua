@@ -309,7 +309,7 @@ function UF:GroupFilters(frame, list)
 			candidates.maxDuration = info.maxDuration
 
 			for candidate in next, E.AuraCandidates do
-				local value = data.candidates[candidate]
+				local value = data.candidates and data.candidates[candidate]
 				if value == 1 then -- grey is exclude
 					candidates[candidate] = false
 				else
@@ -380,7 +380,7 @@ function UF:Configure_AllAuras(frame)
 end
 
 function UF:GetAuraElements(frame)
-	if frame.isNamePlate then
+	if frame.isNameplate then
 		return frame.Buffs_, frame.Debuffs_
 	else
 		return frame.Buffs, frame.Debuffs
@@ -388,10 +388,13 @@ function UF:GetAuraElements(frame)
 end
 
 function UF:SetSmartPosition(frame, db)
-	if frame.isNamePlate then db = NP:PlateDB(frame) end
+	if frame.isNameplate then db = NP:PlateDB(frame) end
+	if not db then return end
+
+	local buffs, debuffs = UF:GetAuraElements(frame)
+	if not buffs or not debuffs then return end
 
 	local position = db.smartAuraPosition
-	local buffs, debuffs = UF:GetAuraElements(frame)
 	local info = UF.SmartPosition[position]
 	if info then
 		local TO = db[strlower(info.to)]
@@ -468,7 +471,7 @@ function UF:Configure_Auras(frame, which)
 
 	local initialAnchor = (UF.SideAnchor[settings.anchorPoint] and E.InversePoints[settings.anchorPoint]) or (UF.GrowthPoints[settings.growthY]..UF.GrowthPoints[settings.growthX])
 	if E.Retail then
-		auras:SetEnabled(settings.enable)
+		auras.allowEnable = settings.enable
 
 		auras.isUnitframe = true
 		auras.auraType = auraType
@@ -520,9 +523,6 @@ function UF:Configure_Auras(frame, which)
 		auras.disableMouse = settings.clickThrough
 		auras.filterList = UF:ConvertFilters(auras, settings.priority)
 
-		auras:SetFrameStrata(settings.strataAndLevel and settings.strataAndLevel.useCustomStrata and settings.strataAndLevel.frameStrata or 'LOW')
-		auras:SetFrameLevel((settings.strataAndLevel and settings.strataAndLevel.useCustomLevel and settings.strataAndLevel.frameLevel) or (frame.RaisedElementParent and frame.RaisedElementParent.AuraLevel) or 1)
-
 		local index = 1
 		while auras[index] do
 			local button = auras[index]
@@ -538,6 +538,8 @@ function UF:Configure_Auras(frame, which)
 
 	auras:ClearAllPoints()
 	auras:Point(auras.initialAnchor, auras.attachTo, auras.anchorPoint, auras.xOffset, auras.yOffset - (smartFluid and 1 or 0))
+	auras:SetFrameStrata((settings.strataAndLevel and settings.strataAndLevel.useCustomStrata and settings.strataAndLevel.frameStrata) or 'LOW')
+	auras:SetFrameLevel((settings.strataAndLevel and settings.strataAndLevel.useCustomLevel and settings.strataAndLevel.frameLevel) or frame.RaisedElementParent.AuraLevel)
 
 	if settings.enable then
 		auras:Show()

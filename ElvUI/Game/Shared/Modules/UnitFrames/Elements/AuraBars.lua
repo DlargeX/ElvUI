@@ -125,11 +125,11 @@ function UF:Configure_AuraBars(frame)
 		bars.reverseFill = bars.db.reverseFill
 		bars.friendlyAuraType = db.friendlyAuraType
 		bars.enemyAuraType = db.enemyAuraType
-		bars.disableMouse = db.clickThrough
 		bars.auraSort = UF.SortAuraFuncs[E.Retail and 'PLAYER' or db.sortMethod]
 		bars.tooltipAnchor = db.tooltipAnchorType
 		bars.tooltipAnchorX = db.tooltipAnchorX
 		bars.tooltipAnchorY = db.tooltipAnchorY
+		bars.customBackdropColor = UF.db.colors.customaurabarbackdrop and E:UpdateClassColor(UF.db.colors.aurabar_backdrop)
 
 		for _, bar in ipairs(bars) do
 			UF:AuraBars_UpdateBar(bar)
@@ -210,25 +210,30 @@ function UF:Configure_AuraBars(frame)
 			bars.size = db.height
 			bars.numAuras = db.maxBars
 			bars.maxFrameCount = db.maxBars
+			bars.lineSpacing = bars.spacing
 			bars.isTransparent = UF.db.colors.transparentAurabars -- always on for now
 			bars.invertAurabars = UF.db.colors.invertAurabars
 			bars.sortMethod = E.AuraContainerSortMethod[db.sortMethod]
 			bars.statusbarTexture = LSM:Fetch('statusbar', UF.db.statusbar)
 			bars.countPosition, bars.countXOffset, bars.countYOffset = db.countPosition, db.countXOffset, db.countYOffset
 			bars.countFont, bars.countFontSize, bars.countFontOutline = db.countFont, db.countFontSize, db.countFontOutline
+			bars.textFont, bars.textFontSize, bars.textFontOutline = UF.db.font, UF.db.fontSize, UF.db.fontOutline
 			bars.friendlyFilter = db.friendlyFilter.filterLists
 			bars.enemyFilter = db.enemyFilter.filterLists
+			bars.noMouse = db.clickThrough
 			bars.forceShowAuras = frame.forceShowAuras
-			bars.customBackdropColor = UF.db.colors.customaurabarbackdrop and UF.db.colors.aurabar_backdrop or nil
 
 			UF:AuraBars_UpdateFilter(bars, frame.__unit)
 
 			E:Auras_GroupUnit(bars, frame.__unit)
 			E:Auras_SetContainer(bars)
 			E:Auras_SetLineSize(bars)
+			E:Auras_UpdateButtons(bars)
 
-			bars:SetEnabled(true)
+			bars.allowEnable = true
 		else
+			bars.disableMouse = db.clickThrough
+
 			E:UpdateClassColor(UF.db.colors.auraBarBuff)
 			E:UpdateClassColor(UF.db.colors.auraBarDebuff)
 
@@ -240,7 +245,7 @@ function UF:Configure_AuraBars(frame)
 		end
 
 		if E.Retail then
-			bars:SetEnabled(false)
+			bars.allowEnable = false
 		end
 
 		bars:Hide()
@@ -281,6 +286,8 @@ function UF:PostUpdateBar_AuraBars(unit, bar, _, _, _, _, debuffType) -- unit, b
 		color = (isDebuff and colors.auraBarDebuff) or colors.auraBarBuff
 	end
 
+	bar.custom_backdrop = self.customBackdropColor
+
 	local text = self.db and self.db.abbrevName and spellName and E.TagFunctions.Abbrev(spellName)
 	if text then -- this is a copy from oUF we just change the text
 		if E:IsSecretValue(bar.count) then
@@ -310,8 +317,6 @@ function UF:PostUpdateBar_AuraBars(unit, bar, _, _, _, _, debuffType) -- unit, b
 			UF:SetStatusBarBackdropPoints(bar, bar:GetStatusBarTexture(), bar.bg, orientation)
 		end
 	end
-
-	bar.custom_backdrop = colors.customaurabarbackdrop and colors.aurabar_backdrop
 
 	if color then
 		UF:SetStatusBarColor(bar, color.r, color.g, color.b)

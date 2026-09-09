@@ -1,3 +1,60 @@
+### Version 15.26 [ August 29th 2026 ]
+*   Item level display for enchants will appear cleaner (regardless of abbreviate setting).
+*   Chat tabs had an unneeded workaround that was causing trouble, removed it.
+*   CreateShadow sometimes causing a secret error (plugin related).
+*   Nameplate reload would sometimes cause an error if a nameplate was removed while profile was switching.
+*   Aura containers protected from failure when a unitframe is tiny: elementWidth can't be a negative value.
+*   Experience Datatext can show housing level in the tooltip when tracked (same with Databar).
+*   Experience Databar will swap to tracked housing at max level (when shown at max level).
+*   Aura highlight has several fixes and updating spells without a reload works again.
+*   Aura highlight should work again for totems on shamans (or others classes were it wasn't).
+*   Top Aura status bars were not using the color set in config (color by value does not work still).
+*   Quick join Datatext and Chat message should work again (rather than saying Unknown; Thanks Dack).
+*   Aura containers on nameplates reanchored (fixes leveling issue; Thanks Plusmouse).
+*   Mage Arcane Missile ticks on castbar for Amplification (still need to do 2 set bonus).
+*   Aura indicator count text works again.
+
+### Version 15.25 [ August 22nd 2026 ]
+*   **Auras**
+    *   Filter defaults adjusted further.
+    *   Aura container eventing handled slightly differently.
+    *   Aura container range event removed, as it was causing auras to not appear on frames.
+    *   Nameplate Aura containers are now pre-allocated to reduce lag when a new plate first appears.
+    *   Aura container spacing adjusted.
+    *   Aurabars should stay on a single line now.
+    *   Aurabars custom backdrop color will update when its set to a class color.
+    *   Top aura enchantments should update when changing settings and use the correct spacing.
+    *   Aura desaturate icon will work when a group contains a !PLAYER (reload required atm).
+    *   Top aura Masque groups readded. (Thanks miklas206)
+    *   Arena preparation frames were breaking auras on arena frames.
+*   **Other**
+    *   Quest parchment still had a few bugs.
+    *   Raid marker keybind error prevented; however on Retail, it won't function in combat currently.
+
+### Version 15.24 [ August 19th 2026 ]
+*   **Major Filter Changes**
+    *   Please read 15.23 log entry.
+*   Quest parchment wasn't appearing properly.
+*   Party buffs weren't displaying properly for player.
+*   Unitframe additional power was throwing an error.
+*   Unitframe auras obey their strata and level settings.
+
+### Version 15.23 [ August 19th 2026 ]
+*   **Major Filter Changes** with in-game Guide in filter section (also a Filter Guide tab in aura sections).
+*   **Cancel Auras**  Player auras can be right-click canceled off on unitframes (when click-through is disabled).
+*   **Filter Defaults**  All filter defaults were updated; past configurations are no longer used with the new system.
+    *   Entirely new configuration for midnight aura filtering.
+    *   Top auras can be filtered the same as unitframes and nameplates.
+    *   Top auras anchor to its mover properly again.
+    *   Top auras have the correct border colors again.
+*   **Other Changes**
+    *   Crest datatext updated.
+    *   Enemy unit pings won't explode with errors.
+    *   Aura indicator size adjusted to be like previous versions.
+    *   Minimap location text not setting properly with mouseover enabled.
+    *   Quest pages should use the Blizzard art correctly when parchment is enabled.
+    *   Reverted a change to charge cooldowns.
+
 ### Version 15.22 [ August 15th 2026 ]
 *   **Auras**
     *   Buff highlighting works again (Filters > Aura Highlight).

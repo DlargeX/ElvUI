@@ -8,7 +8,6 @@ local pairs = pairs
 local ipairs = ipairs
 local unpack = unpack
 
-local CopyTable = CopyTable
 local CreateFrame = CreateFrame
 
 local MAX_COMBO_POINTS = MAX_COMBO_POINTS
@@ -28,10 +27,10 @@ local AltManaTypes = {
 }
 
 local ManaType = { powerName = 'MANA', powerType = 0 }
-UF.ALT_POWER_INFO = _G.ALT_POWER_BAR_PAIR_DISPLAY_INFO and CopyTable(_G.ALT_POWER_BAR_PAIR_DISPLAY_INFO) or {
-	DRUID = { [8] = CopyTable(ManaType) },		-- LunarPower
-	SHAMAN = { [11] = CopyTable(ManaType) },	-- Maelstrom
-	PRIEST = { [13] = CopyTable(ManaType) }		-- Insanity
+UF.ALT_POWER_INFO = _G.ALT_POWER_BAR_PAIR_DISPLAY_INFO and E:CopyTable({}, _G.ALT_POWER_BAR_PAIR_DISPLAY_INFO) or {
+	DRUID = { [8] = E:CopyTable({}, ManaType) },		-- LunarPower
+	SHAMAN = { [11] = E:CopyTable({}, ManaType) },	-- Maelstrom
+	PRIEST = { [13] = E:CopyTable({}, ManaType) }		-- Insanity
 }
 
 UF.ClassPowerTypes = { 'ClassPower', 'AdditionalPower', 'Runes', 'Stagger', 'Totems', 'AlternativePower', 'EclipseBar' }
@@ -401,14 +400,16 @@ function UF:ToggleResourceBar()
 	local frame = self.origParent or self:GetParent()
 
 	local db = frame.db
-	if not db then return end
+	if not db or not db.classbar then return end
 
-	frame.CLASSBAR_SHOWN = frame[frame.ClassBar]:IsShown()
+	local shown = frame[frame.ClassBar]:IsShown()
+	if self.text then
+		self.text:SetAlpha(shown and 1 or 0)
+	end
 
-	if self.text then self.text:SetAlpha(frame.CLASSBAR_SHOWN and 1 or 0) end
-
+	frame.CLASSBAR_SHOWN = shown
 	frame.CLASSBAR_HEIGHT = (frame.USE_CLASSBAR and db.classbar.height) or (frame.AlternativePower and db.power.height) or 0
-	frame.CLASSBAR_YOFFSET = ((not frame.USE_CLASSBAR or not frame.CLASSBAR_SHOWN or frame.CLASSBAR_DETACHED)) and 0 or (frame.USE_MINI_CLASSBAR and ((UF.SPACING+(frame.CLASSBAR_HEIGHT*0.5))) or (frame.CLASSBAR_HEIGHT - (UF.BORDER-UF.SPACING)))
+	frame.CLASSBAR_YOFFSET = (not shown or not frame.USE_CLASSBAR or frame.CLASSBAR_DETACHED) and 0 or (frame.USE_MINI_CLASSBAR and (UF.SPACING + (frame.CLASSBAR_HEIGHT * 0.5))) or (frame.CLASSBAR_HEIGHT - (UF.BORDER - UF.SPACING))
 
 	UF:Configure_CustomTexts(frame)
 	UF:Configure_HealthBar(frame)
@@ -657,7 +658,7 @@ function UF:PostColorAdditionalPower(unit, color)
 		if pred and pred.enable then
 			UF:SetStatusBarColor(bar, pred.additional.r, pred.additional.g, pred.additional.b)
 		else
-			UF:SetStatusBarColor(bar, r * UF.multiplierPrediction, g * UF.multiplierPrediction, b * UF.multiplierPrediction)
+			UF:SetStatusBarColor(bar, r, g, b, nil, UF.multiplierPrediction)
 		end
 	end
 end
@@ -666,7 +667,7 @@ function UF:PostUpdateAdditionalPower(CUR, MAX, event)
 	local frame = self.origParent or self:GetParent()
 	local db = frame.db
 
-	self:SetShown((frame.USE_CLASSBAR and event ~= 'ElementDisable') and (not db.classAdditional.autoHide or (E:IsSecretValue(CUR) or CUR ~= MAX)) and (not E.Mists or E.myclass ~= 'MONK' or E.myspec == SPEC_MONK_MISTWEAVER))
+	self:SetShown((frame.USE_CLASSBAR and event ~= 'ElementDisable') and (not (db and db.classAdditional and db.classAdditional.autoHide) or (E:IsSecretValue(CUR) or CUR ~= MAX)) and (not E.Mists or E.myclass ~= 'MONK' or E.myspec == SPEC_MONK_MISTWEAVER))
 end
 
 function UF:PostVisibilityAdditionalPower()

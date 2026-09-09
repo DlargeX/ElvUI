@@ -852,7 +852,7 @@ function CH:EditBoxOnKeyDown(key)
 
 	-- Override to allow using default editbox history for secure commands
 	-- Require holding alt when restricted: will use default editbox history
-	if IsAltKeyDown() or E:IsRestrictedChat() then return end
+	if IsAltKeyDown() or E:IsRestrictedInstance() then return end
 
 	local maxLines = #lines
 	if maxLines == 0 then return end
@@ -973,9 +973,7 @@ function CH:StyleChat(frame)
 	frame:SetMaxLines(CH.db.maxLines)
 	frame:SetFading(CH.db.fade)
 
-	if tab.Text then
-		tab:SetScript('OnUpdate', CH.Tab_OnUpdate)
-	end
+	tab.Text:FontTemplate(CH.db.tabFont, CH.db.tabFontSize, CH.db.tabFontOutline)
 
 	if not IsCombatLog(frame) then -- setting this script to log is problematic on retail
 		tab:SetScript('OnClick', CH.Tab_OnClick)
@@ -991,6 +989,10 @@ function CH:StyleChat(frame)
 		if communities then
 			communities:FontTemplate(font, size, outline)
 		end
+	end
+
+	if not frame.isDocked then
+		PanelTemplates_TabResize(tab, tab.sizePadding or 0)
 	end
 
 	if frame.styled then return end
@@ -2873,7 +2875,7 @@ end
 
 function CH:AddLines(lines, ...)
 	for i = select('#', ...), 1, -1 do
-	local x = select(i, ...)
+		local x = select(i, ...)
 		if x:IsObjectType('FontString') and not x:GetName() then
 			tinsert(lines, x:GetText())
 		end
@@ -3189,17 +3191,21 @@ function CH:SocialQueueEvent(_, guid, numAddedItems) -- event, guid, numAddedIte
 
 	local firstData = firstQueue.queueData
 	if firstQueue.eligible and (firstData and firstData.queueType == 'lfglist') then
-		local activityID, activityInfo, name, leaderName, isLeader
-		if firstData.lfgListID then
-			local searchInfo = C_LFGList_GetSearchResultInfo(firstData.lfgListID)
-			if searchInfo then
-				activityID, name, leaderName = searchInfo.activityID, searchInfo.name, searchInfo.leaderName
-				isLeader = CH:SocialQueueIsLeader(playerName, leaderName)
-			end
+		local listID, activityID, activityInfo, name, leaderName, isLeader = firstData.lfgListID
+		local searchInfo = listID and C_LFGList_GetSearchResultInfo(listID)
+		if searchInfo then
+			local activities = searchInfo.activityIDs
+			activityID = E:NotSecretTable(activities) and activities and activities[1]
+			name, leaderName = searchInfo.name, searchInfo.leaderName
+			isLeader = CH:SocialQueueIsLeader(playerName, leaderName)
 		end
 
-		if activityID or firstData.activityID then
-			activityInfo = C_LFGList_GetActivityInfoTable(activityID or firstData.activityID)
+		if not activityID then
+			activityID = firstData.activityID
+		end
+
+		if activityID then
+			activityInfo = C_LFGList_GetActivityInfoTable(activityID)
 		end
 
 		CH:SocialQueueMessage(guid, format(name and '%s %s: [%s] |cff00CCFF%s|r' or '%s %s: |cff00CCFF%s|r', coloredName, (isLeader and L["is looking for members"]) or L["joined a group"], activityInfo and activityInfo.fullName or UNKNOWN, name))
@@ -3997,21 +4003,6 @@ end
 function CH:Tab_OnClick(button)
 	CH.FCF_Tab_OnClick(self, button)
 	PlaySound(SOUND_U_CHAT_SCROLL_BUTTON)
-end
-
-function CH:Tab_OnUpdate(elapsed)
-	self.lastUpdate = (self.lastUpdate or 0) + elapsed
-
-	if self.lastUpdate > 0.1 and self.Text:GetFontObject() == _G.GameFontNormalSmall then
-		self.Text:FontTemplate(CH.db.tabFont, CH.db.tabFontSize, CH.db.tabFontOutline)
-
-		local chat = CH:GetOwner(self)
-		if chat and chat.isDocked then
-			_G.FCF_DockUpdate()
-		else
-			PanelTemplates_TabResize(self, self.sizePadding or 0)
-		end
-	end
 end
 
 do

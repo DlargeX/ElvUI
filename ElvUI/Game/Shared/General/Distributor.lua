@@ -29,6 +29,15 @@ local REQUEST_PREFIX = 'ELVUI_REQUEST'
 local REPLY_PREFIX = 'ELVUI_REPLY'
 local TRANSFER_PREFIX = 'ELVUI_TRANSFER'
 local TRANSFER_COMPLETE_PREFIX = 'ELVUI_COMPLETE'
+local LETTERS_MAX = 50 -- forced by Ace3 for some reason?
+local LETTERS_WIDTH = 350
+
+local profileTypes = {
+	profile = true,
+	private = true,
+	global = true,
+	filters = true
+}
 
 -- The active downloads
 local Downloads = {}
@@ -321,8 +330,8 @@ function D:OnCommReceived(prefix, msg, dist, sender)
 					confirm.button1 = ACCEPT
 					confirm.button2 = nil
 					confirm.hasEditBox = 1
-					confirm.editBoxWidth = 350
-					confirm.maxLetters = 127
+					confirm.editBoxWidth = LETTERS_WIDTH
+					confirm.maxLetters = LETTERS_MAX
 					confirm.timeout = 0
 					confirm.exclusive = 1
 					confirm.preferredIndex = 3
@@ -481,57 +490,64 @@ function D:GetImportStringType(dataString)
 	return (strmatch(dataString, '^'..EXPORT_PREFIX) and 'Deflate') or (strmatch(dataString, '^{') and 'Table') or ''
 end
 
+function D:GetExportInfo(str)
+	local profileData, profileType, profileKey = strmatch(str, '(.+)::([^:]-)::(.-)$')
+	if profileTypes[profileType] then
+		return profileData, profileType, profileKey
+	end
+
+	local exportData, exportType = strmatch(str, '(.+)::([^:]-)$')
+	if profileTypes[exportType] then
+		return exportData, exportType
+	end
+end
+
 function D:Decode(dataString)
 	if D:IsPreviousImport(dataString) then
 		E:Print('This import needs to be upgraded: https://github.com/tukui-org/ElvUI/wiki/export')
 	end
 
 	local stringType = D:GetImportStringType(dataString)
-	local profileInfo, profileType, profileKey, profileData
+	local profileData, profileType, profileKey
 
 	if stringType == 'Deflate' then
 		local data = gsub(dataString, '^'..EXPORT_PREFIX, '')
 		local decodedData = DecodeBase64(data)
 		local decompressed = DecompressString(decodedData, COMPRESS)
-
 		if not decompressed then
 			E:Print('Error decompressing data.')
 			return
 		end
 
-		local serializedData
-		serializedData, profileType, profileKey = E:SplitString(decompressed, '::')
-
-		profileData = DeserializeCBOR(serializedData)
-
+		profileData, profileType, profileKey = D:GetExportInfo(decompressed)
 		if not profileData then
-			E:Print('Error deserializing:', profileData)
+			E:Print('Error extracting data to deserialize.')
+			return
+		end
+
+		profileData = DeserializeCBOR(profileData)
+		if not profileData then
+			E:Print('Error deserializing data.')
 			return
 		end
 	elseif stringType == 'Table' then
-		local profileDataAsString
-		profileDataAsString, profileInfo = E:SplitString(dataString, '}::') -- '}::' indicates the end of the table
-
-		if not profileInfo then
-			E:Print('Error extracting profile info. Invalid import string!')
+		profileData, profileType, profileKey = D:GetExportInfo(dataString)
+		if not profileData then
+			E:Print('Error extracting data to table.')
 			return
 		end
 
-		if not profileDataAsString then
-			E:Print('Error extracting profile data. Invalid import string!')
-			return
+		local profileText = gsub(profileData, '\124\124', '\124') -- Remove escape pipe characters
+		local profileFunc = format('%s %s', 'return', profileText)
+
+		local success
+		local profileTable = loadstring(profileFunc)
+		if profileTable then
+			success, profileData = pcall(profileTable)
 		end
 
-		profileDataAsString = format('%s%s', profileDataAsString, '}') --Add back the missing '}'
-		profileDataAsString = gsub(profileDataAsString, '\124\124', '\124') --Remove escape pipe characters
-		profileType, profileKey = E:SplitString(profileInfo, '::')
-
-		local profileMessage
-		local profileToTable = loadstring(format('%s %s', 'return', profileDataAsString))
-		if profileToTable then profileMessage, profileData = pcall(profileToTable) end
-
-		if profileMessage and (not profileData or type(profileData) ~= 'table') then
-			E:Print('Error converting lua string to table:', profileMessage)
+		if not success or (type(profileData) ~= 'table') then
+			E:Print('Error converting data to table.')
 			return
 		end
 	end
@@ -642,8 +658,8 @@ E.PopupDialogs.IMPORT_PROFILE_EXISTS = {
 	button1 = ACCEPT,
 	button2 = CANCEL,
 	hasEditBox = 1,
-	editBoxWidth = 350,
-	maxLetters = 127,
+	editBoxWidth = LETTERS_WIDTH,
+	maxLetters = LETTERS_MAX,
 	OnAccept = function(frame, data)
 		D:SetImportedProfile(data.profileType, frame.editBox:GetText(), data.profileData, true)
 	end,

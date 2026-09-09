@@ -10,9 +10,8 @@ local setmetatable = setmetatable
 local hooksecurefunc = hooksecurefunc
 local type, pairs, unpack, strmatch = type, pairs, unpack, strmatch
 local wipe, max, next, tinsert, date, time = wipe, max, next, tinsert, date, time
-local pcall, strlen, tonumber, tostring = pcall, strlen, tonumber, tostring
+local pcall, strlen, tonumber = pcall, strlen, tonumber
 
-local CopyTable = CopyTable
 local CreateFrame = CreateFrame
 local GetBattlefieldArenaFaction = GetBattlefieldArenaFaction
 local GetGameTime = GetGameTime
@@ -49,8 +48,6 @@ local UnitIsPlayer = UnitIsPlayer
 local UnitSex = UnitSex
 local UnitThreatSituation = UnitThreatSituation
 local UnitSelectionType = UnitSelectionType
-local UIParentLoadAddOn = UIParentLoadAddOn
-local LoadAddOnWithErrorHandling = LoadAddOnWithErrorHandling
 
 local WorldFrame = WorldFrame
 local GetWatchedFactionInfo = GetWatchedFactionInfo
@@ -66,6 +63,10 @@ local CreateCurve = C_CurveUtil.CreateCurve
 local CreateColorCurve = C_CurveUtil.CreateColorCurve
 local GetColorDataForItemQuality = ColorManager and ColorManager.GetColorDataForItemQuality
 local GetAuraDataByIndex = C_UnitAuras.GetAuraDataByIndex
+
+local GetTrackedHouseGuid = C_Housing and C_Housing.GetTrackedHouseGuid
+local GetCurrentHouseLevelFavor = C_Housing and C_Housing.GetCurrentHouseLevelFavor
+local GetHouseLevelFavorForLevel = C_Housing and C_Housing.GetHouseLevelFavorForLevel
 
 local GetSpecialization = C_SpecializationInfo.GetSpecialization or GetSpecialization
 local GetSpecializationInfo = C_SpecializationInfo.GetSpecializationInfo or GetSpecializationInfo
@@ -481,19 +482,6 @@ do
 	end
 end
 
-do -- backwards compatibility for GetMouseFocus
-	local GetMouseFocus = GetMouseFocus
-	local GetMouseFoci = GetMouseFoci
-	function E:GetMouseFocus()
-		if GetMouseFoci then
-			local frames = GetMouseFoci()
-			return frames and frames[1]
-		else
-			return GetMouseFocus()
-		end
-	end
-end
-
 do
 	function E:GetSpellInfo(spellID)
 		local info = spellID and C_Spell_GetSpellInfo(spellID)
@@ -778,7 +766,7 @@ do
 	}
 
 	function E:SetupCustomClassColors()
-		local object = CopyTable(_G.RAID_CLASS_COLORS)
+		local object = E:CopyTable({}, _G.RAID_CLASS_COLORS)
 
 		_G.CUSTOM_CLASS_COLORS = setmetatable(object, meta)
 
@@ -858,30 +846,6 @@ do
 
 	if Masque then
 		Masque:Register('ElvUI', E.MasqueCallback)
-	end
-end
-
-function E:LoadAddon(addon)
-	if UIParentLoadAddOn then
-		return UIParentLoadAddOn(addon)
-	elseif LoadAddOnWithErrorHandling then
-		LoadAddOnWithErrorHandling(addon)
-	end
-end
-
-function E:Dump(object, inspect)
-	local debugTools = IsAddOnLoaded('Blizzard_DebugTools')
-	if not debugTools then E:LoadAddon('Blizzard_DebugTools') end
-
-	if inspect then
-		local tableType = type(object)
-		if tableType == 'table' then
-			_G.DisplayTableInspectorWindow(object)
-		else
-			E:Print('Failed: ', tostring(object), ' is type: ', tableType,'. Requires table object.')
-		end
-	else
-		_G.DevTools_Dump(object)
 	end
 end
 
@@ -1286,6 +1250,44 @@ function E:CropRatio(width, height, mult, left, right, top, bottom, factor)
 	return left, right, top, bottom
 end
 
+function E:UpdateHouseFavor(data, event, info)
+	if event == 'TRACKED_HOUSE_CHANGED' or event == 'ELVUI_FORCE_UPDATE' then
+		local houseGUID = GetTrackedHouseGuid()
+		if houseGUID then
+			data.houseGUID = houseGUID
+			GetCurrentHouseLevelFavor(houseGUID) -- trigger HOUSE_LEVEL_FAVOR_UPDATED
+		else
+			wipe(data) -- clear when we stop tracking
+		end
+	elseif event == 'HOUSE_LEVEL_FAVOR_UPDATED' then
+		if data.houseGUID == info.houseGUID then
+			local actualLevel = info.houseLevel
+			local displayLevel = actualLevel + 1
+
+			data.actualLevel = actualLevel
+			data.displayLevel = displayLevel
+
+			local minXP = GetHouseLevelFavorForLevel(actualLevel)
+			local maxXP = GetHouseLevelFavorForLevel(displayLevel)
+
+			local houseXP = info.houseFavor
+			local sectionCurrent = houseXP - minXP
+			local sectionLevel = maxXP - minXP
+			local sectionPercent = (sectionCurrent / sectionLevel) * 100
+
+			data.houseFavor = houseXP
+			data.minBar = minXP
+			data.maxBar = maxXP
+			data.remainLevel = maxXP - houseXP
+			data.sectionCurrent = sectionCurrent
+			data.sectionLevel = sectionLevel
+			data.sectionPercent = sectionPercent
+		end
+	end
+
+	return data.houseFavor, data.sectionPercent
+end
+
 function E:ScanTooltip_UnitInfo(unit)
 	if C_TooltipInfo_GetUnit then
 		return C_TooltipInfo_GetUnit(unit)
@@ -1455,20 +1457,36 @@ function E:IsInRestrictionState(which)
 	return E:CheckRestrictionState(which) > 1
 end
 
-function E:IsRestrictedPvPMatch()
-	return GetCVarBool('addonPvPMatchRestrictionsForced') or E:IsInRestrictionState('PvPMatch')
-end
-
-function E:IsRestrictedCombat()
+function E:IsRestrictedCombat() -- enum 0
 	return GetCVarBool('addonCombatRestrictionsForced') or E:IsInRestrictionState('Combat')
 end
 
-function E:IsRestrictedEncounter()
+function E:IsRestrictedEncounter() -- enum 1
 	return GetCVarBool('addonEncounterRestrictionsForced') or E:IsInRestrictionState('Encounter')
 end
 
-function E:IsRestrictedChat()
-	return GetCVarBool('addonChatRestrictionsForced') or (E:IsInRestrictionState('ChallengeMode') or E:IsInRestrictionState('Encounter'))
+function E:IsRestrictedChallengeMode() -- enum 2
+	return GetCVarBool('addonChallengeModeRestrictionsForced') or E:IsInRestrictionState('ChallengeMode')
+end
+
+function E:IsRestrictedPvPMatch() -- enum 3
+	return GetCVarBool('addonPvPMatchRestrictionsForced') or E:IsInRestrictionState('PvPMatch')
+end
+
+function E:IsRestrictedMap() -- enum 4
+	return GetCVarBool('addonMapRestrictionsForced') or E:IsInRestrictionState('Map')
+end
+
+function E:IsRestrictedChat() -- enum 5
+	return GetCVarBool('addonChatRestrictionsForced') or E:IsInRestrictionState('Chat')
+end
+
+function E:IsRestrictedInstance() -- restrictions during mythic+
+	return E:IsRestrictedChallengeMode() or E:IsRestrictedEncounter()
+end
+
+function E:IsRestrictedAuras() -- restrictions that block aura container updates
+	return E:IsRestrictedChallengeMode() or E:IsRestrictedEncounter() or E:IsRestrictedCombat() or E:IsRestrictedPvPMatch()
 end
 
 function E:UnregisterGameEvent(event)
