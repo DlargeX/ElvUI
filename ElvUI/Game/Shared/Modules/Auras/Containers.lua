@@ -57,6 +57,7 @@ E.AuraDispel = {
 	customDispelColorMap = {} -- updated by UpdateDispelColors
 }
 
+E.AuraHighlightActive = {}
 E.AuraContainerSortDirection = {}
 E.AuraContainerSortMethod = {}
 E.AuraPreviewFrames = {}
@@ -94,6 +95,12 @@ if SORTDIRECTION then
 	E.AuraContainerSortDirection.DESCENDING = SORTDIRECTION.Reverse
 	E.AuraContainerSortDirection['+'] = SORTDIRECTION.Normal
 	E.AuraContainerSortDirection['-'] = SORTDIRECTION.Reverse
+end
+
+function E:Auras_DispelUpdated()
+	for container in next, E.AuraHighlightActive do
+		E:Auras_SetHighlight(container)
+	end
 end
 
 function E:Auras_OnEvent(event, arg1)
@@ -715,15 +722,17 @@ end
 function E:Auras_SetHighlight(container)
 	local groupKey = container.key
 	if groupKey == 'bad' then
-		if container.known[groupKey] then return end
-
 		local candidate = E:Auras_FilterSlot(container)
 		E:Auras_CleanCandidates(container, candidate)
 
-		local slot = E:Auras_SetupHighlight(container, candidate)
-		container:AddAuraSlot(groupKey, container.filter, slot)
+		if container.known[groupKey] then
+			container:SetAuraSlotCandidateFilters(groupKey, candidate)
+		else
+			local slot = E:Auras_SetupHighlight(container, candidate)
+			container:AddAuraSlot(groupKey, container.filter, slot)
 
-		container.known[groupKey] = 'meow'
+			container.known[groupKey] = 'meow'
+		end
 	else
 		for key, data in next, container.active do
 			if not container.keys[key] then -- only handle previous keys
@@ -1019,6 +1028,8 @@ function E:Auras_ToggleEnable(container, shown)
 	if state ~= container:IsEnabled() then
 		container:SetEnabled(state)
 
+		E.AuraHighlightActive[container] = (container.isHighlight and state) or nil
+
 		return true
 	end
 end
@@ -1063,13 +1074,16 @@ function E:Auras_SetEnabled(enabled)
 	self.events:SetScript('OnEvent', enabled and E.Auras_OnEvent or nil)
 end
 
-function E:Auras_CreateEventFrame(container, frameType)
+function E:Auras_CreateEventFrame(container, parent)
 	local events = CreateFrame('Frame', nil, container)
 
-	events:RegisterEvent('UNIT_FACTION') -- highlight: faction changes
-	events:RegisterEvent('UNIT_FLAGS') -- highlight: flags changes
-	events:RegisterEvent('UNIT_PHASE') -- highlight: phase changes
+	if parent.isHighlight then
+		events:RegisterEvent('UNIT_FACTION') -- highlight: faction changes
+		events:RegisterEvent('UNIT_FLAGS') -- highlight: flags changes
+		events:RegisterEvent('UNIT_PHASE') -- highlight: phase changes
+	end
 
+	local frameType = parent.unitframeType
 	if E.AuraGroupHeaders[frameType] then
 		events:RegisterEvent('GROUP_ROSTER_UPDATE') -- raid: when people move between groups
 	elseif strmatch(frameType, '^focus') then
@@ -1098,9 +1112,8 @@ function E:Auras_Create(parent, which, override)
 	container.layout = {}
 	container.filters = {}
 
-	local frameType = parent and parent.unitframeType
-	if frameType then -- we only need events for unitframes
-		container.events = E:Auras_CreateEventFrame(container, frameType)
+	if parent and parent.unitframeType then -- we only need events for unitframes
+		container.events = E:Auras_CreateEventFrame(container, parent)
 
 		hooksecurefunc(container, 'SetEnabled', E.Auras_SetEnabled)
 	end
