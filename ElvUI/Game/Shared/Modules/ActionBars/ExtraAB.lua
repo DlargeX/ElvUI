@@ -142,7 +142,7 @@ end
 function AB:ExtraButtons_UpdateScale()
 	if not E.private.actionbar.enable then return end
 
-	if not E.Retail and InCombatLockdown() then
+	if not E.Modern and InCombatLockdown() then
 		AB.NeedsExtraButtonsRescale = true
 
 		AB:RegisterEvent('PLAYER_REGEN_ENABLED')
@@ -278,9 +278,9 @@ function AB:CreateExtraMovers()
 		E:CreateMover(ExtraActionBarHolder, 'BossButton', L["Boss Button"], nil, nil, nil, 'ALL,ACTIONBARS', nil, 'actionbar,extraButtons,extraActionButton')
 	end
 
-	if not ZoneAbilityHolder.mover then
+	if _G.ZoneAbilityFrame and not ZoneAbilityHolder.mover then
 		ZoneAbilityHolder:Point('BOTTOM', E.UIParent, 'BOTTOM', 150, 300)
-		E:CreateMover(ZoneAbilityHolder, 'ZoneAbility', L["Zone Ability"], nil, nil, nil, 'ALL,ACTIONBARS', nil, 'actionbar,extraButtons,extraActionButton')
+		E:CreateMover(ZoneAbilityHolder, 'ZoneAbility', L["Zone Ability"], nil, nil, nil, 'ALL,ACTIONBARS', nil, 'actionbar,extraButtons,zoneActionButton')
 	end
 end
 
